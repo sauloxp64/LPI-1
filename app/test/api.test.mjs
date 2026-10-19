@@ -205,3 +205,81 @@ test('configurações: data dos exames', async () => {
   assert.equal((await call('/api/settings', 'PUT', { data_101: 'amanhã' })).status, 400);
   assert.equal((await call('/api/settings', 'PUT', { data_101: null })).status, 200);
 });
+
+// ---------- regressões da segunda revisão do Codex ----------
+import net from 'node:net';
+
+const rawSocket = (payload, ms = 2500) => new Promise((resolve) => {
+  const s = net.connect(PORT, '127.0.0.1', () => s.write(payload));
+  let d = ''; const t = setTimeout(() => { s.destroy(); resolve(d); }, ms);
+  s.on('data', (c) => { d += c; if (d.includes('\r\n\r\n')) { clearTimeout(t); s.destroy(); resolve(d); } });
+  s.on('error', () => { clearTimeout(t); resolve(d || 'erro'); });
+  s.on('close', () => { clearTimeout(t); resolve(d); });
+});
+const statusLine = (r) => r.split('\r\n')[0];
+
+test('URL malformada não derruba o servidor (GET //%) e devolve 400', async () => {
+  const r = await rawSocket(`GET //% HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`);
+  assert.match(statusLine(r), /400/);
+  const r2 = await rawSocket(`GET //evil.example/x HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`);
+  assert.match(statusLine(r2), /400/);
+  assert.equal((await call('/api/stats')).status, 200, 'o servidor tem de continuar de pé');
+});
+
+test('Host duplicado e Origin fora do padrão são recusados', async () => {
+  const dupHost = await rawSocket(`GET /api/stats HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nHost: evil.example\r\nConnection: close\r\n\r\n`);
+  assert.match(statusLine(dupHost), /40[03]/);
+  for (const origin of [`ftp://127.0.0.1:${PORT}`, `http://127.0.0.1:${PORT}/`, `http://user@127.0.0.1:${PORT}`, 'null']) {
+    const r = await rawSocket(`POST /api/reset HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nOrigin: ${origin}\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}`);
+    assert.match(statusLine(r), /403/, `Origin ${origin} deveria ser recusada`);
+  }
+});
+
+test('terminal: sem laboratório responde 502 e handshake WebSocket inválido é recusado (sem derrubar o servidor)', async () => {
+  const r = await rawSocket(`GET /terminal/ HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`, 6000);
+  assert.match(statusLine(r), /502/);
+  const hs = (extra) => `GET /terminal/ws HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nOrigin: http://127.0.0.1:${PORT}\r\nConnection: Upgrade\r\n${extra}\r\n`;
+  // protocolo arbitrário
+  assert.match(statusLine(await rawSocket(hs('Upgrade: foo\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n'))), /400/);
+  // sem chave
+  assert.match(statusLine(await rawSocket(hs('Upgrade: websocket\r\nSec-WebSocket-Version: 13\r\n'))), /400/);
+  // Origin de outro site
+  assert.match(statusLine(await rawSocket(hs('Upgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n').replace(`Origin: http://127.0.0.1:${PORT}`, 'Origin: http://evil.example'))), /403/);
+  // dados "pegando carona" no handshake (head não vazio)
+  const smuggle = hs('Upgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n') + `GET /api/export HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\n\r\n`;
+  assert.match(statusLine(await rawSocket(smuggle)), /400/);
+  assert.equal((await call('/api/stats')).status, 200);
+});
+
+test('importação: números fora do intervalo e JSON de tipo errado são recusados sem tocar no banco', async () => {
+  const antes = (await call('/api/export')).json;
+  const base = () => ({ versao: 1, progress: [], lessons: [], exams: [], attempts: [], qstats: [], reports: [], lab_runs: [], settings: [] });
+  const ruim1 = base(); ruim1.attempts = [{ exam_id: 'x', idx: 0, qid: 'q', obj: '103.4', correct: 1, ts: 9007199254740992 }];
+  assert.equal((await call('/api/import', 'POST', ruim1)).status, 400);
+  const ruim2 = base(); ruim2.exams = [{ id: 'e1', created: 1, mode: 'topico', status: 'finalizado', questions: '{}' }];
+  assert.equal((await call('/api/import', 'POST', ruim2)).status, 400);
+  const ruim3 = base(); ruim3.lab_runs = [{ id: 'r1', challenge: 'c', params: '{oops', started: 1 }];
+  assert.equal((await call('/api/import', 'POST', ruim3)).status, 400);
+  const ruim4 = base(); ruim4.progress = [{ obj: '103.4' }];
+  assert.equal((await call('/api/import', 'POST', ruim4)).status, 400);
+  const depois = (await call('/api/export')).json;
+  assert.equal(depois.attempts.length, antes.attempts.length);
+  // e o arquivo exportado pelo próprio app continua importável (ida e volta)
+  assert.equal((await call('/api/import', 'POST', antes)).status, 200);
+  assert.equal((await call('/api/export')).json.attempts.length, antes.attempts.length);
+});
+
+test('salvamento fora de ordem: versão antiga não sobrescreve a mais nova', async () => {
+  const { json: { id } } = await call('/api/exams', 'POST', { mode: 'topico', objetivos: ['103.4'], n: 5, minutes: 0 });
+  await call(`/api/exams/${id}/answers`, 'PUT', { answers: { 0: [1] }, vers: { 0: 5 } });
+  await call(`/api/exams/${id}/answers`, 'PUT', { answers: { 0: [0] }, vers: { 0: 3 } }); // atrasado
+  assert.deepEqual((await call(`/api/exams/${id}`)).json.answers[0], [1]);
+});
+
+test('finalizar com estado completo: null apaga a resposta e as marcações são gravadas', async () => {
+  const { json: { id } } = await call('/api/exams', 'POST', { mode: 'topico', objetivos: ['103.4'], n: 5, minutes: 0 });
+  await call(`/api/exams/${id}/answers`, 'PUT', { answers: { 0: [0], 1: [0] } });
+  const fin = (await call(`/api/exams/${id}/finish`, 'POST', { answers: { 0: null, 1: [0], 2: null }, flags: [1] })).json;
+  assert.equal(fin.result.respondidas, 1, 'a resposta apagada (null) não pode continuar valendo');
+  assert.deepEqual(fin.flags, [1]);
+});

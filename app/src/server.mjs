@@ -24,13 +24,28 @@ const LAB_TERMINAL = new URL(process.env.LAB_TERMINAL_URL || 'http://lab:7681');
 // defina ALLOWED_HOSTS="meu-pc.local,192.168.0.10" (ou "*" para desligar a checagem).
 const ALLOWED_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', ...(process.env.ALLOWED_HOSTS ?? '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean)]);
 const hostName = (h) => (String(h ?? '').toLowerCase().match(/^(\[[^\]]+\]|[^:]+)(?::\d+)?$/) ?? [])[1] ?? '';
-const hostAllowed = (req) => ALLOWED_HOSTS.has('*') || ALLOWED_HOSTS.has(hostName(req.headers.host));
-/** Sem Origin (ferramentas/GET) passa; com Origin, tem de ser o próprio app (bloqueia CSRF e WebSocket de outros sites). */
+/** Cabeçalhos repetidos são ambíguos (o Node expõe um valor, o proxy repassaria todos): tratamos como inválidos. */
+const dupHeader = (req, names) => {
+  const seen = new Set();
+  for (let i = 0; i < req.rawHeaders.length; i += 2) {
+    const k = req.rawHeaders[i].toLowerCase();
+    if (names.includes(k)) { if (seen.has(k)) return true; seen.add(k); }
+  }
+  return false;
+};
+const hostAllowed = (req) => !dupHeader(req, ['host']) && (ALLOWED_HOSTS.has('*') || ALLOWED_HOSTS.has(hostName(req.headers.host)));
+/** Sem Origin (ferramentas/GET) passa; com Origin, tem de ser exatamente a origem do próprio app (bloqueia CSRF e WebSocket de outros sites). */
 const originAllowed = (req) => {
+  if (dupHeader(req, ['origin'])) return false;
   const o = req.headers.origin;
   if (!o) return true;
-  try { return new URL(o).host === req.headers.host; } catch { return false; }
+  try {
+    const u = new URL(o);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && u.origin === o && u.host === req.headers.host;
+  } catch { return false; }
 };
+// versão mais recente já aplicada por resposta (`examId:índice`): lotes de salvamento que chegam fora de ordem não sobrescrevem o mais novo
+const answerVers = new Map();
 
 const db = openDb(DB_PATH);
 let bank = loadBank();
@@ -234,9 +249,23 @@ route('PUT', '/api/exams/:id/answers', async (req, res, p) => {
   if (!exam) throw httpError(404, 'prova não encontrada');
   if (exam.status !== 'andamento') throw httpError(409, 'prova já finalizada');
   const incoming = validateAnswers(exam, body.answers);
+  const vers = body.vers && typeof body.vers === 'object' ? body.vers : {};
+  for (const k of Object.keys(incoming)) {
+    const v = Number(vers[k]);
+    if (!Number.isSafeInteger(v)) continue;
+    const key = `${exam.id}:${k}`;
+    if (v < (answerVers.get(key) ?? -1)) delete incoming[k]; // lote antigo chegou depois de um mais novo
+    else answerVers.set(key, v);
+  }
+  let flagsIn = body.flags;
+  const fv = Number(body.fv);
+  if (Number.isSafeInteger(fv)) {
+    const key = `${exam.id}:flags`;
+    if (fv < (answerVers.get(key) ?? -1)) flagsIn = undefined; else answerVers.set(key, fv);
+  }
   const answers = { ...exam.answers, ...incoming };
   for (const [k, v] of Object.entries(answers)) if (v === null) delete answers[k];
-  const flags = Array.isArray(body.flags) ? [...new Set(body.flags.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))] : exam.flags;
+  const flags = Array.isArray(flagsIn) ? [...new Set(flagsIn.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))] : exam.flags;
   db.prepare('UPDATE exams SET answers = ?, flags = ? WHERE id = ?').run(JSON.stringify(answers), JSON.stringify(flags), exam.id);
   return { ok: true, now: Date.now() };
 });
@@ -257,10 +286,15 @@ route('POST', '/api/exams/:id/finish', async (req, res, p) => {
   if (!exam) throw httpError(404, 'prova não encontrada');
   const late = exam.deadline && Date.now() > exam.deadline + 20_000; // tolerância de rede; depois disso só valem as respostas já salvas
   if (exam.status === 'andamento' && body.answers && !late) {
+    // o cliente manda o estado COMPLETO ao finalizar: null apaga a resposta (ex.: o usuário limpou uma alternativa)
     const answers = { ...exam.answers, ...validateAnswers(exam, body.answers) };
-    db.prepare('UPDATE exams SET answers = ? WHERE id = ?').run(JSON.stringify(answers), exam.id);
+    for (const [k, v] of Object.entries(answers)) if (v === null) delete answers[k];
+    const flags = Array.isArray(body.flags) ? [...new Set(body.flags.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))] : exam.flags;
+    db.prepare('UPDATE exams SET answers = ?, flags = ? WHERE id = ?').run(JSON.stringify(answers), JSON.stringify(flags), exam.id);
   }
-  return examView(finishExam(db, p.id));
+  const done = finishExam(db, p.id);
+  for (const k of [...answerVers.keys()]) if (k.startsWith(`${p.id}:`)) answerVers.delete(k);
+  return examView(done);
 });
 
 route('POST', '/api/exams/:id/contest', async (req, res, p) => {
@@ -426,27 +460,67 @@ route('GET', '/api/export', async () => {
   return dump;
 });
 
-const JSON_COLS = { exams: ['scope', 'questions', 'answers', 'flags', 'overrides', 'checked', 'result'] };
+// Contrato do arquivo de importação: tabela -> { req: colunas obrigatórias, cols: tipos }.
+// Tipos: s=texto, i=inteiro seguro >= 0, b=0|1, j:a=JSON array (em texto), j:o=JSON objeto (em texto); sufixo ? = pode ser nulo/ausente.
+const IMPORT_SPEC = {
+  progress: { req: ['obj', 'status'], cols: { obj: 's', status: 's', updated: 'i?' }, max: 100 },
+  lessons: { req: ['key'], cols: { key: 's', done: 'b', updated: 'i?' }, max: 2000 },
+  exams: {
+    req: ['id', 'created', 'mode', 'status', 'questions'], max: 5000,
+    cols: { id: 's', created: 'i', mode: 's', title: 's?', scope: 'j:o?', seed: 's?', minutes: 'i?', instant: 'b', deadline: 'i?', status: 's', questions: 'j:a', answers: 'j:o', flags: 'j:a', overrides: 'j:a', checked: 'j:a', result: 'j:o?', finished: 'i?', n: 'i?', parent: 's?' },
+  },
+  attempts: { req: ['exam_id', 'qid', 'obj', 'correct', 'ts'], cols: { id: 'i?', exam_id: 's', idx: 'i', qid: 's', obj: 's', type: 's?', level: 'i?', correct: 'b', ts: 'i' }, max: 300000 },
+  qstats: { req: [], cols: { qid: 's?', obj: 's?', seen: 'i?', correct: 'i?', box: 'i?', last_ts: 'i?', last_ok: 'i?', due_ts: 'i?' }, max: 100000 }, // ignorado: é recalculado
+  reports: { req: ['qid', 'ts'], cols: { id: 'i?', qid: 's', exam_id: 's?', note: 's?', ts: 'i' }, max: 20000 },
+  lab_runs: { req: ['id', 'challenge', 'params', 'started'], cols: { id: 's', challenge: 's', params: 'j:o', started: 'i', passed: 'b', passed_ts: 'i?', checks: 'i', hints: 'i', solution_seen: 'b' }, max: 50000 },
+  settings: { req: ['k'], cols: { k: 's', v: 's?' }, max: 50 },
+};
 
-/** Valida o arquivo de importação por completo; devolve a mensagem do problema ou null. */
+function typeOk(t, v) {
+  const opt = t.endsWith('?');
+  const base = opt ? t.slice(0, -1) : t;
+  if (v === null || v === undefined) return opt;
+  if (base === 's') return typeof v === 'string' && v.length <= 8_000_000;
+  if (base === 'i') return Number.isSafeInteger(v) && v >= 0 && v <= 1e13;
+  if (base === 'b') return v === 0 || v === 1;
+  if (base === 'j:a' || base === 'j:o') {
+    if (typeof v !== 'string') return false;
+    try {
+      const x = JSON.parse(v);
+      return base === 'j:a' ? Array.isArray(x) : !!x && typeof x === 'object' && !Array.isArray(x);
+    } catch { return false; }
+  }
+  return false;
+}
+
+const isObjCode = (c) => meta.objetivos.some((o) => o.code === c);
+
+/** Valida o arquivo de importação por completo; devolve a mensagem do problema ou null. Nada é apagado antes disso. */
 function validateImport(d) {
-  if (!d || d.versao !== 1) return 'arquivo de exportação inválido (versao)';
-  for (const t of EXPORT_TABLES) {
-    if (!Array.isArray(d[t])) return `tabela ausente ou inválida: ${t}`;
-    const cols = new Set(db.prepare(`PRAGMA table_info(${t})`).all().map((c) => c.name));
-    for (const row of d[t]) {
+  if (!d || typeof d !== 'object' || d.versao !== 1) return 'arquivo de exportação inválido (versao)';
+  for (const [t, spec] of Object.entries(IMPORT_SPEC)) {
+    const rows = d[t];
+    if (!Array.isArray(rows)) return `tabela ausente ou inválida: ${t}`;
+    if (rows.length > spec.max) return `tabela grande demais: ${t}`;
+    for (const row of rows) {
       if (!row || typeof row !== 'object' || Array.isArray(row)) return `linha inválida em ${t}`;
-      for (const [k, v] of Object.entries(row)) {
-        if (!cols.has(k)) return `coluna desconhecida em ${t}: ${k}`;
-        if (v !== null && typeof v === 'object') return `valor inválido em ${t}.${k}`;
-      }
-      for (const k of JSON_COLS[t] ?? []) {
-        if (row[k] == null) continue;
-        try { JSON.parse(row[k]); } catch { return `JSON inválido em ${t}.${k}`; }
-      }
+      for (const k of Object.keys(row)) if (!(k in spec.cols)) return `coluna desconhecida em ${t}: ${k}`;
+      for (const k of spec.req) if (row[k] === undefined || row[k] === null) return `campo obrigatório ausente em ${t}: ${k}`;
+      for (const [k, ty] of Object.entries(spec.cols)) if (k in row && !typeOk(ty, row[k])) return `valor inválido em ${t}.${k}`;
     }
   }
-  if (!d.progress.every((r) => meta.objetivos.some((o) => o.code === r.obj) && ['nao', 'estudando', 'concluido'].includes(r.status))) return 'progress com objetivo/status inválido';
+  if (!d.progress.every((r) => isObjCode(r.obj) && ['nao', 'estudando', 'concluido'].includes(r.status))) return 'progress com objetivo/status inválido';
+  if (!d.lessons.every((r) => /^\d{3}\.\d:\d+$/.test(r.key))) return 'aula com chave inválida';
+  if (!d.attempts.every((r) => isObjCode(r.obj) && r.qid.length <= 80)) return 'tentativa com objetivo/questão inválidos';
+  if (!d.settings.every((r) => ['data_101', 'data_102'].includes(r.k))) return 'configuração desconhecida';
+  for (const e of d.exams) {
+    if (!['andamento', 'finalizado'].includes(e.status)) return 'prova com status inválido';
+    const qs = JSON.parse(e.questions);
+    if (qs.length === 0 || qs.length > 200) return 'prova com número de questões inválido';
+    const okQ = qs.every((q) => q && typeof q === 'object' && typeof q.qid === 'string' && isObjCode(q.obj) && ['unica', 'multipla', 'lacuna'].includes(q.type)
+      && typeof q.text === 'string' && Array.isArray(q.options) && Array.isArray(q.answers));
+    if (!okQ) return 'prova com questões inválidas';
+  }
   return null;
 }
 
@@ -454,17 +528,18 @@ route('POST', '/api/import', async (req) => {
   const d = await readBody(req, 64 * 1024 * 1024);
   const problema = validateImport(d);
   if (problema) throw httpError(400, problema);
+  // tudo (inclusive o recálculo das estatísticas) numa só transação: se algo falhar, o banco anterior permanece intacto
   tx(db, () => {
     for (const t of EXPORT_TABLES) {
       db.exec(`DELETE FROM ${t}`);
+      if (t === 'qstats') continue; // dado derivado: recalculado abaixo a partir das tentativas
       for (const row of d[t]) {
         const cols = Object.keys(row);
         db.prepare(`INSERT INTO ${t}(${cols.join(',')}) VALUES(${cols.map(() => '?').join(',')})`).run(...cols.map((c) => row[c]));
       }
     }
-    db.exec('DELETE FROM qstats'); // dado derivado: recalculado a partir das tentativas
+    rebuildAllQstats();
   });
-  rebuildAllQstats();
   return { ok: true };
 });
 
@@ -519,18 +594,36 @@ function servePublic(req, res, pathname) {
 }
 
 // ---------- terminal do laboratório: proxy reverso (mesma origem, mesma checagem de Host/Origin) ----------
+const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'proxy-connection', 'te', 'trailer', 'transfer-encoding', 'upgrade']);
+/** Cabeçalhos a repassar: sem os hop-by-hop nem os nomeados em `Connection` (não são fim-a-fim). */
+function forwardHeaders(headers) {
+  const named = new Set(String(headers.connection ?? '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean));
+  return Object.fromEntries(Object.entries(headers).filter(([k]) => !HOP_BY_HOP.has(k) && !named.has(k)));
+}
+
 function proxyTerminal(req, res) {
-  const up = httpRequest({ hostname: LAB_TERMINAL.hostname, port: LAB_TERMINAL.port, path: req.url, method: req.method, headers: req.headers }, (pr) => {
-    res.writeHead(pr.statusCode, pr.headers);
+  if (dupHeader(req, ['content-length', 'transfer-encoding'])) return send(res, 400, { erro: 'requisição inválida' });
+  const up = httpRequest({ hostname: LAB_TERMINAL.hostname, port: LAB_TERMINAL.port, path: req.url, method: req.method, headers: forwardHeaders(req.headers), timeout: 30_000 }, (pr) => {
+    const rh = { ...pr.headers };
+    for (const h of HOP_BY_HOP) delete rh[h];
+    res.writeHead(pr.statusCode, rh);
+    pr.on('error', () => res.destroy());
+    pr.on('aborted', () => res.destroy());   // o laboratório encerrou no meio da resposta: não deixa o navegador pendurado
     pr.pipe(res);
   });
+  up.on('timeout', () => up.destroy(new Error('timeout')));
   up.on('error', () => { if (!res.headersSent) send(res, 502, { erro: 'laboratório indisponível (docker compose up -d lab)' }); else res.destroy(); });
+  res.on('close', () => up.destroy());      // o navegador desconectou: solta o laboratório
+  req.on('aborted', () => up.destroy());
   req.pipe(up);
 }
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
   try {
+    // alvo da requisição: caminho absoluto simples; "//x" e formas estranhas viram 400 (antes derrubavam o processo)
+    if (!req.url.startsWith('/') || req.url.startsWith('//')) return send(res, 400, { erro: 'URL inválida' });
+    let url;
+    try { url = new URL(req.url, 'http://localhost'); } catch { return send(res, 400, { erro: 'URL inválida' }); }
     if (!hostAllowed(req)) return send(res, 403, { erro: 'host não permitido (veja ALLOWED_HOSTS no docker-compose.yml)' });
     if (req.method !== 'GET' && req.method !== 'HEAD' && !originAllowed(req)) return send(res, 403, { erro: 'origem não permitida' });
     if (url.pathname === '/terminal') { res.writeHead(302, { location: '/terminal/' }); return res.end(); }
@@ -562,18 +655,31 @@ const server = createServer(async (req, res) => {
 
 // WebSocket do terminal (ttyd): mesma checagem de Host/Origin e túnel TCP até o container do lab
 server.on('upgrade', (req, socket, head) => {
-  const url = new URL(req.url, 'http://localhost');
-  if (!url.pathname.startsWith('/terminal/') || !hostAllowed(req) || !originAllowed(req)) { socket.end('HTTP/1.1 403 Forbidden\r\nconnection: close\r\n\r\n'); return; }
+  socket.on('error', () => socket.destroy());
+  const deny = (status = '403 Forbidden') => socket.end(`HTTP/1.1 ${status}\r\nconnection: close\r\n\r\n`);
+  let url;
+  try {
+    if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny('400 Bad Request');
+    url = new URL(req.url, 'http://localhost');
+  } catch { return deny('400 Bad Request'); }
+  if (!url.pathname.startsWith('/terminal/') || !hostAllowed(req) || !originAllowed(req)) return deny();
+  // só um handshake WebSocket legítimo passa; nada de protocolo arbitrário nem dados "pegando carona" no mesmo pacote
+  if (req.method !== 'GET' || String(req.headers.upgrade ?? '').toLowerCase() !== 'websocket' || req.headers['sec-websocket-version'] !== '13'
+      || !req.headers['sec-websocket-key'] || head?.length) return deny('400 Bad Request');
   const up = net.connect(Number(LAB_TERMINAL.port), LAB_TERMINAL.hostname, () => {
-    const lines = [`${req.method} ${req.url} HTTP/1.1`];
-    for (let i = 0; i < req.rawHeaders.length; i += 2) lines.push(`${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}`);
+    // cabeçalhos reconstruídos a partir dos valores já validados (Node colapsa duplicados); nada de rawHeaders
+    const lines = [`GET ${req.url} HTTP/1.1`];
+    for (const [k, v] of Object.entries(forwardHeaders(req.headers))) lines.push(`${k}: ${v}`);
+    lines.push('Connection: Upgrade', 'Upgrade: websocket');
     up.write(lines.join('\r\n') + '\r\n\r\n');
-    if (head?.length) up.write(head);
     socket.pipe(up); up.pipe(socket);
   });
   const close = () => { socket.destroy(); up.destroy(); };
-  up.on('error', close); socket.on('error', close); up.on('close', close); socket.on('close', close);
+  up.on('error', close); up.on('close', close); socket.on('close', close);
 });
+
+// um erro isolado numa requisição não pode derrubar o servidor inteiro
+process.on('unhandledRejection', (e) => console.error('[unhandledRejection]', e));
 
 server.listen(PORT, '0.0.0.0', () => console.log(`[web] http://localhost:${PORT}`));
 process.on('SIGTERM', () => { server.close(); db.close(); process.exit(0); });

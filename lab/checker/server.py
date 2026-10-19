@@ -72,10 +72,21 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
+            self._handle_post()
+        except Exception as e:  # qualquer falha inesperada vira 500 em JSON, nunca uma conexão sem resposta
+            try:
+                self._send(500, {'ok': False, 'erro': f'falha interna do verificador: {e}'})
+            except Exception:
+                pass
+
+    def _handle_post(self):
+        try:
             n = int(self.headers.get('content-length') or 0)
             body = json.loads(self.rfile.read(n) or b'{}')
         except Exception:
             return self._send(400, {'ok': False, 'erro': 'JSON inválido'})
+        if not isinstance(body, dict):
+            return self._send(400, {'ok': False, 'erro': 'o corpo deve ser um objeto JSON'})
         challenge = str(body.get('challenge', ''))
         params = body.get('params') or {}
         if not ID_RE.match(challenge):

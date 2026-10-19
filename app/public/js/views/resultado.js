@@ -11,9 +11,10 @@ function ring(v) {
     <div class="val"><div><b>${Math.round(v * 100)}%</b></div></div></div>`;
 }
 
-export async function render(root, { args, params }) {
+export async function render(root, { args, params, isCurrent = () => true }) {
   const id = args[0];
   const [ex, m] = await Promise.all([get(`/api/exams/${id}`), meta()]);
+  if (!isCurrent()) return;
   if (ex.status !== 'finalizado') { location.replace(`#/prova/${id}`); return; }
   const r = ex.result;
   const filter = params.get('f') ?? 'todas';

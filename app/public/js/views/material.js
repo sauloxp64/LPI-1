@@ -5,12 +5,13 @@ export async function render(root, { params }) {
   const m = await meta();
   const extras = m.pdf.extras ?? [];
   const extraById = Object.fromEntries(extras.map((e) => [e.id, e]));
-  const isExtra = (ex) => ex in extraById;
+  const isExtra = (ex) => Object.hasOwn(extraById, ex);
   const label = (ex) => (isExtra(ex) ? extraById[ex].titulo : `Exame ${ex}`);
   const shortLabel = (ex) => (isExtra(ex) ? `📘 ${extraById[ex].titulo.replace(/\s*\(.*$/, '').slice(0, 26)}` : `Exame ${ex}`);
 
   // parâmetros da URL vêm de fora: só aceitamos valores conhecidos (evita XSS/injeção em innerHTML)
-  const objParam = m.byCode[params.get('obj')] ? params.get('obj') : null;
+  const objRaw = params.get('obj');
+  const objParam = objRaw && Object.hasOwn(m.byCode, objRaw) ? objRaw : null; // hasOwn: 'constructor' etc. não são objetivos
   const validExams = ['101', '102', ...extras.map((e) => e.id)];
   let exam = validExams.includes(params.get('exame')) ? params.get('exame') : (objParam ? m.byCode[objParam].exame : '101');
   let page = Math.min(2000, Math.max(1, Number(params.get('p') ?? (objParam ? m.byCode[objParam].pdf?.inicio : 2)) || 2));

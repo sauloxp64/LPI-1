@@ -19,6 +19,7 @@ export class PdfIndex {
     this.pages = {}; // exame -> [{ raw, norm }]
     this.state = 'novo';
     this.semTexto = []; // PDFs sem texto e sem OCR (não pesquisáveis)
+    this.falhas = []; // PDFs que o pdftotext não conseguiu ler
     this.error = null;
   }
 
@@ -28,16 +29,21 @@ export class PdfIndex {
       for (const [exam, f] of Object.entries(this.files)) {
         const path = join(this.dir, f);
         if (!existsSync(path)) continue;
-        let text = await pdftotext(path);
-        // PDF escaneado (sem camada de texto): usa o OCR gerado por scripts/ocr-pdf.sh, se existir
-        if (text.replace(/\s/g, '').length < 200) {
-          const sidecar = path.replace(/\.pdf$/i, '.ocr.txt');
-          if (existsSync(sidecar)) text = readFileSync(sidecar, 'utf8');
-          else this.semTexto.push(exam);
+        try { // um PDF inválido não pode derrubar a busca nos demais
+          let text = await pdftotext(path);
+          // PDF escaneado (sem camada de texto): usa o OCR gerado por scripts/ocr-pdf.sh, se existir
+          if (text.replace(/\s/g, '').length < 200) {
+            const sidecar = path.replace(/\.pdf$/i, '.ocr.txt');
+            if (existsSync(sidecar)) text = readFileSync(sidecar, 'utf8');
+            else this.semTexto.push(exam);
+          }
+          this.pages[exam] = text.split('\f').map((raw) => ({ raw, norm: strip(raw) }));
+        } catch (e) {
+          this.falhas.push(exam);
+          console.error(`[pdf] não consegui indexar ${f}: ${String(e.message || e).slice(0, 120)}`);
         }
-        this.pages[exam] = text.split('\f').map((raw) => ({ raw, norm: strip(raw) }));
       }
-      this.state = Object.keys(this.pages).length ? 'pronto' : 'sem-pdfs';
+      this.state = Object.keys(this.pages).length ? 'pronto' : this.falhas.length ? 'erro' : 'sem-pdfs';
     } catch (e) {
       this.state = 'erro';
       this.error = String(e.message || e);

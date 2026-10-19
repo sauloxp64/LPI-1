@@ -10,14 +10,14 @@ async function start(body) {
   } catch (e) { toast(e.message, 'err'); }
 }
 
-export async function render(root, { params }) {
+export async function render(root, { params, isCurrent = () => true }) {
   const modo = params.get('modo');
   // atalhos que iniciam direto (sem formulário)
   if (modo && (AUTO.has(modo) || (modo === 'treino' && params.get('obj')))) {
     root.innerHTML = html`<p class="muted"><span class="spinner"></span> Montando seu simulado…</p>`.s;
     try {
       const { id } = await post('/api/exams', { mode: modo, objetivos: params.get('obj') ? params.get('obj').split(',') : undefined, n: modo === 'treino' ? 10 : undefined });
-      location.replace(`#/prova/${id}`);
+      if (isCurrent()) location.replace(`#/prova/${id}`);
     } catch (e) {
       root.innerHTML = html`<div class="empty">${e.message}<p><a class="btn" href="#/novo">Ver todos os modos</a></p></div>`.s;
     }

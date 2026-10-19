@@ -61,7 +61,7 @@ async function route() {
       holder.innerHTML = '<p class="muted"><span class="spinner"></span> Carregando…</p>';
       await meta();
       const mod = await loader();
-      const out = await mod.render(holder, { args: m.slice(1), params, path });
+      const out = await mod.render(holder, { args: m.slice(1), params, path, isCurrent: () => myNav === navId });
       if (myNav !== navId) { // o usuário já foi para outra tela: encerra os efeitos (timers, listeners) desta e não toca no estado atual
         if (typeof out === 'function') { try { out(); } catch (e) { /* ignora */ } }
         return;

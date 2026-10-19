@@ -1,9 +1,10 @@
 import { get, put, post } from '../api.js';
 import { html, raw, md, clock, LETTERS, stars, toast, confirmDialog, esc } from '../util.js';
 
-export async function render(root, { args }) {
+export async function render(root, { args, isCurrent = () => true }) {
   const id = args[0];
   const ex = await get(`/api/exams/${id}`);
+  if (!isCurrent()) return; // o usuário já saiu desta tela: não redireciona nem registra efeitos globais
   if (ex.status === 'finalizado') { location.replace(`#/resultado/${id}`); return; }
 
   const offset = ex.now - Date.now();
@@ -17,6 +18,8 @@ export async function render(root, { args }) {
   const answeredCount = () => ex.questions.reduce((s, _, i) => s + (isBlank(answers[i]) ? 0 : 1), 0);
 
   let saving = Promise.resolve();
+  const ver = {}; let flagsVer = 0; // versões por resposta/flags: o servidor ignora lotes antigos que chegam fora de ordem
+  const checking = new Set(); // questões com correção em andamento (treino): não aceitam edição
   const setSaveState = (t) => { const el = root.querySelector('#savestate'); if (el) el.textContent = t; };
   const flush = (keepalive = false) => {
     clearTimeout(saveTimer);
@@ -24,10 +27,11 @@ export async function render(root, { args }) {
     if (!pending.size && !keepalive) return saving;
     const keys = [...pending]; pending = new Set();
     const send = () => {
-      const batch = {}; keys.forEach((i) => { batch[i] = isBlank(answers[i]) ? null : answers[i]; });
+      const batch = {}; const vers = {};
+      keys.forEach((i) => { batch[i] = isBlank(answers[i]) ? null : answers[i]; vers[i] = ver[i] ?? 0; });
       return fetch(`/api/exams/${id}/answers`, {
         method: 'PUT', headers: { 'content-type': 'application/json' }, keepalive,
-        body: JSON.stringify({ answers: batch, flags: [...flags] }),
+        body: JSON.stringify({ answers: batch, vers, flags: [...flags], fv: flagsVer }),
       }).then((r) => {
         if (!r.ok && r.status !== 409) throw new Error(`HTTP ${r.status}`);
         setSaveState('✓ salvo');
@@ -126,12 +130,15 @@ export async function render(root, { args }) {
 
   async function check() {
     const i = cur; // fixa o índice: o usuário pode avançar antes de a resposta do servidor chegar
+    if (checking.has(i)) return;
     if (isBlank(answers[i])) return toast('Responda antes de corrigir.');
+    checking.add(i);
     try {
       const out = await post(`/api/exams/${id}/check`, { i, answer: answers[i] });
+      answers[i] = out.given ?? answers[i]; // o servidor é a fonte da verdade sobre o que foi corrigido
       feedback[i] = out; ex.checked = [...new Set([...(ex.checked ?? []), i])];
       if (cur === i) drawQuestion(); else drawNav();
-    } catch (e) { toast(e.message, 'err'); }
+    } catch (e) { toast(e.message, 'err'); } finally { checking.delete(i); }
   }
 
   async function ensureFeedback() {
@@ -147,7 +154,13 @@ export async function render(root, { args }) {
     history.replaceState(null, '', `#/prova/${id}?q=${cur}`);
   };
 
+  function toggleFlag() {
+    flags.has(cur) ? flags.delete(cur) : flags.add(cur);
+    flagsVer++; pending.add(cur); scheduleSave(); drawQuestion();
+  }
+
   function setAnswer(v) {
+    ver[cur] = (ver[cur] ?? 0) + 1;
     answers[cur] = v; pending.add(cur); scheduleSave(); drawHead();
     navEl.querySelector(`[data-go="${cur}"]`)?.classList.toggle('done', !isBlank(v));
   }
@@ -165,8 +178,9 @@ export async function render(root, { args }) {
     }
     clearInterval(tick);
     try {
-      await flush();
-      await post(`/api/exams/${id}/finish`, { answers: Object.fromEntries(Object.entries(answers).filter(([, v]) => !isBlank(v))) });
+      await flush(); // melhor esforço (não rejeita): o estado COMPLETO vai junto, inclusive respostas apagadas (null) e marcações
+      const full = Object.fromEntries(ex.questions.map((_, i) => [i, isBlank(answers[i]) ? null : answers[i]]));
+      await post(`/api/exams/${id}/finish`, { answers: full, flags: [...flags] });
       done = true;
       location.hash = `#/resultado/${id}`;
     } catch (e) { finishing = false; toast(e.message, 'err'); }
@@ -179,6 +193,7 @@ export async function render(root, { args }) {
       e.preventDefault();
       const q = ex.questions[cur];
       if (ex.instant && (feedback[cur] || ex.checked?.includes(cur))) return;
+      if (checking.has(cur)) return; // correção em andamento: não deixa a tela divergir do que foi enviado
       const k = Number(opt.dataset.opt);
       if (q.type === 'unica') setAnswer([k]);
       else { const s = new Set(Array.isArray(answers[cur]) ? answers[cur] : []); s.has(k) ? s.delete(k) : s.add(k); setAnswer([...s].sort((a, b) => a - b)); }
@@ -190,12 +205,16 @@ export async function render(root, { args }) {
     if (b.dataset.go !== undefined) go(Number(b.dataset.go));
     else if ('prev' in b.dataset) go(cur - 1);
     else if ('next' in b.dataset) { cur === ex.n - 1 ? finish() : go(cur + 1); }
-    else if ('flag' in b.dataset) { flags.has(cur) ? flags.delete(cur) : flags.add(cur); scheduleSave(); pending.add(cur); drawQuestion(); }
+    else if ('flag' in b.dataset) toggleFlag();
     else if ('check' in b.dataset) check();
     else if ('report' in b.dataset) reportQ();
     else if (b.id === 'finish') finish();
   };
-  root.oninput = (e) => { if (e.target.id === 'lac') setAnswer(e.target.value); };
+  root.oninput = (e) => {
+    if (e.target.id !== 'lac') return;
+    if (checking.has(cur)) { e.target.value = typeof answers[cur] === 'string' ? answers[cur] : ''; return; }
+    setAnswer(e.target.value);
+  };
 
   async function reportQ() {
     const note = prompt('O que está errado nesta questão? (gabarito, enunciado, ambiguidade…)');
@@ -213,7 +232,7 @@ export async function render(root, { args }) {
     const q = ex.questions[cur];
     if (e.key === 'ArrowRight') go(cur + 1);
     else if (e.key === 'ArrowLeft') go(cur - 1);
-    else if (e.key.toLowerCase() === 'f') { flags.has(cur) ? flags.delete(cur) : flags.add(cur); scheduleSave(); pending.add(cur); drawQuestion(); }
+    else if (e.key.toLowerCase() === 'f') toggleFlag();
     else if (e.key === 'Enter' && ex.instant) { feedback[cur] ? go(cur + 1) : check(); }
     else if (q.type !== 'lacuna') {
       const k = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : LETTERS.indexOf(e.key.toUpperCase());

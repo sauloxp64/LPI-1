@@ -11,7 +11,8 @@ dir="$(cd "$(dirname "$pdf")" && pwd)"
 file="$(basename "$pdf")"
 hostdir="$dir"
 if command -v cygpath >/dev/null 2>&1; then hostdir="$(cygpath -m "$dir")"; fi   # Git Bash/Windows: caminho no formato C:/...
-out="${file%.pdf}.ocr.txt"
+base="$(printf '%s' "$file" | sed -E 's/\.[pP][dD][fF]$//')"   # tira .pdf/.PDF (o índice do app usa a mesma regra, sem diferenciar caixa)
+out="${base}.ocr.txt"
 echo "OCR de '$file' (pode levar alguns minutos)..."
 MSYS_NO_PATHCONV=1 docker run --rm -v "$hostdir:/work" -e FILE="$file" -e OUT="$out" debian:bookworm-slim bash -c '
   set -e
