@@ -1,5 +1,5 @@
 import { get, post, meta } from '../api.js';
-import { html, pct, tone, dots, toast } from '../util.js';
+import { html, pct, tone, dots, ico, toast } from '../util.js';
 
 export async function render(root, { args }) {
   const code = args[0];
@@ -14,9 +14,9 @@ export async function render(root, { args }) {
   const status = prog.status[code] ?? 'nao';
 
   root.innerHTML = html`
-    <div class="page-title"><h1><span class="mono">${code}</span> ${o.titulo}</h1></div>
-    <div class="row" style="margin:-8px 0 16px"><span class="chip">Exame ${o.exame}-500</span><span class="chip">Tópico ${o.topico} · ${topico.titulo}</span>
-      <span class="chip warn" title="peso na prova: quantidade aproximada de questões">${dots(o.peso)} peso ${o.peso}</span>
+    <div class="page-title"><h1><span class="mono">${code}</span>${o.titulo}</h1></div>
+    <div class="row" style="margin:0 0 18px"><span class="chip">Exame ${o.exame}-500</span><span class="chip">Tópico ${o.topico}: ${topico.titulo}</span>
+      <span class="chip warn" title="peso na prova: quantidade aproximada de questões">peso ${o.peso} ${dots(o.peso)}</span>
       <span class="chip ${status === 'concluido' ? 'ok' : status === 'estudando' ? 'warn' : ''}">curso: ${{ nao: 'não vi', estudando: 'estudando', concluido: 'concluído' }[status]}</span></div>
 
     <div class="grid c2" style="grid-template-columns:1.4fr 1fr;align-items:start">
@@ -25,7 +25,7 @@ export async function render(root, { args }) {
           <ul style="margin:0;padding-left:20px">${o.areas.map((a) => html`<li>${a}</li>`)}</ul>
           <h4 style="margin-top:16px">Comandos, arquivos e termos-chave</h4>
           <div class="row" style="gap:6px">${o.utils.map((u) => html`<code>${u}</code>`)}</div>
-          ${['109.2', '109.3', '110.2'].includes(code) ? html`<p class="muted small" style="margin-top:12px">⚠ A LPI já anunciou a futura retirada de: ${m.mudancas_futuras.join('; ')}. Ainda cai na versão 5.0.</p>` : ''}
+          ${['109.2', '109.3', '110.2'].includes(code) ? html`<p class="muted small" style="margin-top:12px">${ico('warn')} A LPI já anunciou a futura retirada de: ${m.mudancas_futuras.join('; ')}. Ainda cai na versão 5.0.</p>` : ''}
         </section>
 
         <section class="card"><h3>Onde estudar no material oficial</h3>
@@ -38,15 +38,15 @@ export async function render(root, { args }) {
           <div class="row"><div class="kpi">${s.n ? pct(s.mastery) : '—'}</div><span class="chip ${s.n ? tone(s.mastery) : ''}">${s.n ? 'domínio estimado' : 'sem respostas'}</span></div>
           <p class="muted small">${s.n} respostas · ${s.acc !== null ? pct(s.acc) : '—'} de acerto no total</p>
           <div class="stack">
-            <button class="btn primary" style="width:100%" data-train="10">🎯 Treinar 10 questões</button>
-            <button class="btn" style="width:100%" data-train="25">🏋️ Treinar 25 questões</button>
-            <button class="btn" style="width:100%" data-quiz="1">📝 Simulado deste objetivo (cronometrado)</button>
-            <a class="btn" style="width:100%" href="#/material?obj=${code}">📖 Abrir material (p.${o.pdf?.inicio ?? '?'}–${o.pdf?.fim ?? '?'})</a>
+            <button class="btn primary block" data-train="10">${ico('target')} Treinar 10 questões</button>
+            <button class="btn block" data-train="25">${ico('checkcircle')} Treinar 25 questões</button>
+            <button class="btn block" data-quiz="1">${ico('exam')} Simulado deste objetivo (cronometrado)</button>
+            <a class="btn block" href="#/material?obj=${code}">${ico('book')} Abrir material (p.${o.pdf?.inicio ?? '?'} a ${o.pdf?.fim ?? '?'})</a>
           </div></section>
         <section class="card"><h3>Banco de questões</h3>
-          <p style="margin:0"><b>${b.n}</b> fixas (${b.unica} única · ${b.multipla} múltipla · ${b.lacuna} lacuna) + <b>${b.geradores}</b> gerador(es) paramétrico(s).</p></section>
+          <p style="margin:0"><b>${b.n}</b> fixas (${b.unica} de resposta única, ${b.multipla} de múltipla escolha, ${b.lacuna} de lacuna) e <b>${b.geradores}</b> gerador(es) paramétrico(s).</p></section>
         <section class="card"><h3>Laboratório</h3>
-          ${labs.length ? labs.map((d) => html`<a class="result-item" href="#/lab/${d.id}"><div class="row"><b>${d.titulo}</b><span class="right chip ${d.concluido ? 'ok' : ''}">${d.concluido ? '✓ feito' : `nível ${d.nivel}`}</span></div></a>`) : html`<p class="muted small" style="margin:0">Ainda sem desafios práticos para este objetivo.</p>`}
+          ${labs.length ? labs.map((d) => html`<a class="result-item" href="#/lab/${d.id}"><div class="row"><b>${d.titulo}</b><span class="right chip ${d.concluido ? 'ok' : ''}">${d.concluido ? 'concluído' : `nível ${d.nivel}`}</span></div></a>`) : html`<p class="muted small" style="margin:0">Ainda sem desafios práticos para este objetivo.</p>`}
         </section>
       </div>
     </div>`.s;

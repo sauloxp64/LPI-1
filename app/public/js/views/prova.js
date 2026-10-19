@@ -1,5 +1,5 @@
 import { get, put, post } from '../api.js';
-import { html, raw, md, clock, LETTERS, stars, toast, confirmDialog, esc } from '../util.js';
+import { html, raw, md, clock, LETTERS, stars, toast, confirmDialog, esc, ico } from '../util.js';
 
 export async function render(root, { args, isCurrent = () => true }) {
   const id = args[0];
@@ -20,7 +20,7 @@ export async function render(root, { args, isCurrent = () => true }) {
   let saving = Promise.resolve();
   const ver = {}; let flagsVer = 0; // versões por resposta/flags: o servidor ignora lotes antigos que chegam fora de ordem
   const checking = new Set(); // questões com correção em andamento (treino): não aceitam edição
-  const setSaveState = (t) => { const el = root.querySelector('#savestate'); if (el) el.textContent = t; };
+  const setSaveState = (t, err = false) => { const el = root.querySelector('#savestate'); if (el) { el.textContent = t; el.classList.toggle('err', err); } };
   const flush = (keepalive = false) => {
     clearTimeout(saveTimer);
     if (done) return Promise.resolve(); // prova finalizada: o servidor recusa novas respostas
@@ -34,11 +34,11 @@ export async function render(root, { args, isCurrent = () => true }) {
         body: JSON.stringify({ answers: batch, vers, flags: [...flags], fv: flagsVer }),
       }).then((r) => {
         if (!r.ok && r.status !== 409) throw new Error(`HTTP ${r.status}`);
-        setSaveState('✓ salvo');
+        setSaveState('salvo');
       }).catch(() => {
         // não descarta: devolve à fila e tenta de novo (o lote seguinte já leva o valor mais recente)
         keys.forEach((i) => pending.add(i));
-        setSaveState('⚠ não salvo — tentando de novo');
+        setSaveState('não salvo, tentando de novo', true);
         if (!keepalive && !done) { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 3000); }
       });
     };
@@ -59,10 +59,10 @@ export async function render(root, { args, isCurrent = () => true }) {
     <div class="exam">
       <div id="qwrap"></div>
       <aside class="card tight" style="position:sticky;top:78px">
-        <h3 class="small muted" style="text-transform:uppercase;letter-spacing:.05em">Navegação</h3>
+        <h3>Navegação</h3>
         <div class="navgrid" id="nav"></div>
-        <p class="small muted" style="margin:10px 0 0">⚑ marcada · <span style="color:var(--accent)">■</span> respondida</p>
-        <p class="small muted" style="margin:6px 0 0"><kbd>←</kbd><kbd>→</kbd> navegar · <kbd>1</kbd>–<kbd>5</kbd> ou <kbd>A</kbd>–<kbd>E</kbd> escolher · <kbd>F</kbd> marcar${ex.instant ? html` · <kbd>Enter</kbd> corrigir` : ''}</p>
+        <p class="legend"><span><i class="l-flag"></i>marcada</span><span><i class="l-done"></i>respondida</span></p>
+        <p class="small muted" style="margin:10px 0 0;line-height:1.9"><kbd>setas</kbd> navegar<br><kbd>1</kbd> a <kbd>5</kbd> ou <kbd>A</kbd> a <kbd>E</kbd> escolher<br><kbd>F</kbd> marcar${ex.instant ? html`<br><kbd>Enter</kbd> corrigir` : ''}</p>
       </aside>
     </div>`.s;
 
@@ -70,7 +70,7 @@ export async function render(root, { args, isCurrent = () => true }) {
   const navEl = root.querySelector('#nav');
 
   function drawHead() {
-    root.querySelector('#prog').textContent = `${answeredCount()}/${ex.n} respondidas · ${flags.size} marcadas`;
+    root.querySelector('#prog').textContent = `${answeredCount()}/${ex.n} respondidas, ${flags.size} marcadas`;
   }
 
   function drawNav() {
@@ -97,21 +97,21 @@ export async function render(root, { args, isCurrent = () => true }) {
         const cls = ['opt', q.type === 'multipla' ? 'multi' : '', on ? 'sel' : '', locked ? 'locked' : '',
           gab && gab.has(k) ? 'good' : '', gab && on && !gab.has(k) ? 'bad' : ''].join(' ');
         return html`<label class="${cls}" data-opt="${k}"><input type="${q.type === 'unica' ? 'radio' : 'checkbox'}" name="q" ${on ? 'checked' : ''} ${locked ? 'disabled' : ''}>
-          <span class="key">${LETTERS[k]}</span><span class="txt">${md(t, { inline: true })}</span>${gab ? html`<span class="mark">${gab.has(k) ? '✓' : on ? '✗' : ''}</span>` : ''}</label>`;
+          <span class="key">${LETTERS[k]}</span><span class="txt">${md(t, { inline: true })}</span>${gab ? html`<span class="mark">${gab.has(k) ? html`${ico('check')} correta` : on ? html`${ico('x')} sua resposta` : ''}</span>` : ''}</label>`;
       })}</div>`;
     }
     qwrap.innerHTML = html`<section class="card qcard">
-      <div class="row small muted" style="margin-bottom:10px"><b>Questão ${cur + 1} de ${ex.n}</b>${ex.instant ? html`<span class="lvl" title="dificuldade">${stars(q.level)}</span>` : ''}
-        ${flags.has(cur) ? html`<span class="chip warn">⚑ marcada</span>` : ''}</div>
+      <div class="row qmeta"><b>Questão ${cur + 1} de ${ex.n}</b>${ex.instant ? html`<span class="lvl" title="dificuldade">dificuldade ${stars(q.level)}</span>` : ''}
+        ${flags.has(cur) ? html`<span class="chip warn">${ico('flag')} marcada</span>` : ''}</div>
       ${q.type === 'multipla' ? html`<div class="qhint">Selecione ${q.escolhas} respostas.</div>` : q.type === 'lacuna' ? html`<div class="qhint">Preencha a lacuna.</div>` : ''}
       <div class="qtext">${md(q.text)}</div>
       ${body}
       ${fb ? feedbackBox(fb) : ''}
       <div class="row" style="margin-top:18px">
-        <button class="btn" data-prev ${cur === 0 ? 'disabled' : ''}>← Anterior</button>
-        <button class="btn ghost" data-flag>${flags.has(cur) ? '⚑ Desmarcar' : '⚐ Marcar para revisão'}</button>
+        <button class="btn" data-prev ${cur === 0 ? 'disabled' : ''}>${ico('left')} Anterior</button>
+        <button class="btn ghost" data-flag>${ico('flag')} ${flags.has(cur) ? 'Desmarcar' : 'Marcar para revisão'}</button>
         ${ex.instant && !locked ? html`<button class="btn primary right" data-check>Corrigir</button>` : ''}
-        <button class="btn ${ex.instant && !locked ? '' : 'primary'} ${ex.instant && !locked ? '' : 'right'}" data-next>${cur === ex.n - 1 ? 'Revisar e finalizar' : 'Próxima →'}</button>
+        <button class="btn ${ex.instant && !locked ? '' : 'primary'} ${ex.instant && !locked ? '' : 'right'}" data-next>${cur === ex.n - 1 ? 'Revisar e finalizar' : html`Próxima ${ico('right')}`}</button>
       </div></section>`.s;
     drawHead(); drawNav();
     const lac = qwrap.querySelector('#lac');
@@ -119,11 +119,11 @@ export async function render(root, { args, isCurrent = () => true }) {
   }
 
   function feedbackBox(fb) {
-    return html`<div class="feedback ${fb.ok ? 'ok' : 'no'}"><h4>${fb.ok ? '✓ Correto!' : '✗ Não foi dessa vez'}</h4>
+    return html`<div class="feedback ${fb.ok ? 'ok' : 'no'}"><h4>${fb.ok ? html`${ico('check')} Resposta correta` : html`${ico('x')} Resposta incorreta`}</h4>
       ${md(fb.explanation)}
       <div class="row small" style="margin-top:8px"><span class="chip mono">${fb.obj}</span>
-        ${(fb.ref ?? []).map((r) => html`<a class="chip" target="_blank" rel="noopener" href="${refUrl(r)}">📖 material ${r.replace(/^(\d+):p\./, '$1 · p.')}</a>`)}
-        <button class="btn sm ghost right" data-report>🚩 reportar erro</button></div></div>`;
+        ${(fb.ref ?? []).map((r) => html`<a class="chip" target="_blank" rel="noopener" href="${refUrl(r)}">${ico('book')} material ${r.replace(/^(\d+):p\./, '$1 · p.')}</a>`)}
+        <button class="btn sm ghost right" data-report>${ico('flag')} Reportar erro</button></div></div>`;
   }
 
   const refUrl = (r) => { const m = /^(\d+):p\.(\d+)/.exec(r); return m ? `/pdf/${m[1]}#page=${m[2]}` : '#'; };

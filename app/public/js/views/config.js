@@ -1,5 +1,5 @@
 import { get, post, meta } from '../api.js';
-import { html, toast, fmtDate, confirmDialog } from '../util.js';
+import { html, toast, fmtDate, confirmDialog, ico, st } from '../util.js';
 
 const TARGET = { 1: 10, 2: 14, 3: 20, 4: 26, 5: 32 };
 
@@ -16,16 +16,16 @@ export async function render(root) {
     <div class="grid c2" style="align-items:start">
       <section class="card stack"><h3>Seus dados</h3>
         <p class="muted small" style="margin:0">Tudo fica no volume Docker <code>dados</code> (SQLite) — nada sai do seu computador.</p>
-        <div class="row"><a class="btn" href="/api/export" download="lpic1-progresso.json">⬇ Exportar progresso</a>
-          <label class="btn">⬆ Importar<input type="file" id="imp" accept="application/json" class="sr-only"></label></div>
-        <hr style="border:0;border-top:1px solid var(--line);width:100%">
+        <div class="row"><a class="btn" href="/api/export" download="lpic1-progresso.json">${ico('download')} Exportar progresso</a>
+          <label class="btn" style="cursor:pointer">${ico('upload')} Importar<input type="file" id="imp" accept="application/json" class="sr-only"></label></div>
+        <hr>
         <button class="btn danger" id="reset">Apagar todo o progresso…</button></section>
 
       <section class="card stack"><h3>Sistema</h3>
         <div class="row"><span class="chip ${lab.online ? 'ok' : 'bad'}">laboratório ${lab.online ? 'online' : 'offline'}</span>
           <span class="chip ${m.pdf.indice === 'pronto' ? 'ok' : 'warn'}">busca nos PDFs: ${m.pdf.indice}</span>
           <span class="chip">${b.total} questões</span><span class="chip">${b.geradores} geradores</span><span class="chip">${b.desafios} desafios</span></div>
-        <div class="row"><button class="btn" id="reload">↻ Recarregar banco e desafios</button></div>
+        <div class="row"><button class="btn" id="reload">${ico('redo')} Recarregar banco e desafios</button></div>
         <p class="muted small" style="margin:0">Para acrescentar questões suas, edite <code>app/content/questions/*.txt</code> (formato em <code>app/content/FORMATO.md</code>) e recarregue.</p>
         ${b.erros.length ? html`<div class="feedback no"><b>${b.erros.length} erro(s) de validação</b><ul class="small">${b.erros.map((e) => html`<li><code>${e.file}:${e.line}</code> ${e.id ?? ''} ${e.msg}</li>`)}</ul></div>` : ''}
         ${b.avisos ? html`<p class="muted small" style="margin:0">${b.avisos} aviso(s) de qualidade — rode <code>node app/tools/lint-questions.mjs</code>.</p>` : ''}
@@ -35,12 +35,12 @@ export async function render(root) {
     <section class="card" style="margin-top:16px"><h3>Cobertura do banco por objetivo</h3>
       <p class="muted small">Meta mínima proporcional ao peso (10/14/20/26/32). Geradores criam variações ilimitadas por cima disso.</p>
       <div style="overflow-x:auto"><table><thead><tr><th>Obj.</th><th>Peso</th><th>Fixas</th><th>única</th><th>múlt.</th><th>lacuna</th><th>Geradores</th><th></th></tr></thead><tbody>
-        ${rows.map(({ o, s, meta: mt, ok }) => html`<tr><td><a href="#/objetivo/${o.code}" class="mono">${o.code}</a> <span class="muted small">${o.titulo}</span></td><td>${o.peso}</td><td>${s.n}/${mt}</td><td>${s.unica}</td><td>${s.multipla}</td><td>${s.lacuna}</td><td>${s.geradores}</td><td>${ok ? '✓' : '…'}</td></tr>`)}
+        ${rows.map(({ o, s, meta: mt, ok }) => html`<tr><td><a href="#/objetivo/${o.code}" class="mono">${o.code}</a> <span class="muted small">${o.titulo}</span></td><td>${o.peso}</td><td>${s.n}/${mt}</td><td>${s.unica}</td><td>${s.multipla}</td><td>${s.lacuna}</td><td>${s.geradores}</td><td>${ok ? st('ok', 'OK') : st('wait', 'POUCAS')}</td></tr>`)}
       </tbody></table></div></section>
 
     <section class="card" style="margin-top:16px"><h3>Questões reportadas</h3>
       ${reports.reports.length ? html`<table><thead><tr><th>Quando</th><th>Questão</th><th>Nota</th></tr></thead><tbody>${reports.reports.map((r) => html`<tr><td class="small">${fmtDate(r.ts)}</td><td class="mono small">${r.qid}</td><td>${r.note}</td></tr>`)}</tbody></table>`
-        : html`<p class="muted">Nenhuma. Use "🚩 Reportar erro" durante a revisão se achar um gabarito duvidoso.</p>`}</section>
+        : html`<p class="muted" style="margin:0">Nenhuma. Use "Reportar erro" durante a revisão se achar um gabarito duvidoso.</p>`}</section>
 
     <section class="card" style="margin-top:16px"><h3>Sobre</h3>
       <p class="small muted" style="margin:0">Material de estudo: <i>LPI Learning Material</i> (LPIC-1 101-500 e 102-500, pt-BR), © Linux Professional Institute, licença CC BY-NC-ND 4.0 — os PDFs ficam apenas no seu repositório e são servidos localmente. Objetivos: <a href="https://www.lpi.org/pt-br/exam-101-102-objectives/" target="_blank" rel="noopener">lpi.org</a> (versão 5.0). Este app não é afiliado à LPI; confirme formato, preço e regras da prova no site oficial / Pearson VUE.</p></section>`.s;

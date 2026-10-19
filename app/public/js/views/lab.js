@@ -1,5 +1,5 @@
 import { get, post, meta } from '../api.js';
-import { html, md, toast, fmtDuration } from '../util.js';
+import { html, md, toast, fmtDuration, ico, st as stMark } from '../util.js';
 
 const LEVELS = { 1: 'fácil', 2: 'médio', 3: 'difícil' };
 const store = {
@@ -16,9 +16,9 @@ async function listView(root) {
   const [m, st, list] = await Promise.all([meta(), get('/api/lab/status'), get('/api/lab/challenges')]);
   const done = list.desafios.filter((d) => d.concluido).length;
   root.innerHTML = html`
-    <div class="page-title"><h1>Laboratório</h1><p>Um Debian de verdade no navegador. Cada desafio sorteia nomes, números e arquivos novos — e confere o resultado de verdade, rodando comandos no sistema.</p></div>
+    <div class="page-title"><h1>Laboratório</h1><p>Um Debian de verdade no navegador. Cada desafio sorteia nomes, números e arquivos novos e confere o resultado de verdade, rodando comandos no sistema.</p></div>
     <section class="card row">
-      <span class="chip ${st.online ? 'ok' : 'bad'}">${st.online ? '● laboratório online' : '● laboratório offline'}</span>
+      <span class="chip ${st.online ? 'ok' : 'bad'}">laboratório ${st.online ? 'online' : 'offline'}</span>
       <span class="muted small">${done}/${list.desafios.length} desafios concluídos</span>
       ${st.online ? '' : html`<span class="small">Suba o container: <code>docker compose up -d lab</code></span>`}
     </section>
@@ -26,8 +26,8 @@ async function listView(root) {
       const ds = list.desafios.filter((d) => m.byCode[d.obj]?.topico === t);
       if (!ds.length) return '';
       return html`<section class="card" style="margin-top:16px"><h3>${t} · ${info.titulo}</h3>
-        <div class="grid auto">${ds.map((d) => html`<a class="sugg" href="#/lab/${d.id}"><span class="em">${d.concluido ? '✅' : '🧪'}</span>
-          <span><b>${d.titulo}</b><br><span class="muted small"><span class="mono">${d.obj}</span> · ${LEVELS[d.nivel] ?? ''}${d.minutos ? ` · ~${d.minutos} min` : ''}${d.tentativas ? ` · ${d.tentativas} tentativa(s)` : ''}${d.melhor ? ` · melhor ${fmtDuration(d.melhor / 1000)}` : ''}</span></span></a>`)}</div></section>`;
+        <div class="omap">${ds.map((d) => html`<a class="challenge" href="#/lab/${d.id}">${stMark(d.concluido ? 'ok' : 'wait', d.concluido ? 'FEITO' : 'ABERTO')}<b>${d.titulo}</b>
+          <span class="meta"><span class="mono">${d.obj}</span>, ${LEVELS[d.nivel] ?? ''}${d.minutos ? `, cerca de ${d.minutos} min` : ''}${d.tentativas ? `, ${d.tentativas} tentativa(s)` : ''}${d.melhor ? `, melhor tempo ${fmtDuration(d.melhor / 1000)}` : ''}</span></a>`)}</div></section>`;
     }) : html`<div class="empty" style="margin-top:16px">Nenhum desafio encontrado em <code>lab/challenges</code>.</div>`}`.s;
 }
 
@@ -48,25 +48,26 @@ async function runView(root, id) {
   let hintsShown = 0;
 
   root.innerHTML = html`
-    <div class="row" style="margin-bottom:12px"><a class="btn sm ghost" href="#/lab">← Desafios</a><h2 style="margin:0">${run.titulo}</h2>
+    <div class="row" style="margin-bottom:12px"><a class="btn sm ghost" href="#/lab">${ico('left')} Desafios</a><h2 style="margin:0">${run.titulo}</h2>
       <span class="chip mono">${run.obj}</span><span class="chip">${LEVELS[run.nivel] ?? ''}</span></div>
     <div class="lab-split">
       <aside class="card side-panel">
         <div class="qtext">${md(run.enunciado)}</div>
         ${run.verifica.length ? html`<h4>O que será verificado</h4><ul style="margin:0 0 12px;padding-left:20px">${run.verifica.map((v) => html`<li class="small">${md(v, { inline: true })}</li>`)}</ul>` : ''}
         <div class="row">
-          <button class="btn primary" data-act="check">✔ Verificar</button>
-          <button class="btn" data-act="hint" ${run.dicas ? '' : 'disabled'}>💡 Dica</button>
-          <button class="btn" data-act="solution">👁 Solução</button>
+          <button class="btn primary" data-act="check">${ico('check')} Verificar</button>
+          <button class="btn" data-act="hint" ${run.dicas ? '' : 'disabled'}>${ico('bulb')} Dica</button>
+          <button class="btn" data-act="solution">${ico('eye')} Solução</button>
         </div>
         <div class="row" style="margin-top:8px">
-          <button class="btn sm ghost" data-act="reset" title="Recria os arquivos/usuários do cenário">↺ Reiniciar cenário</button>
-          <button class="btn sm ghost" data-act="new" title="Sorteia novos nomes e valores">🎲 Novo sorteio</button>
+          <button class="btn sm ghost" data-act="reset" title="Recria os arquivos/usuários do cenário">${ico('undo')} Reiniciar cenário</button>
+          <button class="btn sm ghost" data-act="new" title="Sorteia novos nomes e valores">${ico('shuffle')} Novo sorteio</button>
         </div>
         <div id="out" style="margin-top:14px"></div>
       </aside>
-      <div style="display:flex;flex-direction:column;gap:6px;min-height:0">
-        <iframe src="${termUrl}" title="Terminal do laboratório" allow="clipboard-read; clipboard-write"></iframe>
+      <div style="display:flex;flex-direction:column;gap:8px;min-height:0">
+        <div class="term-frame"><div class="term-title">${ico('terminal')} aluno@lpic-lab: ~</div>
+          <iframe src="${termUrl}" title="Terminal do laboratório" allow="clipboard-read; clipboard-write"></iframe></div>
         <p class="muted small" style="margin:0">Terminal como usuário <code>aluno</code> (com <code>sudo</code>) num container descartável — nada aqui afeta o seu computador. Não abre? <a href="${termUrl}" target="_blank" rel="noopener">abra em outra aba</a>.</p>
       </div>
     </div>`.s;
@@ -83,10 +84,10 @@ async function runView(root, id) {
       if (act === 'check') {
         out.innerHTML = '<span class="spinner"></span> Conferindo no laboratório…';
         const r = await post(`/api/lab/runs/${run.run}/check`);
-        out.innerHTML = html`<h4>${r.passed ? '🎉 Desafio concluído!' : 'Ainda não…'}</h4>
-          ${r.results.map((x) => html`<div class="check"><span class="b">${x.ok ? '✅' : '❌'}</span><span>${x.msg}</span></div>`)}
+        out.innerHTML = html`<h4>${r.passed ? 'Desafio concluído' : 'Ainda não'}</h4>
+          ${r.results.map((x) => html`<div class="check"><span class="b">${stMark(x.ok ? 'ok' : 'bad')}</span><span>${x.msg}</span></div>`)}
           ${r.passed ? html`<div class="row" style="margin-top:10px"><a class="btn primary" href="#/lab">Próximo desafio</a></div>` : ''}`.s;
-        if (r.passed) toast('Desafio concluído! 🎉');
+        if (r.passed) toast('Desafio concluído.');
       } else if (act === 'hint') {
         const r = await post(`/api/lab/runs/${run.run}/hint`);
         if (r.dica) {

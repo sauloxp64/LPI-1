@@ -204,7 +204,7 @@ function buildReview(opts, env, seed, rng, now) {
       questions.push(materializeBank(byId.get(s.qid), rng.fork(`r${questions.length}`)));
     }
   }
-  if (!questions.length) throw new Error('Nada para revisar: você não tem erros recentes nem revisões vencidas. 🎉');
+  if (!questions.length) throw new Error('Nada para revisar: você não tem erros recentes nem revisões vencidas.');
   return {
     seed, title: 'Caderno de erros e revisões', mode: 'erros', instant: false,
     minutes: Math.ceil(questions.length * 1.5), questions: rng.shuffle(questions),

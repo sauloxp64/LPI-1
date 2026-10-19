@@ -22,7 +22,7 @@ LPI-Learning-Material-102-500-pt.pdf
 
 Qualquer **outro PDF** na mesma pasta aparece na aba *Material* como **complemento** (apostilas, livros). Se for escaneado (só imagem),
 rode `scripts/ocr-pdf.sh "arquivo.pdf"` — um container descartável faz o OCR em português — e ele também entra na busca.
-Sem os PDFs o app funciona normalmente; só os links "📖 material" e a busca dependem deles.
+Sem os PDFs o app funciona normalmente; só os links de material e a busca dependem deles.
 
 ## O que tem aqui
 
@@ -83,7 +83,7 @@ Tudo roda na sua máquina e as portas escutam só em `127.0.0.1`. O progresso fi
 ```
 docker-compose.yml        web (Node 24, sem dependências npm) + lab (Debian 12 + ttyd + verificador)
 app/src                   servidor, motor de provas, estatísticas, geradores, índice dos PDFs
-app/public                interface (HTML/CSS/JS puro, sem build, funciona offline)
+app/public                interface (HTML/CSS/JS puro, sem build, funciona offline) e as fontes em app/public/fonts
 app/content/questions     banco de questões (.txt)       app/data    objetivos oficiais, mapa de páginas dos PDFs, curso
 app/tools                 lint, verificação dos geradores, revisão cega, autoteste do lab, E2E
 lab/                      Dockerfile do laboratório, checker, desafios
@@ -93,3 +93,5 @@ scripts/                  selftest, OCR de PDFs
 ## Créditos e licenças
 
 Código e questões: MIT (veja `LICENSE`). O *LPI Learning Material* (LPIC-1 101-500/102-500, pt-BR) é © Linux Professional Institute, **CC BY-NC-ND 4.0**, e não faz parte deste repositório; as questões do app são originais. Objetivos: <https://www.lpi.org/pt-br/exam-101-102-objectives/>. "LPI" e "LPIC-1" são marcas do Linux Professional Institute. Este projeto não é afiliado à LPI, à Linux Sem Fronteiras nem à Pearson VUE.
+
+Interface: fontes **Fira Sans** e **Fira Mono** (Mozilla/Carrois/Edenspiekermann), licença SIL OFL 1.1, embutidas em `app/public/fonts` (textos das licenças na mesma pasta) para funcionar offline. O visual segue a linguagem de uma estação de trabalho Linux: paleta derivada do esquema *Tango* do GNOME Terminal, medidores segmentados como no `htop`, marcadores `[  OK  ]` como no boot do systemd e o terminal do laboratório com as mesmas cores. Ícones SVG próprios, sem emojis.

@@ -1,15 +1,7 @@
 import { get, post, meta } from '../api.js';
-import { html, md, pct, fmtDuration, fmtDate, LETTERS, tone, toast, confirmDialog } from '../util.js';
+import { html, md, pct, fmtDuration, fmtDate, LETTERS, tone, toneCls, bar, ico, toast, confirmDialog } from '../util.js';
 
 const refUrl = (r) => { const m = /^(\d+):p\.(\d+)/.exec(r); return m ? `/pdf/${m[1]}#page=${m[2]}` : '#'; };
-
-function ring(v) {
-  const R = 60; const C = 2 * Math.PI * R;
-  const col = v >= 0.75 ? 'var(--accent)' : v >= 0.62 ? 'var(--amber)' : 'var(--red)';
-  return html`<div class="ring"><svg width="150" height="150" viewBox="0 0 150 150"><circle cx="75" cy="75" r="${R}" fill="none" stroke="var(--line)" stroke-width="12"/>
-    <circle cx="75" cy="75" r="${R}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(Math.max(0.01, v) * C).toFixed(1)} ${C.toFixed(1)}"/></svg>
-    <div class="val"><div><b>${Math.round(v * 100)}%</b></div></div></div>`;
-}
 
 export async function render(root, { args, params, isCurrent = () => true }) {
   const id = args[0];
@@ -47,17 +39,19 @@ export async function render(root, { args, params, isCurrent = () => true }) {
     : filter === 'erradas' ? !r.items[i].ok : filter === 'marcadas' ? flagged.has(i) : blank(i));
 
   root.innerHTML = html`
-    <div class="page-title"><h1>${ex.title}</h1><p>${fmtDate(ex.created)} · ${fmtDuration(r.tempo_seg)}${ex.minutes ? ` de ${ex.minutes} min` : ''}</p></div>
+    <div class="page-title"><h1>${ex.title}</h1><p>${fmtDate(ex.created)}, em ${fmtDuration(r.tempo_seg)}${ex.minutes ? ` de ${ex.minutes} min` : ''}</p></div>
 
     <div class="grid c2" style="grid-template-columns:1.1fr 1fr">
-      <section class="card"><div class="ring-wrap">${ring(r.pct)}
-        <div class="stack"><div class="verdict ${verdict.cls}">${verdict.t}</div>
-          <div><b>${r.correct}</b> de <b>${r.n}</b> corretas · ${r.n - r.respondidas} em branco</div>
-          <p class="muted small" style="margin:0">A LPI usa nota escalonada (aprovação 500 de 800) e não publica a fórmula; o app usa ${pct(0.75)} como margem de segurança.</p></div></div>
+      <section class="card"><h3>Resultado</h3>
+        <div class="score"><span class="big-num">${Math.round(r.pct * 100)}<small>%</small></span><div class="verdict ${verdict.cls}">${verdict.t}</div></div>
+        ${bar(r.pct, { cls: `big ${toneCls(r.pct)}`, target: ex.instant ? undefined : 0.75 })}
+        <div class="stack" style="margin-top:14px">
+          <div><b>${r.correct}</b> de <b>${r.n}</b> corretas, ${r.n - r.respondidas} em branco</div>
+          <p class="muted small" style="margin:0">A LPI usa nota escalonada (aprovação com 500 de 800) e não publica a fórmula. O app usa ${pct(0.75)} como margem de segurança, marcada na barra.</p></div>
         <div class="row" style="margin-top:16px">
-          <button class="btn primary" data-act="retake">↻ Novo sorteio</button>
-          <button class="btn" data-act="same" title="As mesmas questões, com alternativas embaralhadas">Mesma prova, embaralhada</button>
-          ${wrongN ? html`<button class="btn" data-act="wrong">🏋️ Treinar as ${wrongN} erradas</button>` : ''}
+          <button class="btn primary" data-act="retake">${ico('redo')} Novo sorteio</button>
+          <button class="btn" data-act="same" title="As mesmas questões, com alternativas embaralhadas">${ico('shuffle')} Mesma prova, embaralhada</button>
+          ${wrongN ? html`<button class="btn" data-act="wrong">${ico('target')} Treinar as ${wrongN} erradas</button>` : ''}
           <a class="btn ghost" href="#/novo">Outros modos</a>
         </div></section>
 
@@ -70,19 +64,19 @@ export async function render(root, { args, params, isCurrent = () => true }) {
     ${objsRuins.length ? html`<section class="card" style="margin-top:16px"><h3>Onde focar agora</h3>
       <div class="grid auto">${objsRuins.slice(0, 6).map((o) => html`<div class="card tight" style="background:var(--panel-2)"><div class="row"><b class="mono">${o.code}</b><span class="chip bad">${o.ok}/${o.n}</span></div>
         <div class="small muted" style="margin:4px 0 8px">${m.byCode[o.code]?.titulo}</div>
-        <div class="row"><a class="btn sm" href="#/material?obj=${o.code}">📖 Material</a><a class="btn sm" href="#/novo?modo=treino&obj=${o.code}">🎯 Treinar</a></div></div>`)}</div></section>` : ''}
+        <div class="row"><a class="btn sm" href="#/material?obj=${o.code}">${ico('book')} Material</a><a class="btn sm" href="#/novo?modo=treino&obj=${o.code}">${ico('target')} Treinar</a></div></div>`)}</div></section>` : ''}
 
     <section style="margin-top:20px">
-      <div class="row" style="margin-bottom:12px"><h2 style="margin:0">Revisão</h2>
+      <div class="row" style="margin-bottom:12px"><h2 style="margin:0">Revisão das questões</h2>
         <div class="seg">${[['todas', `Todas (${ex.n})`], ['erradas', `Erradas (${wrongN})`], ['marcadas', `Marcadas (${flagged.size})`], ['brancas', `Em branco (${r.n - r.respondidas})`]]
           .map(([k, l]) => html`<button data-f="${k}" class="${filter === k ? 'on' : ''}">${l}</button>`)}</div></div>
       ${shown.length ? shown.map(({ q, i }) => {
         const it = r.items[i];
         return html`<article class="card rv ${it.ok ? 'ok' : blank(i) ? 'blank' : 'no'}">
           <header><b>Questão ${i + 1}</b><span class="chip mono">${q.obj}</span><span class="chip">${q.type === 'unica' ? 'uma resposta' : q.type === 'multipla' ? `${q.escolhas} respostas` : 'lacuna'}</span>
-            <span class="chip ${it.ok ? 'ok' : 'bad'}">${it.ok ? (it.contested ? '✓ contestada' : '✓ correta') : blank(i) ? 'em branco' : '✗ errada'}</span>
-            ${q.gen ? html`<span class="chip" title="Questão gerada por código: os números mudam a cada simulado">⚙ gerada</span>` : ''}
-            ${flagged.has(i) ? html`<span class="chip warn">⚑</span>` : ''}</header>
+            <span class="chip ${it.ok ? 'ok' : blank(i) ? 'warn' : 'bad'}">${it.ok ? (it.contested ? 'contestada' : 'correta') : blank(i) ? 'em branco' : 'errada'}</span>
+            ${q.gen ? html`<span class="chip" title="Questão gerada por código: os números mudam a cada simulado">gerada por código</span>` : ''}
+            ${flagged.has(i) ? html`<span class="chip warn">${ico('flag')} marcada</span>` : ''}</header>
           <div class="qtext">${md(q.text)}</div>
           ${q.type === 'lacuna'
             ? html`<p>Sua resposta: ${given(q, i)}<br>Aceitas: ${q.gabarito.map((a) => html`<code>${a}</code> `)}</p>`
@@ -90,14 +84,14 @@ export async function render(root, { args, params, isCurrent = () => true }) {
                 const good = q.gabarito.includes(k);
                 const sel = Array.isArray(ex.answers[i]) ? ex.answers[i].includes(k) : ex.answers[i] === k;
                 return html`<div class="opt locked ${good ? 'good' : ''} ${sel && !good ? 'bad' : ''} ${sel ? 'sel' : ''}"><span class="key">${LETTERS[k]}</span><span class="txt">${md(t, { inline: true })}</span>
-                  <span class="mark">${good ? '✓' : sel ? '✗' : ''}${sel ? ' sua' : ''}</span></div>`;
+                  <span class="mark">${good ? html`${ico('check')} ${sel ? 'sua resposta' : 'correta'}` : sel ? html`${ico('x')} sua resposta` : ''}</span></div>`;
               })}</div>`}
           <div class="feedback" style="margin-top:12px"><h4>Explicação</h4>${md(q.explanation)}
-            <div class="row small" style="margin-top:8px">${(q.ref ?? []).map((rf) => html`<a class="chip" target="_blank" rel="noopener" href="${refUrl(rf)}">📖 ${rf.replace(/^(\d+):p\./, '$1 · p.')}</a>`)}
+            <div class="row small" style="margin-top:8px">${(q.ref ?? []).map((rf) => html`<a class="chip" target="_blank" rel="noopener" href="${refUrl(rf)}">${ico('book')} ${rf.replace(/^(\d+):p\./, '$1 · p.')}</a>`)}
               <span class="right row">${!it.ok ? html`<button class="btn sm ghost" data-contest="${i}" title="Minha resposta está certa (ex.: variação equivalente)">Contestar</button>` : ''}
-              <button class="btn sm ghost" data-report="${i}">🚩 Reportar erro</button></span></div></div>
+              <button class="btn sm ghost" data-report="${i}">${ico('flag')} Reportar erro</button></span></div></div>
         </article>`;
-      }) : html`<div class="empty">Nada nesta categoria. 🎉</div>`}
+      }) : html`<div class="empty">Nada nesta categoria.</div>`}
     </section>`.s;
 
   root.onclick = async (e) => {

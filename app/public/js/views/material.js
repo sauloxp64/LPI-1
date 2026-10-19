@@ -1,5 +1,5 @@
 import { get, meta } from '../api.js';
-import { html, esc } from '../util.js';
+import { html, esc, ico } from '../util.js';
 
 export async function render(root, { params }) {
   const m = await meta();
@@ -7,7 +7,7 @@ export async function render(root, { params }) {
   const extraById = Object.fromEntries(extras.map((e) => [e.id, e]));
   const isExtra = (ex) => Object.hasOwn(extraById, ex);
   const label = (ex) => (isExtra(ex) ? extraById[ex].titulo : `Exame ${ex}`);
-  const shortLabel = (ex) => (isExtra(ex) ? `📘 ${extraById[ex].titulo.replace(/\s*\(.*$/, '').slice(0, 26)}` : `Exame ${ex}`);
+  const shortLabel = (ex) => (isExtra(ex) ? extraById[ex].titulo.replace(/\s*\(.*$/, '').slice(0, 26) : `Exame ${ex}`);
 
   // parâmetros da URL vêm de fora: só aceitamos valores conhecidos (evita XSS/injeção em innerHTML)
   const objRaw = params.get('obj');
@@ -20,10 +20,10 @@ export async function render(root, { params }) {
   if (semPdf) {
     root.innerHTML = html`<div class="page-title"><h1>Material oficial da LPI</h1></div>
       <div class="card stack"><h3>Os PDFs da LPI ainda não estão na pasta do projeto</h3>
-        <p>O material de estudo é gratuito, mas pertence à LPI (licença CC BY-NC-ND) e por isso não vem junto com o código. Baixe no portal <b>learning.lpi.org</b> (Learning Materials → LPIC-1 → 101-500 e 102-500, em português) e salve na <b>raiz do projeto</b> com estes nomes:</p>
+        <p>O material de estudo é gratuito, mas pertence à LPI (licença CC BY-NC-ND) e por isso não vem junto com o código. Baixe no portal <b>learning.lpi.org</b> (em Learning Materials, escolha LPIC-1 e baixe o 101-500 e o 102-500, em português) e salve na <b>raiz do projeto</b> com estes nomes:</p>
         <pre><code>${m.pdf.arquivos['101']}
 ${m.pdf.arquivos['102']}</code></pre>
-        <p class="muted small" style="margin:0">Depois recarregue esta página. Qualquer outro PDF que você colocar na mesma pasta aparece aqui como <i>complemento</i>. Todo o resto do app (simulados, laboratório, curso) funciona sem os PDFs; só os links "📖 material" e a busca dependem deles.</p></div>`.s;
+        <p class="muted small" style="margin:0">Depois recarregue esta página. Qualquer outro PDF que você colocar na mesma pasta aparece aqui como <i>complemento</i>. Todo o resto do app (simulados, laboratório, curso) funciona sem os PDFs; só os links de material e a busca dependem deles.</p></div>`.s;
     return;
   }
 
@@ -45,7 +45,7 @@ ${m.pdf.arquivos['102']}</code></pre>
     <div class="page-title"><h1>Material de estudo</h1><p>Os PDFs oficiais da LPI com índice por objetivo${extras.length ? ' e os complementos da pasta' : ''}, com busca em texto completo.</p></div>
     <div class="split">
       <aside class="card tree">
-        <input type="search" id="q" placeholder="Buscar no material… (ex.: umask, fstab, cron)" aria-label="Buscar no material">
+        <input type="search" id="q" placeholder="Buscar no material (ex.: umask)" aria-label="Buscar no material">
         <div id="results" class="hidden" style="margin-top:8px"></div>
         <div id="toc" style="margin-top:10px">
           <div class="seg" style="margin-bottom:8px;flex-wrap:wrap">${validExams.map((ex) => html`<button data-ex="${ex}" class="${exam === ex ? 'on' : ''}" title="${label(ex)}">${shortLabel(ex)}</button>`)}</div>
@@ -67,8 +67,8 @@ ${m.pdf.arquivos['102']}</code></pre>
     const src = `/pdf/${ex}#page=${p}${term ? `&search=${encodeURIComponent(term)}` : ''}`;
     frame.innerHTML = `<iframe src="${esc(src)}" title="PDF ${esc(label(ex))}"></iframe>`;
     const o = isExtra(ex) ? null : m.objetivos.find((x) => x.exame === ex && x.pdf && p >= x.pdf.inicio && p <= x.pdf.fim);
-    where.innerHTML = `<span>${esc(label(ex))} · página ${p}${o ? ` · <a href="#/objetivo/${o.code}">${o.code} ${esc(o.titulo)}</a>` : ''}</span>
-      <a class="right" href="${esc(src)}" target="_blank" rel="noopener">abrir em nova aba ↗</a>`;
+    where.innerHTML = `<span>${esc(label(ex))}, página ${p}${o ? `. Objetivo <a href="#/objetivo/${o.code}">${o.code} ${esc(o.titulo)}</a>` : ''}</span>
+      <a class="right" href="${esc(src)}" target="_blank" rel="noopener">abrir em nova aba ${ico('external')}</a>`;
     history.replaceState(null, '', `#/material?exame=${ex}&p=${p}${objParam ? `&obj=${objParam}` : ''}`);
   }
   open(exam, page);
@@ -109,7 +109,7 @@ ${m.pdf.arquivos['102']}</code></pre>
       const re = new RegExp(`(${words.join('|')})`, 'gi');
       results.innerHTML = r.estado !== 'pronto' ? `<p class="muted small">Índice ${esc(r.estado)}…</p>`
         : r.resultados.length ? r.resultados.map((x) => `<a class="result-item" href="#" data-open="${esc(x.exame)}:${Number(x.pagina)}:${encodeURIComponent(term)}">
-            <div class="row small"><b>${esc(x.titulo ? `📘 ${x.titulo.replace(/\s*\(.*$/, '')}` : `Exame ${x.exame}`)} · p.${Number(x.pagina)}</b>${x.obj ? `<span class="chip mono">${esc(x.obj)}</span>` : ''}</div>
+            <div class="row small"><b>${esc(x.titulo ? x.titulo.replace(/\s*\(.*$/, '') : `Exame ${x.exame}`)}, p.${Number(x.pagina)}</b>${x.obj ? `<span class="chip mono">${esc(x.obj)}</span>` : ''}</div>
             <div class="small muted">…${esc(x.trecho).replace(re, '<mark>$1</mark>')}…</div></a>`).join('')
           : '<p class="muted small">Nada encontrado.</p>';
     }, 250);

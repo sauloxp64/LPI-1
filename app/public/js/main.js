@@ -1,4 +1,4 @@
-import { html, esc, toast } from './util.js';
+import { html, esc, toast, ico } from './util.js';
 import { meta } from './api.js';
 
 const ROUTES = [
@@ -15,24 +15,24 @@ const ROUTES = [
 ];
 
 const NAV = [
-  ['#/', '🏠', 'Início'],
-  ['#/curso', '🎓', 'Curso'],
-  ['#/novo', '📝', 'Simulados'],
-  ['#/material', '📚', 'Material'],
-  ['#/lab', '🧪', 'Laboratório'],
-  ['#/config', '⚙️', 'Configurações'],
+  ['#/', 'home', 'Início'],
+  ['#/curso', 'course', 'Curso'],
+  ['#/novo', 'exam', 'Simulados'],
+  ['#/material', 'book', 'Material'],
+  ['#/lab', 'terminal', 'Laboratório'],
+  ['#/config', 'sliders', 'Configurações'],
 ];
 
 const view = document.getElementById('view');
 let cleanup = null;
 
 function renderNav(path) {
-  document.getElementById('nav').innerHTML = NAV.map(([href, ico, label]) => {
+  document.getElementById('nav').innerHTML = NAV.map(([href, icon, label]) => {
     const p = href.slice(1);
     const active = p === '/' ? path === '/' || path === '' : path.startsWith(p) || (p === '/novo' && /^\/(prova|resultado)\//.test(path));
-    return `<a href="${href}" class="${active ? 'active' : ''}"><span class="ico">${ico}</span>${esc(label)}</a>`;
+    return `<a href="${href}" class="${active ? 'active' : ''}"${active ? ' aria-current="page"' : ''}>${ico(icon)}${esc(label)}</a>`;
   }).join('');
-  document.getElementById('foot').innerHTML = `<button class="btn sm ghost" id="tema" title="Alternar tema claro/escuro">🌓 Tema</button>`;
+  document.getElementById('foot').innerHTML = `<button class="btn sm ghost" id="tema" title="Alternar tema claro/escuro">${ico('contrast')} Tema claro/escuro</button><span class="ver">LPIC-1 · objetivos 5.0</span>`;
   document.getElementById('tema').onclick = () => {
     const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     const next = cur === 'light' ? 'dark' : 'light';
@@ -77,6 +77,7 @@ async function route() {
   holder.innerHTML = '<div class="empty">Página não encontrada. <a href="#/">Início</a></div>';
 }
 
+document.getElementById('menu').innerHTML = ico('menu');
 document.getElementById('menu').onclick = () => document.getElementById('side').classList.toggle('open');
 window.addEventListener('hashchange', route);
 window.addEventListener('unhandledrejection', (e) => toast(e.reason?.message || 'Erro inesperado', 'err'));

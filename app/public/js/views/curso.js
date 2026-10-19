@@ -1,5 +1,5 @@
 import { get, put, post, meta } from '../api.js';
-import { html, pct, dots, tone, toast } from '../util.js';
+import { html, pct, dots, tone, bar, ico, toast } from '../util.js';
 
 const STATUS = [['nao', 'Não vi'], ['estudando', 'Estudando'], ['concluido', 'Concluído']];
 
@@ -14,17 +14,17 @@ export async function render(root) {
 
   root.innerHTML = html`
     <div class="page-title"><h1>Meu avanço no curso</h1>
-      <p><a href="${m.curso.url}" target="_blank" rel="noopener">${m.curso.nome} — ${m.curso.plataforma} ↗</a></p></div>
+      <p><a href="${m.curso.url}" target="_blank" rel="noopener">${m.curso.nome}, ${m.curso.plataforma} ${ico('external')}</a></p></div>
 
     <section class="card">
       <div class="row">
         <div style="flex:1;min-width:240px">
           <div class="row small"><b>Conteúdo visto (ponderado pelos pesos da prova)</b><span class="right">${pct(done / total)}</span></div>
-          <div class="bar"><i style="width:${Math.round((100 * done) / total)}%"></i></div>
+          ${bar(done / total, { cls: 'accent' })}
           <p class="muted small" style="margin:8px 0 0">Marque o status de cada objetivo conforme avança nas aulas. Os simulados <b>"do que já vi"</b> usam só o que está <i>Estudando</i> ou <i>Concluído</i>, então o banco acompanha o curso — e o painel considera todo o resto como ainda não estudado.</p>
         </div>
         <div class="stack">
-          <a class="btn primary ${unlocked.length ? '' : 'hidden'}" href="#/novo?modo=curso">📝 Simulado do que já vi (${unlocked.length} obj.)</a>
+          <a class="btn primary ${unlocked.length ? '' : 'hidden'}" href="#/novo?modo=curso">${ico('exam')} Simulado do que já vi (${unlocked.length} obj.)</a>
           <div class="row"><button class="btn sm" data-bulk="topico">Marcar tópicos vistos…</button></div>
         </div>
       </div>
@@ -35,7 +35,7 @@ export async function render(root) {
       const objs = m.objetivos.filter((o) => o.topico === t);
       const nDone = objs.filter((o) => prog.status[o.code] === 'concluido').length;
       return html`<details class="card" data-topic="${t}" ${open.has(t) ? 'open' : ''}>
-        <summary class="row" style="cursor:pointer;list-style:none"><h2 style="margin:0">Tópico ${t} · ${info.titulo}</h2>
+        <summary class="row" style="cursor:pointer;list-style:none"><h2 style="margin:0;font-size:1.05rem">Tópico ${t} · ${info.titulo}</h2>
           <span class="chip">peso ${info.peso}</span><span class="chip ${nDone === objs.length ? 'ok' : ''}">${nDone}/${objs.length} concluídos</span><span class="chip">Exame ${info.exame}</span></summary>
         <div class="stack" style="margin-top:12px">
         ${objs.map((o) => {
@@ -52,9 +52,9 @@ export async function render(root) {
             ${lessons.length ? html`<div class="row" style="margin-top:10px;gap:6px 14px">${lessons.map((a, i) => html`<label class="small row" style="gap:6px;cursor:pointer">
               <input type="checkbox" data-lesson="${o.code}:${i}" ${prog.aulas[`${o.code}:${i}`] ? 'checked' : ''}> ${a}</label>`)}</div>` : ''}
             <div class="row" style="margin-top:10px">
-              <a class="btn sm" href="#/material?obj=${o.code}">📖 Material (p.${o.pdf?.inicio ?? '?'})</a>
-              <button class="btn sm" data-train="${o.code}">🎯 Treinar 10</button>
-              <a class="btn sm ghost" href="#/lab">🧪 Lab</a>
+              <a class="btn sm" href="#/material?obj=${o.code}">${ico('book')} Material (p.${o.pdf?.inicio ?? '?'})</a>
+              <button class="btn sm" data-train="${o.code}">${ico('target')} Treinar 10</button>
+              <a class="btn sm ghost" href="#/lab">${ico('terminal')} Laboratório</a>
             </div></div>`;
         })}
         </div></details>`;

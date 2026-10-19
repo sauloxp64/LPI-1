@@ -16,6 +16,6 @@ python3 /opt/lab/checker/server.py &
 # Só a rede interna do compose alcança a porta 7681: o app web faz o proxy em /terminal/ (checando Host e Origin).
 # -O recusa WebSocket de outra origem; -b é o prefixo usado pelo proxy; -m limita as conexões simultâneas.
 exec ttyd -p 7681 -W -O -b /terminal -m 3 \
-  -t fontSize=16 -t cursorBlink=true -t 'titleFixed=Laboratório LPIC-1' \
-  -t 'theme={"background":"#0b0f17","foreground":"#e6ebf5","cursor":"#34d399","selectionBackground":"#243049"}' \
+  -t fontSize=15 -t cursorBlink=true -t 'titleFixed=Laboratório LPIC-1' \
+  -t 'theme={"background":"#1a1f21","foreground":"#d3d7cf","cursor":"#7aa7d9","cursorAccent":"#1a1f21","selectionBackground":"#384144","black":"#2e3436","red":"#cc0000","green":"#4e9a06","yellow":"#c4a000","blue":"#5f8fc9","magenta":"#75507b","cyan":"#06989a","white":"#d3d7cf","brightBlack":"#555753","brightRed":"#ef2929","brightGreen":"#8ae234","brightYellow":"#fce94f","brightBlue":"#729fcf","brightMagenta":"#ad7fa8","brightCyan":"#34e2e2","brightWhite":"#eeeeec"}' \
   su -l aluno

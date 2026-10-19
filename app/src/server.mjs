@@ -328,7 +328,7 @@ route('POST', '/api/exams/:id/wrong', async (req, res, p) => {
   const exam = loadExam(db, p.id);
   if (!exam || exam.status !== 'finalizado') throw httpError(400, 'finalize a prova primeiro');
   const wrong = exam.questions.filter((_, i) => !exam.result.items[i].ok);
-  if (!wrong.length) throw httpError(400, 'nenhuma questão errada 🎉');
+  if (!wrong.length) throw httpError(400, 'nenhuma questão errada');
   const { makeRng } = await import('./rng.mjs');
   const seed = randomSeed();
   const rng = makeRng(`wrong:${seed}`);
