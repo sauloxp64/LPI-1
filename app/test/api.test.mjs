@@ -92,17 +92,25 @@ test('validações: modo inválido, corpo inválido, rota inexistente', async ()
   assert.equal((await call('/api/exams/inexistente')).status, 404);
 });
 
-test('PDF com Range, busca, exportar/importar e reset', async () => {
-  const h = await fetch(`${BASE}/pdf/101`, { headers: { range: 'bytes=0-9' } });
-  assert.equal(h.status, 206);
-  assert.equal(h.headers.get('content-type'), 'application/pdf');
-  assert.equal((await h.arrayBuffer()).byteLength, 10);
-  for (let i = 0; i < 40; i++) { // índice é montado em segundo plano
-    if ((await call('/api/search?q=umask')).json.estado === 'pronto') break;
-    await new Promise((r) => setTimeout(r, 250));
+test('PDF (com ou sem os arquivos), exportar/importar e reset', async () => {
+  const meta = (await call('/api/meta')).json;
+  if (meta.pdf.disponiveis['101']) {
+    // PDFs presentes: serve com Range e a busca em texto completo encontra conteúdo
+    const h = await fetch(`${BASE}/pdf/101`, { headers: { range: 'bytes=0-9' } });
+    assert.equal(h.status, 206);
+    assert.equal(h.headers.get('content-type'), 'application/pdf');
+    assert.equal((await h.arrayBuffer()).byteLength, 10);
+    for (let i = 0; i < 40; i++) { // índice é montado em segundo plano
+      if ((await call('/api/search?q=umask')).json.estado === 'pronto') break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    const sr = (await call('/api/search?q=umask')).json;
+    if (sr.estado === 'pronto') assert.ok(sr.resultados.length > 0);
+  } else {
+    // clone limpo (PDFs da LPI não são versionados): 404 limpo e o app segue funcionando
+    assert.equal((await fetch(`${BASE}/pdf/101`)).status, 404);
+    assert.equal((await call('/api/search?q=umask')).status, 200);
   }
-  const sr = (await call('/api/search?q=umask')).json;
-  if (sr.estado === 'pronto') assert.ok(sr.resultados.length > 0);
   const exp = (await call('/api/export')).json;
   assert.equal(exp.versao, 1);
   assert.ok(exp.attempts.length >= 6);

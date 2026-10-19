@@ -121,29 +121,36 @@ try {
   ok('resultado: revisão por filtro e contestação');
 
   await goto('#/objetivo/103.4'); await waitFor(`!!document.querySelector('[data-train]')`, 'objetivo'); ok('página do objetivo'); await shot('07-objetivo');
-  await goto('#/material?obj=103.4'); await waitFor(`!!document.querySelector('#frame iframe')`, 'material');
-  await evalJs(`const q=document.querySelector('#q'); q.value='umask'; q.dispatchEvent(new Event('input',{bubbles:true})); 0`);
-  await waitFor(`document.querySelectorAll('#results .result-item').length > 0`, 'busca no PDF', 15000);
-  ok('material: PDF embutido e busca em texto completo'); await shot('08-material');
-  // alternar entre os índices dos dois exames (regressão: o índice sumia ao trocar)
-  await goto('#/material?obj=103.4'); await waitFor(`!!document.querySelector('[data-ex="102"]')`, 'abas de exame');
-  await evalJs(`document.querySelector('[data-ex="102"]').click(); 0`);
-  await waitFor(`document.querySelector('#tree').textContent.includes('Shells e scripts')`, 'índice do exame 102');
-  await evalJs(`document.querySelector('[data-ex="101"]').click(); 0`);
-  await waitFor(`document.querySelector('#tree').textContent.includes('Arquitetura de Sistema')`, 'índice do exame 101');
-  ok('material: alternar índice 101 ↔ 102');
-  // XSS por parâmetro de URL (regressão)
-  await goto('#/material?exame=%3Cimg%20src%3Dx%20onerror%3Dwindow.__xss%3D1%3E&p=2'); await sleep(900);
-  if (await evalJs(`!!window.__xss || !!document.querySelector('#view img[onerror]')`)) errors.push('XSS via parâmetro "exame" em #/material');
-  else ok('material: parâmetros de URL não injetam HTML');
-  // PDFs complementares (qualquer .pdf extra na raiz do projeto), se houver
-  await goto('#/material?obj=103.4'); await waitFor(`!!document.querySelector('[data-ex]')`, 'abas do material');
-  if (await evalJs(`!!document.querySelector('[data-ex^="x"]')`)) {
-    await evalJs(`document.querySelector('[data-ex^="x"]').click(); 0`);
-    await waitFor(`document.querySelector('#frame iframe')?.getAttribute('src')?.startsWith('/pdf/x1')`, 'complemento aberto no visualizador');
-    await evalJs(`const f=document.querySelector('[data-goto] input'); f.value='12'; document.querySelector('[data-goto]').requestSubmit(); 0`);
-    await waitFor(`document.querySelector('#frame iframe')?.getAttribute('src')?.includes('#page=12')`, 'ir para a página 12');
-    ok('material: complemento abre e navega por página');
+  // os PDFs da LPI não são versionados: num clone limpo o app mostra instruções em vez do visualizador
+  const temPdf = await evalJs(`fetch('/api/meta').then((r) => r.json()).then((m) => !!m.pdf.disponiveis['101'])`);
+  if (temPdf) {
+    await goto('#/material?obj=103.4'); await waitFor(`!!document.querySelector('#frame iframe')`, 'material');
+    await evalJs(`const q=document.querySelector('#q'); q.value='umask'; q.dispatchEvent(new Event('input',{bubbles:true})); 0`);
+    await waitFor(`document.querySelectorAll('#results .result-item').length > 0`, 'busca no PDF', 15000);
+    ok('material: PDF embutido e busca em texto completo'); await shot('08-material');
+    // alternar entre os índices dos dois exames (regressão: o índice sumia ao trocar)
+    await goto('#/material?obj=103.4'); await waitFor(`!!document.querySelector('[data-ex="102"]')`, 'abas de exame');
+    await evalJs(`document.querySelector('[data-ex="102"]').click(); 0`);
+    await waitFor(`document.querySelector('#tree').textContent.includes('Shells e scripts')`, 'índice do exame 102');
+    await evalJs(`document.querySelector('[data-ex="101"]').click(); 0`);
+    await waitFor(`document.querySelector('#tree').textContent.includes('Arquitetura de Sistema')`, 'índice do exame 101');
+    ok('material: alternar índice 101 ↔ 102');
+    // XSS por parâmetro de URL (regressão)
+    await goto('#/material?exame=%3Cimg%20src%3Dx%20onerror%3Dwindow.__xss%3D1%3E&p=2'); await sleep(900);
+    if (await evalJs(`!!window.__xss || !!document.querySelector('#view img[onerror]')`)) errors.push('XSS via parâmetro "exame" em #/material');
+    else ok('material: parâmetros de URL não injetam HTML');
+    // PDFs complementares (qualquer .pdf extra na raiz do projeto), se houver
+    await goto('#/material?obj=103.4'); await waitFor(`!!document.querySelector('[data-ex]')`, 'abas do material');
+    if (await evalJs(`!!document.querySelector('[data-ex^="x"]')`)) {
+      await evalJs(`document.querySelector('[data-ex^="x"]').click(); 0`);
+      await waitFor(`document.querySelector('#frame iframe')?.getAttribute('src')?.startsWith('/pdf/x1')`, 'complemento aberto no visualizador');
+      await evalJs(`const f=document.querySelector('[data-goto] input'); f.value='12'; document.querySelector('[data-goto]').requestSubmit(); 0`);
+      await waitFor(`document.querySelector('#frame iframe')?.getAttribute('src')?.includes('#page=12')`, 'ir para a página 12');
+      ok('material: complemento abre e navega por página');
+    }
+  } else {
+    await goto('#/material'); await waitFor(`document.querySelector('#view').textContent.includes('learning.lpi.org')`, 'instruções para baixar os PDFs');
+    ok('material: sem PDFs mostra instruções de download');
   }
   await goto('#/lab'); await waitFor(`!!document.querySelector('.page-title')`, 'lab'); await sleep(500); ok('laboratório: lista'); await shot('09-lab');
   await goto('#/config'); await waitFor(`!!document.querySelector('#reload')`, 'config'); ok('configurações'); await shot('10-config');
