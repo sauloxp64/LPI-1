@@ -9,7 +9,7 @@ const TARGETS = ['www.gnu.org', 'db.interno', 'intranet.example.com', 'localhost
 // ---------- túneis e opções do ssh (verificados com `ssh -G`, que imprime a configuração efetiva sem conectar) ----------
 function sshTasks(r) {
   const u = r.pick(USERS); const h = r.pick(HOSTS); const uh = `${u}@${h}`; const lp = r.int(1025, 9999); let rp = r.int(1025, 9999); if (rp === lp) rp += 1;
-  const hp = r.pick([22, 80, 443, 3306, 5432, 8080]); const th = r.pick(TARGETS); const port = r.pick([2222, 2200, 2022, 22022]); const j = r.pick(['bastion.example.com', 'jump@gw.empresa.local', 'jumpbox']);
+  const hp = r.pick([22, 80, 443, 3306, 5432, 8080]); const th = r.pick(TARGETS); const port = r.pick([2222, 2200, 2022, 22022]); const j = r.pick(['bastion.example.com', 'jump@gw.empresa.local', 'jumpbox'].filter((x) => x.split('@').pop() !== h));
   return [
     { id: 'L', keys: ['localforward'], args: `-L ${lp}:${th}:${hp} ${uh}`, exp: [`localforward ${lp} [${th}]:${hp}`], desc: `Abrir a porta **local** ${lp} que encaminha, por meio do servidor SSH ${c(h)}, o tráfego para ${c(`${th}:${hp}`)} (túnel de porta local)`, wrong: [`-R ${lp}:${th}:${hp} ${uh}`, `-L ${th}:${hp}:${lp} ${uh}`, `-D ${lp} ${uh}`, `-L ${hp}:${th}:${lp} ${uh}`], n: '-L [porta_local]:[host_destino]:[porta_destino]: a porta é aberta na máquina cliente e o host de destino é resolvido a partir do servidor SSH.' },
     { id: 'R', keys: ['remoteforward'], args: `-R ${rp}:localhost:${lp} ${uh}`, exp: [`remoteforward ${rp} [localhost]:${lp}`], desc: `Fazer o servidor ${c(h)} escutar na porta ${rp} e encaminhar as conexões recebidas, pelo túnel, para a porta ${lp} da **máquina local** (túnel remoto/reverso)`, wrong: [`-L ${rp}:localhost:${lp} ${uh}`, `-R ${lp}:localhost:${rp} ${uh}`, `-D ${rp} ${uh}`, `-R localhost:${rp}:${lp} ${uh}`], n: '-R [porta_no_servidor]:[host_destino]:[porta_destino]: a porta é aberta no servidor SSH e o destino é resolvido a partir do cliente.' },
@@ -39,7 +39,7 @@ function keygenTasks(r) {
 }
 
 // ---------- GnuPG: nome do arquivo gerado (verificado com gpg real, chave ed25519 temporária) ----------
-const GPG_SETUP = `export GNUPGHOME="$(mktemp -d)"; chmod 700 "$GNUPGHOME"; G="gpg --batch --yes --pinentry-mode loopback --passphrase ''"; $G --quick-gen-key lab ed25519 cert never >/dev/null 2>&1; fpr=$(gpg --with-colons --list-keys lab | awk -F: '/^fpr/{print $10; exit}'); $G --quick-add-key $fpr cv25519 encr never >/dev/null 2>&1; $G --quick-add-key $fpr ed25519 sign never >/dev/null 2>&1; cd "$(mktemp -d)"; echo oi > ARQ`;
+const GPG_SETUP = `export GNUPGHOME=/tmp/gh-lab; G="gpg --batch --yes --pinentry-mode loopback --passphrase ''"; if [ ! -d "$GNUPGHOME/private-keys-v1.d" ]; then mkdir -p -m700 "$GNUPGHOME"; $G --quick-gen-key lab ed25519 cert never >/dev/null 2>&1; fpr=$(gpg --with-colons --list-keys lab 2>/dev/null | awk -F: '/^fpr/{print $10; exit}'); $G --quick-add-key $fpr cv25519 encr never >/dev/null 2>&1; $G --quick-add-key $fpr ed25519 sign never >/dev/null 2>&1; fi; cd "$(mktemp -d)"; echo oi > ARQ`;
 function gpgFiles(f) {
   return [
     { o: `gpg --encrypt --recipient ana ${f}`, v: `$G --trust-model always -e -r lab ARQ`, ext: '.gpg', why: 'A saída criptografada é binária e recebe o sufixo .gpg.' },
@@ -148,7 +148,7 @@ export const generators = [
     make(rng) {
       const f = rng.pick(['relatorio.txt', 'dados.csv', 'contrato.txt', 'notas.md']); const t = rng.pick(gpgFiles(f));
       const exts = ['.gpg', '.asc', '.sig', '.pgp', '.enc', '.sign'];
-      const verify = { sh: `${GPG_SETUP}; ${t.v} >/dev/null 2>&1; ls | grep -v "^ARQ$"; gpgconf --kill all >/dev/null 2>&1`, expect: `ARQ${t.ext}` };
+      const verify = { sh: `${GPG_SETUP}; ${t.v} >/dev/null 2>&1; ls | grep -v "^ARQ$"`, expect: `ARQ${t.ext}` };
       return {
         type: 'unica', text: `Um usuário que já tem as chaves necessárias executa o comando abaixo no diretório onde está ${c(f)}. Qual arquivo novo passa a existir?\n\n\`\`\`\n${t.o}\n\`\`\``,
         options: mcq(rng, c(`${f}${t.ext}`), exts.filter((e) => e !== t.ext).map((e) => c(`${f}${e}`))),

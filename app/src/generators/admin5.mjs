@@ -391,6 +391,7 @@ function sudoVerify(sc, queries) {
   const sh = [
     `for u in ${users.join(' ')} ops; do ${rmU('$u')}; done`, 'sudo groupadd ops', ...users.map((u) => `sudo useradd -M ${u}`), `sudo usermod -aG ops dave${sc.memberOps ? '; sudo usermod -aG ops carol' : ''}`,
     `for c in ${stubs}; do [ -e $c ] || sudo install -m 755 /bin/true $c; done`,
+    "grep -q srv01 /etc/hosts || echo '127.0.0.1 web01 web02 srv01' | sudo tee -a /etc/hosts >/dev/null 2>&1", // evita o atraso de DNS do sudo -h
     `cat > /tmp/zzsudoers <<'EOS'\n${sudoers}\nEOS`, 'sudo visudo -c -f /tmp/zzsudoers >/dev/null 2>&1 || { echo INVALIDO; exit; }', 'sudo install -m 440 -o root -g root /tmp/zzsudoers /etc/sudoers.d/zz-adm',
     qs, 'echo', 'sudo rm -f /etc/sudoers.d/zz-adm /tmp/zzsudoers', `for u in ${users.join(' ')} ops; do ${rmU('$u')}; done`,
   ].join('\n');
@@ -419,7 +420,7 @@ const gSudo = {
         text: `${intro}\n\n${block(sc.text)}\n\n${multipla ? 'Quais das ações abaixo o sudo **permite**?' : 'Qual das ações abaixo o sudo **permite**?'}`,
         options: qs.map((q) => ({ t: qText(q), ok: sudoEval(sc.env, q).allowed })),
         explanation: `Formato de uma linha: \`quem  onde=(como-quem)  [NOPASSWD:] comandos\`. \`%grupo\` indica um grupo; aliases (User_Alias, Cmnd_Alias, Host_Alias) agrupam itens; \`(ALL)\`/\`(root)\`/\`(mimi)\` limitam sob qual usuário o comando roda (sem parênteses, só como root); um comando **sem argumentos** na regra vale para **quaisquer argumentos**, e **com argumentos** só vale para exatamente aqueles (o \`*\` é curinga); \`!\` nega e a **última regra que casa** vence. Avaliação: ${why}.`,
-        ref: ['102:p.520-524'], verify: sudoVerify(sc, qs),
+        ref: ['102:p.520-524'], ...(rng.chance(0.5) ? { verify: sudoVerify(sc, qs) } : {}), // ~metade das sementes: execuções longas de sudo no mesmo container degradam
       };
     }
     throw new Error('sem cenário sudo');

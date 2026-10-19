@@ -119,4 +119,8 @@ vale desconfiar destes trechos ao estudar. Páginas = número **físico** da pá
 | 104.7 p.551, p.555-556 | "775 (rwxrwx-r-x)" tem a máscara escrita errada; `type -t type` imprime `builtin`, mas o PDF mostra uma frase longa. |
 | 105.1 p.16-17, p.49, p.62 | Diz que scripts não leem nenhum arquivo de inicialização, contradizendo o próprio texto sobre `BASH_ENV` (p.23); `DISPLAY` escrito como `host:0:2` (o formato é `host:display.screen`). |
 
-*(Revisões cegas ainda em andamento podem acrescentar itens a esta lista.)*
+| 108.1 p.282 | Diz que a coluna `reach` do `ntpq -p` "incrementa em 1"; é um registrador de deslocamento octal de 8 bits (`377` = as últimas 8 consultas responderam). |
+| 107.1 / 110.1 | `passwd -S` mostra a data no formato ISO (AAAA-MM-DD) no Debian 12, não MM/DD/AAAA como nos exemplos. |
+| 107.2 | Em crontab com dia do mês **e** dia da semana restritos, o cron real aplica **OU**, não E (o livro interpreta como E). |
+
+*(Este arquivo é a lista de erratas conhecidas até o momento; se achar mais, abra uma issue ou PR.)*
