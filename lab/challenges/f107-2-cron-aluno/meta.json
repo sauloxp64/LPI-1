@@ -1,0 +1,30 @@
+{
+  "id": "f107-2-cron-aluno",
+  "obj": "107.2",
+  "titulo": "Agendar duas rotinas no crontab do aluno",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "script_a": { "escolha": ["coleta-metricas.sh", "sincroniza-fotos.sh", "gera-relatorio.sh", "limpa-cache.sh"] },
+    "script_b": { "escolha": ["verifica-fila.sh", "ping-servicos.sh", "rotaciona-temp.sh"] },
+    "dia": { "escolha": ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"] },
+    "hora": { "faixa": [1, 23] },
+    "minuto": { "faixa": [1, 58] },
+    "passo": { "escolha": ["10", "12", "15", "20", "30"] },
+    "h_ini": { "faixa": [6, 9] },
+    "h_fim": { "faixa": [17, 20] }
+  },
+  "enunciado": "Dois scripts de manutenção foram entregues em `~/lab/cronaluno/` (ainda não foram testados). Cadastre-os no **crontab do usuário `aluno`** (sem `sudo`, no seu próprio crontab):\n\n1. `{script_a}` deve rodar **uma vez por semana, no dia da semana `{dia}`**, às **{hora}h e {minuto} min** (todas as semanas do ano).\n2. `{script_b}` deve rodar **a cada {passo} minutos, de segunda a sexta, durante o expediente**: das **{h_ini}h** às **{h_fim}h** (as horas {h_ini} e {h_fim} inclusive, isto é, o campo de horas do cron como o intervalo `{h_ini}-{h_fim}`).\n\nOs dois comandos devem **acrescentar** (sem apagar o que já existe) a saída padrão **e** a saída de erro em `~/lab/cronaluno/agenda.log`. Use **caminhos absolutos** (o cron não herda o seu ambiente: `PATH` mínimo, shell `/bin/sh`, diretório inicial = home).\n\nAtenção: o cron executa o comando de verdade; garanta que ele realmente funciona quando o cron o chamar.",
+  "verifica": [
+    "o crontab de `aluno` tem uma linha para `{script_a}` com minuto `{minuto}`, hora `{hora}`, qualquer dia do mês/mês e dia da semana `{dia}`",
+    "o crontab de `aluno` tem uma linha para `{script_b}` com minutos de `{passo}` em `{passo}`, horas `{h_ini}-{h_fim}`, qualquer dia do mês/mês e dias da semana segunda a sexta",
+    "cada comando, executado como o cron o executaria (`/bin/sh`, ambiente mínimo), anexa stdout e stderr em `~/lab/cronaluno/agenda.log` sem apagar o conteúdo anterior"
+  ],
+  "dicas": [
+    "O crontab do usuário tem 5 campos de tempo (minuto, hora, dia do mês, mês, dia da semana) seguidos do comando; edite com `crontab -e` e liste com `crontab -l`.",
+    "Dia da semana: 0 ou 7 = domingo, 1 = segunda … 6 = sábado (também aceita `mon`, `tue`...). Passos usam `*/N`; intervalos usam `a-b`.",
+    "Redirecionamento que junta stdout e stderr no mesmo arquivo, anexando: `>> arquivo 2>&1` (a ordem importa). O `/bin/sh` do Debian é o dash: não use `&>>`.",
+    "Um script sem permissão de execução falha no cron com 'Permission denied'. Dê `chmod +x` ou chame com `/bin/sh /caminho/script`."
+  ],
+  "solucao": "```\nchmod +x ~/lab/cronaluno/*.sh\ncrontab -e      # acrescente as duas linhas abaixo\n```\n```\n{minuto} {hora} * * <dow> /home/aluno/lab/cronaluno/{script_a} >> /home/aluno/lab/cronaluno/agenda.log 2>&1\n*/{passo} {h_ini}-{h_fim} * * 1-5 /home/aluno/lab/cronaluno/{script_b} >> /home/aluno/lab/cronaluno/agenda.log 2>&1\n```\n(`<dow>` = número do dia: segunda=1 … sábado=6, domingo=0 ou 7; também vale `mon`, `tue`...). Confira com `crontab -l`. Pontos que a prova explora: a ordem dos campos (minuto antes de hora); `*/N` só vale dentro do campo (`*/15` nos minutos = 0,15,30,45); `1-5` nos dias da semana; `>> arquivo 2>&1` anexa e junta os erros, enquanto `2>&1 >> arquivo` (ordem trocada) mandaria o stderr para o destino antigo do stdout (o e-mail do cron); `>` apagaria o histórico do log. O cron usa `/bin/sh` e `PATH=/usr/bin:/bin`, por isso caminhos absolutos."
+}

@@ -1,0 +1,632 @@
+### 109.2-001 | unica | 1
+ref: 102:p.422, 102:p.433
+tags: nomes de interface
+Segundo o esquema de nomes previsíveis do systemd, o que indica o nome de interface `wlo1`?
+= Rede local sem fio (WLAN)
+- Ethernet integrada à placa-mãe (onboard)
+- Rede sem fio de longa distância (WWAN)
+- Linha serial IP (SLIP) em dispositivo integrado
+> O prefixo de dois caracteres indica o tipo: `en` = Ethernet, `wl` = rede local sem fio (WLAN), `ww` = rede sem fio de longa distância (WWAN), `sl` = SLIP, `ib` = InfiniBand. Em `wlo1`, `wl` é WLAN e `o1` é o índice de dispositivo integrado (onboard).
+
+### 109.2-002 | multipla | 2
+ref: 102:p.422-423
+tags: nomes de interface
+Quais associações entre nome de interface e critério usado para nomeá-la estão corretas?
+= eno1: índice fornecido pelo firmware para dispositivo integrado
+= enp3s5: endereço no barramento PCI (barramento 3, slot 5)
+= enx78e7d1ea46da: endereço MAC da interface
+- ens1: endereço MAC da interface
+- wlo1: interface Ethernet cabeada integrada
+- eth0: índice do slot PCI Express informado pela BIOS
+> `eno` usa o índice de firmware/BIOS de dispositivos integrados; `enp3s5` usa o endereço de barramento (PCI bus 3, slot 5), o mesmo que `lspci` mostra como `03:05.0`; `enx` seguido de 12 dígitos hexadecimais usa o endereço MAC.
+> `ens1` usa o índice do slot PCI Express (não o MAC); `wlo1` é wireless (WLAN), não Ethernet; `eth0` é a nomenclatura legada, pela ordem de detecção do kernel.
+
+### 109.2-003 | unica | 3
+ref: 102:p.423
+tags: nomes de interface, prioridade
+Em distribuições que usam o esquema de nomes previsíveis do systemd, qual critério de nomeação tem a maior prioridade?
+= Índice da BIOS/firmware para dispositivos integrados (eno1)
+- Endereço do barramento PCI (enp3s5)
+- Endereço MAC da interface (enx78e7d1ea46da)
+- Ordem de detecção pelo kernel (eth0)
+> Na ordem do material, do mais ao menos prioritário: índice de firmware para onboard (`eno1`), índice do slot PCIe (`ens1`), endereço de barramento (`enp3s5`), endereço MAC (`enx...`) e, por último, o nome legado (`eth0`).
+> Por isso é possível concluir que uma interface chamada `enp3s5` não se encaixou nos dois primeiros métodos.
+
+### 109.2-004 | unica | 1
+ref: 102:p.421
+tags: ip link
+Qual comando do iproute2 lista as interfaces de rede do sistema e seu estado de enlace, e pode ser executado por um usuário comum?
+= ip link show
+- ip route show
+- ip neigh show
+- ip rule show
+> `ip link show` lista as interfaces (links) com flags, MTU e estado, e não modifica nada, por isso não exige root. (`ip addr show` também as lista, acrescentando os endereços IP.)
+> `ip route show` exibe a tabela de rotas, `ip neigh show` o cache ARP/vizinhos e `ip rule show` as regras de política de roteamento.
+
+### 109.2-005 | lacuna | 1
+ref: 102:p.423-424
+tags: ifup, ifdown, /etc/network/interfaces
+Em sistemas Debian, qual arquivo (caminho completo) contém as definições de interface lidas pelos comandos `ifup` e `ifdown`? ____
+= /etc/network/interfaces
+> `ifup` e `ifdown` (pacote `ifupdown`) configuram as interfaces conforme as definições de `/etc/network/interfaces`. As linhas `auto` marcam as interfaces ativadas pelo `ifup -a`; as linhas `iface` descrevem o método de configuração.
+
+### 109.2-006 | unica | 2
+ref: 102:p.424-425
+tags: ifup, iface, dhcp
+Em `/etc/network/interfaces`, o que a linha `iface enp3s5 inet dhcp` configura?
+= A interface enp3s5 obtém seu endereço IPv4 de um servidor DHCP
+- A interface enp3s5 recebe um endereço IPv4 fixo definido nas linhas seguintes
+- A interface enp3s5 obtém seu endereço IPv6 por meio de DHCPv6
+- A interface enp3s5 é tratada como a interface de loopback
+> A sintaxe é `iface <interface> <família> <método>`. A família `inet` é IPv4 (`inet6` seria IPv6) e o método `dhcp` faz o `ifup` chamar um cliente DHCP.
+> O método para endereço fixo é `static`; o de loopback é `loopback` (`iface lo inet loopback`).
+
+### 109.2-007 | unica | 2
+ref: 102:p.425
+tags: ifup, static, /etc/network/interfaces
+Qual bloco de `/etc/network/interfaces` configura `eno1` com o endereço fixo 10.0.0.5/24 e gateway 10.0.0.1?
+= iface eno1 inet static
+    address 10.0.0.5/24
+    gateway 10.0.0.1
+- iface eno1 inet dhcp
+    address 10.0.0.5/24
+    gateway 10.0.0.1
+- iface eno1 static inet
+    address 10.0.0.5/24
+    gateway 10.0.0.1
+- iface eno1 inet static
+    ip 10.0.0.5 mask 24
+    router 10.0.0.1
+> Para endereço fixo usa-se o método `static` depois da família `inet`, seguido das opções `address` (aceita o prefixo `/24`) e `gateway`.
+> Com `dhcp` as linhas `address` e `gateway` não fazem sentido; `static inet` inverte a ordem família/método; `ip`, `mask` e `router` não são opções válidas do `ifupdown`.
+
+### 109.2-008 | unica | 2
+ref: 102:p.424
+tags: ifup, auto
+Qual é o efeito do comando `ifup -a`?
+= Ativa as interfaces marcadas com auto em /etc/network/interfaces
+- Ativa todas as interfaces físicas detectadas pelo kernel, mesmo as ausentes do arquivo
+- Lista todas as interfaces ativas e o respectivo endereço IP de cada uma
+- Ativa somente a interface de loopback e mantém as demais desativadas
+> As linhas `auto <interface>` em `/etc/network/interfaces` identificam as interfaces ativadas quando o `ifup` é executado com `-a` (o que ocorre na inicialização), na ordem em que aparecem no arquivo.
+> O `ifup` só atua sobre interfaces descritas em `/etc/network/interfaces`; para apenas listar interfaces usa-se `ip link` ou `ip addr`.
+
+### 109.2-009 | lacuna | 1
+ref: 102:p.425
+tags: ifdown
+Qual comando desativa a interface `enp3s5` segundo as definições de `/etc/network/interfaces`? Complete: ____ enp3s5
+= ifdown
+> `ifdown` é o par do `ifup`: desativa a interface descrita em `/etc/network/interfaces`.
+
+### 109.2-010 | unica | 2
+ref: 102:p.424
+tags: ifup, centos, sysconfig
+Nas distribuições da família Red Hat/CentOS que usam arquivos `ifcfg`, onde ficam os arquivos de configuração individuais de cada interface?
+= /etc/sysconfig/network-scripts/
+- /etc/network/interfaces.d/
+- /etc/systemd/network/
+- /etc/NetworkManager/conf.d/
+> Em CentOS e similares, cada interface tem um arquivo `ifcfg-<nome>` em `/etc/sysconfig/network-scripts/`, com formato diferente do `/etc/network/interfaces` do Debian. O material alerta que o método de configuração com `ifup`/`ifdown` não é padronizado entre distribuições.
+> `/etc/systemd/network/` é do systemd-networkd e `/etc/NetworkManager/conf.d/` guarda ajustes do próprio NetworkManager. (Versões recentes da Red Hat preferem arquivos de conexão do NetworkManager.)
+
+### 109.2-011 | unica | 2
+ref: 102:p.425
+tags: /etc/hostname
+Como o sistema usa o arquivo `/etc/hostname`, quando ele existe?
+= A primeira linha é o nome local do host; linhas iniciadas por # são ignoradas
+- Todas as linhas são concatenadas, formando o nome de domínio completo (FQDN)
+- Cada linha traz um endereço IP seguido do nome do host correspondente
+- Só é lido quando /etc/hosts está vazio, como alternativa a ele
+> Se `/etc/hostname` existir, o conteúdo da primeira linha é usado como nome do host (hostname); linhas começadas por `#` são ignoradas. Ele guarda só o nome, sem IP.
+> A associação entre IPs e nomes fica em `/etc/hosts`; os dois arquivos não são alternativos.
+
+### 109.2-012 | unica | 1
+ref: 102:p.425-426
+tags: hostnamectl, /etc/hostname
+Em que arquivo o comando `hostnamectl set-hostname storage` grava o nome de host estático?
+= /etc/hostname
+- /etc/hosts
+- /etc/machine-id
+- /etc/resolv.conf
+> O `hostnamectl set-hostname` escreve o nome estático em `/etc/hostname`, que é lido no boot para definir o nome do host. `/etc/hosts` associa nomes a IPs, `/etc/machine-id` identifica a instalação e `/etc/resolv.conf` configura o resolvedor DNS.
+
+### 109.2-013 | unica | 2
+ref: 102:p.426
+tags: hostnamectl, static, pretty, transient
+O `hostnamectl` pode definir três tipos de nome de host. Qual deles é armazenado em `/etc/hostname`?
+= Somente o nome estático (static)
+- Os três: estático, pretty e transiente
+- Somente o nome transiente (transient)
+- Somente o nome pretty
+> Em todos os casos somente o nome de host estático é gravado em `/etc/hostname`. O nome transiente é mantido pelo kernel/rede enquanto o sistema roda, e o pretty é um nome descritivo livre (guardado em `/etc/machine-info`).
+
+### 109.2-014 | lacuna | 2
+ref: 102:p.426, 102:p.434
+tags: hostnamectl, static
+Qual opção do `hostnamectl` deve ser usada para alterar somente o nome de host estático? Complete: hostnamectl ____ set-hostname firewall
+= --static
+> `--static` restringe a alteração ao nome estático (o de `/etc/hostname`). Sem `--static`, `--pretty` ou `--transient`, o comando altera os três tipos.
+
+### 109.2-015 | unica | 2
+ref: 102:p.426
+tags: hostnamectl, pretty
+Qual tipo de nome de host aceita caracteres especiais e espaços, como em "Armazenamento compartilhado da LAN"?
+= Pretty, definido com hostnamectl --pretty set-hostname
+- Static, definido com hostnamectl --static set-hostname
+- Transient, definido com hostnamectl --transient set-hostname
+- Qualquer tipo, desde que o texto esteja entre aspas no comando
+> O nome pretty é o descritivo, que pode conter qualquer caractere. O estático deve se limitar, de preferência, a caracteres ASCII minúsculos sem espaços e sem pontos (formato de rótulo DNS), e o transiente é o nome temporário usado, por exemplo, quando o estático não está definido.
+
+### 109.2-016 | unica | 3
+ref: 102:p.426
+tags: hostnamectl
+Um administrador executa `hostnamectl set-hostname web01`, sem as opções `--static`, `--pretty` ou `--transient`. O que acontece?
+= Ele atua sobre os três tipos de nome (estático, pretty e transiente), e não sobre um só
+- Ele altera somente o nome estático, gravando o novo valor em /etc/hostname
+- Ele altera somente o nome transiente, que se perde ao reiniciar a máquina
+- Ele falha, pois é obrigatório informar o tipo de nome a ser alterado
+> Quando nenhum tipo é escolhido (`--static`, `--pretty` ou `--transient`), o comando atua sobre os três tipos de nome de host, e não apenas sobre um. Mesmo assim, só o nome estático é gravado em `/etc/hostname`.
+
+### 109.2-017 | unica | 2
+ref: 102:p.426-427
+tags: hostnamectl, status
+O que faz o comando `hostnamectl` quando executado sem nenhum subcomando?
+= Equivale a hostnamectl status e exibe nome do host, ID da máquina, sistema e kernel
+- Exibe apenas o conteúdo de /etc/hostname e encerra sem outras informações
+- Redefine o nome do host para o padrão localhost
+- Retorna erro de uso, pois um subcomando é obrigatório
+> A ação padrão é `status`, que mostra os nomes de host (static, pretty, transient), ícone, tipo de chassi, Machine ID, Boot ID, sistema operacional, kernel e arquitetura. Consultar não exige privilégios de root.
+
+### 109.2-018 | lacuna | 2
+ref: 102:p.426
+tags: hostname, /etc/hostname
+O nome de host estático pode ter até quantos caracteres? ____
+= 64
+> O material informa até 64 caracteres, recomendando apenas ASCII minúsculo, sem espaços ou pontos e no formato permitido para rótulos de nomes de domínio DNS.
+
+### 109.2-019 | unica | 2
+ref: 102:p.428, 102:p.434
+tags: /etc/hosts
+Qual linha de `/etc/hosts` associa os nomes `firewall` e `router` ao endereço 10.8.0.1?
+= 10.8.0.1 firewall router
+- firewall router 10.8.0.1
+- 10.8.0.1 firewall, router
+- firewall:10.8.0.1 router:10.8.0.1
+> O formato é `endereço-IP nome [aliases...]`, com campos separados por espaços ou tabs. O primeiro nome é o principal e os demais são aliases do mesmo IP.
+> O IP deve vir primeiro, não há vírgulas separando nomes e a sintaxe com `:` não existe.
+
+### 109.2-020 | multipla | 2
+ref: 102:p.427-428
+tags: /etc/hosts
+Quais afirmações sobre o arquivo `/etc/hosts` estão corretas?
+= Os campos podem ser separados por qualquer número de espaços ou tabs
+= Texto a partir de # até o fim da linha é comentário
+= Nomes alternativos (aliases) são colocados ao final da linha
+- O nome do host deve vir antes do endereço IP na linha
+- Aceita somente endereços IPv4; IPv6 exige o arquivo /etc/hosts6
+- É sempre consultado depois do DNS, independentemente de outras configurações
+> O formato é `IP nome alias...`; espaços/tabs múltiplos e comentários com `#` são aceitos. O arquivo também aceita IPv6, como `::1 localhost ip6-localhost ip6-loopback`.
+> A ordem entre `/etc/hosts` (files) e DNS é definida em `/etc/nsswitch.conf`; no padrão `hosts: files dns`, o arquivo local vem antes do DNS.
+
+### 109.2-021 | unica | 1
+ref: 102:p.427
+tags: nsswitch
+Em `/etc/nsswitch.conf`, a linha `hosts: files dns` significa que, para resolver um nome de host, o sistema:
+= consulta primeiro /etc/hosts e, se não encontrar, consulta o DNS
+- consulta primeiro o DNS e, se não encontrar, consulta /etc/hosts
+- consulta apenas /etc/hosts e nunca consulta o DNS
+- consulta /etc/hosts e o DNS ao mesmo tempo e usa a primeira resposta
+> As fontes são consultadas da esquerda para a direita. `files` é o arquivo local (`/etc/hosts`) e `dns` usa os servidores de `/etc/resolv.conf`. Para consultar o DNS antes, bastaria inverter a ordem: `hosts: dns files`.
+
+### 109.2-022 | unica | 2
+ref: 102:p.427
+tags: nsswitch
+Qual é o papel do arquivo `/etc/nsswitch.conf`?
+= Definir as fontes e a ordem de consulta para bancos de dados de nomes, como hosts, passwd e group
+- Guardar o mapeamento fixo entre nomes de host e endereços IP da rede local
+- Listar os servidores DNS consultados pelo resolvedor, com um nameserver por linha
+- Definir o nome do host e o domínio da máquina na inicialização do sistema
+> O Name Service Switch configura de onde vêm as informações de vários bancos de dados (hosts, passwd, group, services, etc.) e em que ordem. Cada linha traz o nome do banco e as fontes: `files`, `dns`, `nis`, `resolve`...
+> O mapeamento nome-IP local é de `/etc/hosts`, os servidores DNS são de `/etc/resolv.conf` e o nome do host é de `/etc/hostname`.
+
+### 109.2-023 | lacuna | 1
+ref: 102:p.427
+tags: nsswitch
+Qual arquivo (caminho completo) define a ordem das fontes de resolução de nomes de host, como `files` e `dns`? ____
+= /etc/nsswitch.conf
+> A linha `hosts:` de `/etc/nsswitch.conf` determina a ordem das fontes para resolução de nomes de host.
+
+### 109.2-024 | unica | 3
+ref: 102:p.427
+tags: nsswitch, /etc/hosts, dns
+O arquivo `/etc/hosts` contém `10.1.1.1 alvo.example.com`, mas o DNS responde 203.0.113.7 para esse nome. Com `hosts: dns files` em `/etc/nsswitch.conf`, qual endereço `getent hosts alvo.example.com` retorna?
+= 203.0.113.7
+- 10.1.1.1
+- Ambos, um por linha
+- Nenhum: o comando acusa conflito
+> Com `dns files` o DNS é consultado primeiro; como ele responde com sucesso, a consulta termina ali e `/etc/hosts` não é usado. Com o padrão `files dns` o resultado seria `10.1.1.1`.
+> O resolvedor não mescla fontes nem detecta conflitos: usa a primeira que responder.
+
+### 109.2-025 | lacuna | 1
+ref: 102:p.428
+tags: /etc/resolv.conf
+Qual palavra-chave de `/etc/resolv.conf` informa o endereço IP de um servidor DNS? ____
+= nameserver
+> Cada linha `nameserver <IP>` indica um servidor DNS (IPv4 ou IPv6) a consultar. Podem ser informados até três; os demais servem de reserva, na ordem em que aparecem.
+
+### 109.2-026 | unica | 2
+ref: 102:p.428
+tags: /etc/resolv.conf
+Qual é o número máximo de entradas `nameserver` consideradas em `/etc/resolv.conf`?
+= 3
+- 2
+- 6
+- 10
+> O resolvedor da glibc usa até 3 servidores (`MAXNS`, conforme a man page `resolv.conf(5)`); eles são consultados na ordem listada, e os seguintes servem de reserva se o primeiro não responder.
+
+### 109.2-027 | unica | 2
+ref: 102:p.428, 102:p.434
+tags: /etc/resolv.conf, dns
+Como configurar o resolvedor de um host para enviar todas as consultas DNS ao servidor 1.1.1.1?
+= Deixar apenas a linha nameserver 1.1.1.1 em /etc/resolv.conf
+- Adicionar a linha dns 1.1.1.1 ao arquivo /etc/hosts
+- Escrever 1.1.1.1 na linha hosts de /etc/nsswitch.conf
+- Gravar server=1.1.1.1 no arquivo /etc/hostname
+> `/etc/resolv.conf` é o arquivo de configuração do resolvedor, e `nameserver` indica o servidor. Atenção: em sistemas onde o NetworkManager ou o systemd-resolved gerenciam esse arquivo, edições manuais podem ser sobrescritas; nesse caso, configura-se a conexão (por exemplo, com `nmcli`).
+> `/etc/hosts` mapeia nomes a IPs; `/etc/nsswitch.conf` aceita nomes de fontes (files, dns), não IPs; `/etc/hostname` guarda só o nome do host.
+
+### 109.2-028 | unica | 2
+ref: 102:p.428-429
+tags: /etc/resolv.conf, search
+Um host tem este `/etc/resolv.conf`:
+
+```
+search lpi.org
+nameserver 10.0.0.53
+```
+
+Que nome o resolvedor consulta ao ser solicitado a resolver o nome curto `learning`?
+= learning.lpi.org
+- learning.org
+- lpi.org.learning
+- learning, sem acrescentar nenhum sufixo
+> A opção `search` define domínios acrescentados aos nomes curtos antes da consulta ao servidor; assim `learning` vira `learning.lpi.org`.
+
+### 109.2-029 | unica | 3
+ref: 102:p.428-429
+tags: /etc/resolv.conf, search, domain
+Um `/etc/resolv.conf` contém as linhas abaixo, nesta ordem. Qual sufixo o resolvedor acrescenta ao nome curto `web`?
+
+```
+nameserver 10.0.0.53
+domain lab.test
+search alt.test
+```
+= alt.test, pois a última instância entre domain e search prevalece
+- lab.test, pois domain tem precedência sobre search
+- lab.test e depois alt.test, nessa ordem
+- Nenhum: domain e search juntos invalidam o arquivo
+> As palavras-chave `domain` e `search` são mutuamente exclusivas: se ambas aparecem, vale a última do arquivo. Aqui, a última é `search alt.test`. Invertendo a ordem, o sufixo usado seria `lab.test`.
+
+### 109.2-030 | unica | 3
+ref: 102:p.428
+tags: /etc/resolv.conf, nameserver
+Em um host sem nenhuma linha `nameserver` ativa em `/etc/resolv.conf` (todas comentadas), qual é o comportamento padrão do resolvedor?
+= Consultar um servidor de nomes executado na própria máquina local
+- Usar automaticamente os servidores DNS públicos do provedor de internet
+- Consultar o servidor DNS indicado pelo gateway padrão
+- Retornar erro imediatamente, sem enviar nenhuma consulta
+> Sem entradas `nameserver`, o padrão é usar o servidor de nomes da máquina local. Se não houver nenhum servidor DNS ativo no localhost, a resolução por DNS falha, mesmo que a rede esteja correta.
+
+### 109.2-031 | unica | 1
+ref: 102:p.435
+tags: networkmanager
+Qual é a finalidade do NetworkManager?
+= Configurar e manter as conexões de rede de forma simples e automática, como DHCP, rotas, DNS e Wi-Fi
+- Traduzir nomes de host em endereços IP para os aplicativos do sistema
+- Atribuir endereços IP aos clientes da rede, atuando como servidor DHCP
+- Filtrar pacotes de entrada e saída, atuando como firewall do sistema
+> O NetworkManager é um daemon que simplifica e automatiza a configuração de rede (por exemplo, ao usar DHCP ele ajusta rotas, endereço e lista de servidores DNS) e tenta manter ao menos uma conexão ativa. A resolução de nomes é feita pelo resolvedor/DNS, e filtro de pacotes é função de firewalls.
+
+### 109.2-032 | unica | 1
+ref: 102:p.436
+tags: networkmanager, nmcli, nmtui
+Quais são os dois clientes de linha de comando fornecidos pelo próprio NetworkManager?
+= nmcli e nmtui
+- nm-applet e nm-tray
+- ifup e ifdown
+- nmctl e nmshell
+> O `nmcli` é o cliente de linha de comando completo (serve para scripts); o `nmtui` oferece uma interface de texto baseada em curses. `nm-applet` e `nm-tray` são applets gráficos de desktop; `ifup`/`ifdown` pertencem ao `ifupdown`.
+
+### 109.2-033 | multipla | 2
+ref: 102:p.436-437
+tags: nmcli, objetos
+Quais dos termos abaixo são objetos do comando `nmcli`?
+= connection
+= device
+= radio
+- interface
+- route
+- link
+> O `nmcli` organiza as propriedades em objetos: `general`, `networking`, `radio`, `connection`, `device`, `agent` e `monitor`.
+> `interface`, `route` e `link` não são objetos do `nmcli` (`ip link` e `ip route` pertencem ao iproute2).
+
+### 109.2-034 | unica | 2
+ref: 102:p.437, 102:p.446
+tags: nmcli, general
+No resultado de `nmcli general status`, a coluna CONNECTIVITY mostra `portal`. O que isso significa?
+= Há etapas extras de autenticação, geralmente no navegador, para concluir a conexão
+- A conexão está plena e com acesso total à Internet, sem restrições
+- O Wi-Fi está desligado por hardware ou por software no equipamento
+- O sistema está conectado por cabo, e o Wi-Fi está desativado
+> `portal` indica que é necessário um passo adicional de autenticação (portal cativo, como em hotéis ou aeroportos) para concluir o acesso. Conectividade plena aparece como `full`. O estado do rádio aparece nas colunas `WIFI-HW`/`WIFI` e `WWAN-HW`/`WWAN`.
+
+### 109.2-035 | lacuna | 1
+ref: 102:p.437
+tags: nmcli, wifi
+Complete o comando para listar as redes Wi-Fi disponíveis: nmcli device wifi ____
+= list
+> `nmcli device wifi list` mostra SSID, canal, taxa, sinal e segurança das redes encontradas na última varredura.
+
+### 109.2-036 | unica | 2
+ref: 102:p.438, 102:p.446
+tags: nmcli, wifi, connect
+Em um console de texto, qual comando conecta à rede Wi-Fi `Hypnotoad` usando a senha `MyPassword`?
+= nmcli device wifi connect Hypnotoad password MyPassword
+- nmcli wifi connect Hypnotoad --password MyPassword
+- nmcli device connect wifi Hypnotoad password MyPassword
+- nmcli connection up Hypnotoad passwd MyPassword
+> A forma é `nmcli device wifi connect <SSID> password <senha>`. Em um terminal gráfico, se a senha for omitida, aparece uma caixa de diálogo que a solicita. O NetworkManager salva a conexão com o nome do SSID para uso futuro.
+> `wifi` não é um objeto de primeiro nível (é subcomando de `device`/`radio`), `--password` e `passwd` não existem e `connection up` só ativa conexões já salvas.
+
+### 109.2-037 | unica | 3
+ref: 102:p.438
+tags: nmcli, wifi, hidden
+Como conectar a uma rede Wi-Fi cujo SSID é oculto, usando o `nmcli`?
+= nmcli device wifi connect Hypnotoad password MyPassword hidden yes
+- nmcli device wifi connect Hypnotoad password MyPassword --hidden
+- nmcli device wifi connect Hypnotoad password MyPassword ssid-hidden on
+- nmcli device wifi list hidden yes
+> Para redes que não anunciam o SSID, acrescentam-se os argumentos `hidden yes` ao comando `nmcli device wifi connect ...`.
+
+### 109.2-038 | unica | 3
+ref: 102:p.438
+tags: nmcli, wifi, ifname
+O sistema possui dois adaptadores Wi-Fi e a conexão deve ser feita pelo adaptador `wlo1`. Qual argumento do `nmcli device wifi connect` seleciona o adaptador?
+= ifname wlo1
+- dev wlo1
+- iface wlo1
+- adapter wlo1
+> O argumento é `ifname`, como em `nmcli device wifi connect Hypnotoad password MyPassword ifname wlo1`. Os demais nomes não são reconhecidos.
+
+### 109.2-039 | unica | 1
+ref: 102:p.438
+tags: nmcli, connection
+Qual comando lista as conexões salvas pelo NetworkManager, com seus nomes, UUIDs, tipos e dispositivos?
+= nmcli connection show
+- nmcli device wifi list
+- nmcli general status
+- nmcli radio all
+> `nmcli connection show` lista nome, UUID, tipo (ethernet, wifi, tun, gsm, bridge...) e dispositivo de cada conexão. `device wifi list` mostra as redes Wi-Fi ao alcance, `general status` o estado geral do NetworkManager e `radio all` o estado dos rádios.
+
+### 109.2-040 | unica | 2
+ref: 102:p.439
+tags: nmcli, connection
+Qual comando desativa a conexão `Hypnotoad`, mantendo-a salva para uso futuro?
+= nmcli connection down Hypnotoad
+- nmcli connection delete Hypnotoad
+- nmcli radio wifi off
+- nmcli device wifi rescan
+> `nmcli connection down` desativa a conexão, que continua salva e pode ser reativada com `nmcli connection up Hypnotoad`. `delete` remove a conexão salva, `radio wifi off` desliga o rádio Wi-Fi inteiro (todas as conexões) e `rescan` pede nova varredura de redes.
+
+### 109.2-041 | lacuna | 2
+ref: 102:p.439
+tags: nmcli, radio
+Complete o comando para ligar novamente o rádio Wi-Fi: nmcli radio wifi ____
+= on
+> `nmcli radio wifi off` desliga o rádio Wi-Fi (por exemplo, para economizar energia) e `nmcli radio wifi on` o reativa.
+
+### 109.2-042 | unica | 2
+ref: 102:p.447
+tags: nmcli, connection, delete
+Qual comando exclui a conexão salva chamada `Hotel Internet`?
+= nmcli connection delete "Hotel Internet"
+- nmcli device delete "Hotel Internet"
+- nmcli connection down "Hotel Internet"
+- nmcli connection delete Hotel Internet
+> `nmcli connection delete` remove a conexão salva. Como o nome contém espaço, deve ficar entre aspas; sem elas, `Hotel` e `Internet` seriam interpretados como argumentos distintos.
+> `device delete` remove dispositivos virtuais, e `connection down` só desativa a conexão, sem excluí-la.
+
+### 109.2-043 | lacuna | 3
+ref: 102:p.447
+tags: nmcli, wifi, rescan
+Complete o comando que pede ao NetworkManager uma nova varredura das redes Wi-Fi: nmcli device wifi ____
+= rescan
+> `nmcli device wifi list` mostra somente o resultado da última varredura; `nmcli device wifi rescan` solicita uma nova. O material cita o root para essa operação (conforme as políticas do sistema, usuários comuns podem ser impedidos).
+
+### 109.2-044 | unica | 2
+ref: 102:p.435
+tags: networkmanager
+Quando há conexões cabeada e sem fio disponíveis, o que o NetworkManager faz por padrão?
+= Prioriza a conexão cabeada
+- Prioriza a conexão sem fio, pela mobilidade
+- Usa as duas simultaneamente, dividindo o tráfego
+- Pergunta ao usuário qual deve usar, a cada conexão
+> O NetworkManager prioriza a conexão com fio por padrão e tenta manter ao menos uma conexão ativa sempre que possível.
+
+### 109.2-045 | unica | 3
+ref: 102:p.436, 102:p.421
+tags: networkmanager, ifupdown, unmanaged
+Em um Debian com a configuração padrão, a interface `enp3s5` está declarada em `/etc/network/interfaces` (`iface enp3s5 inet dhcp`). Como o NetworkManager trata essa interface?
+= Não a gerencia: ela aparece como unmanaged e continua a cargo do ifupdown
+- Gerencia a interface normalmente e ignora o arquivo /etc/network/interfaces
+- Gerencia a interface e reescreve /etc/network/interfaces com sua configuração
+- Desativa a interface até que ela seja removida do arquivo
+> Por padrão, o NetworkManager controla somente as interfaces não mencionadas em `/etc/network/interfaces`, para não interferir em outros métodos de configuração. A interface listada ali aparece como `unmanaged` em `nmcli device`.
+
+### 109.2-046 | unica | 2
+ref: 102:p.440
+tags: systemd-networkd, diretórios
+Qual diretório do systemd-networkd é o local de administração, onde o administrador deve colocar seus arquivos de configuração personalizados?
+= /etc/systemd/network
+- /lib/systemd/network
+- /run/systemd/network
+- /usr/share/systemd/network
+> `/etc/systemd/network` é o diretório local de administração e tem a maior prioridade. `/lib/systemd/network` guarda os arquivos de sistema (do pacote) e `/run/systemd/network` é o diretório volátil de tempo de execução.
+
+### 109.2-047 | unica | 3
+ref: 102:p.440
+tags: systemd-networkd, prioridade
+Existem os arquivos `/lib/systemd/network/80-dhcp.network` e `/etc/systemd/network/80-dhcp.network`, com o mesmo nome e conteúdos diferentes. O que o systemd-networkd faz?
+= Usa o arquivo de /etc e ignora o de /lib
+- Usa o arquivo de /lib e ignora o de /etc
+- Mescla os dois, com o de /lib prevalecendo nas opções repetidas
+- Recusa ambos e registra erro de duplicidade no log
+> Quando arquivos de mesmo nome existem em mais de um diretório, vale o de maior prioridade: `/etc` supera `/run`, que supera `/lib`. Isso permite alterar a configuração sem editar os arquivos originais do pacote.
+
+### 109.2-048 | multipla | 2
+ref: 102:p.440
+tags: systemd-networkd, sufixos
+Quais associações entre sufixo de arquivo e finalidade no systemd-networkd estão corretas?
+= .network: configura endereços e rotas da interface
+= .netdev: cria dispositivos de rede virtuais, como bridges
+= .link: ajusta configurações de baixo nível da interface
+- .route: define apenas as rotas estáticas do sistema
+- .iface: lista as interfaces ativadas na inicialização
+- .dhcp: ativa o cliente DHCP para toda a máquina
+> O sufixo `.network` é o mais importante: endereços, rotas e DHCP. `.netdev` cria dispositivos virtuais (bridge, tun, vlan...), e `.link` define configurações de baixo nível, raramente necessárias. Os sufixos `.route`, `.iface` e `.dhcp` não existem.
+
+### 109.2-049 | lacuna | 2
+ref: 102:p.441, 102:p.447
+tags: systemd-networkd, match
+Qual linha da seção [Match] de um arquivo .network seleciona todas as interfaces Ethernet pelo prefixo do nome? ____
+= Name=en*
+= Name = en*
+> A chave `Name=` aceita globs no estilo do shell; como `en` é o prefixo das interfaces Ethernet, `Name=en*` seleciona todas elas. Também é possível casar por `MACAddress=`.
+
+### 109.2-050 | unica | 2
+ref: 102:p.441
+tags: systemd-networkd, static
+Qual arquivo .network configura a interface com endereço fixo no systemd-networkd?
+= [Match]
+  Name=enp3s5
+  [Network]
+  Address=192.168.0.100/24
+  Gateway=192.168.0.1
+- [Match]
+  Name=enp3s5
+  [Network]
+  IPAddress=192.168.0.100
+  Netmask=255.255.255.0
+  Gateway=192.168.0.1
+- [Network]
+  Name=enp3s5
+  Address=192.168.0.100/24
+  Gateway=192.168.0.1
+- [Match]
+  Name=enp3s5
+  Address=192.168.0.100/24
+  Gateway=192.168.0.1
+> A seção `[Match]` seleciona a interface (`Name=`) e `[Network]` traz a configuração: `Address=` (com o prefixo) e `Gateway=`.
+> `IPAddress` e `Netmask` não são chaves do networkd; `Name=` pertence a `[Match]`, não a `[Network]`; e `Address`/`Gateway` colocados em `[Match]` estão na seção errada: a seção `[Match]` só seleciona interfaces, não configura endereços.
+
+### 109.2-051 | unica | 2
+ref: 102:p.441
+tags: systemd-networkd, dhcp
+Qual entrada da seção [Network] faz o systemd-networkd obter apenas o endereço IPv4 por DHCP?
+= DHCP=ipv4
+- DHCP=yes
+- DHCP=v4
+- DHCP=ipv6
+> `DHCP=yes` tenta obter endereços IPv4 e IPv6; `DHCP=ipv4` limita-se ao IPv4 e `DHCP=ipv6` ao IPv6. `v4` não é um valor válido.
+
+### 109.2-052 | unica | 3
+ref: 102:p.442
+tags: systemd-networkd, wpa_supplicant, wifi
+Foi criado o arquivo `/etc/wpa_supplicant/wpa_supplicant-wlo1.conf` com `wpa_passphrase`. Qual unidade systemd associa o adaptador `wlo1` ao ponto de acesso?
+= wpa_supplicant@wlo1.service
+- wpa_supplicant-wlo1.service
+- wpa@wlo1.service
+- wlo1-wpa_supplicant.service
+> O systemd cria uma instância do serviço modelo `wpa_supplicant@<interface>.service` para cada arquivo `wpa_supplicant-<interface>.conf`. Com `systemctl start wpa_supplicant@wlo1.service` o adaptador se associa ao ponto de acesso; com `systemctl enable`, isso passa a ocorrer na inicialização. Depois, o systemd-networkd configura a interface por meio de um arquivo `.network`.
+
+### 109.2-053 | unica | 3
+ref: 102:p.442, 102:p.447
+tags: wpa_passphrase
+Qual comando gera o arquivo de credenciais para a rede `MyWifi`, passando a frase-senha como argumento em vez de lê-la da entrada padrão?
+= wpa_passphrase MyWifi MyPassword > /etc/wpa_supplicant/wpa_supplicant-wlo1.conf
+- wpa_passphrase MyPassword MyWifi > /etc/wpa_supplicant/wpa_supplicant-wlo1.conf
+- wpa_passphrase -s MyWifi -p MyPassword > /etc/wpa_supplicant/wpa_supplicant-wlo1.conf
+- wpa_passphrase --ssid MyWifi --pass MyPassword > /etc/wpa_supplicant/wpa_supplicant-wlo1.conf
+> A sintaxe é `wpa_passphrase <SSID> [frase-senha]`: o SSID vem primeiro e a senha logo depois. Sem o segundo argumento, a senha é lida da entrada padrão. A saída (com o hash da senha) é redirecionada para o arquivo, cujo nome contém o nome da interface.
+> A ordem trocada gera credenciais para um SSID errado; `-s`/`-p` e `--ssid`/`--pass` não existem.
+
+### 109.2-054 | unica | 3
+ref: 102:p.440
+tags: systemd-networkd, ordem
+Dois arquivos `.network`, `10-a.network` e `20-b.network`, ambos com `Name=enp3s5` em [Match], estão em `/etc/systemd/network/`. Qual deles o systemd-networkd aplica à interface?
+= O primeiro, em ordem lexicográfica: 10-a.network
+- O último, em ordem lexicográfica: 20-b.network
+- Ambos, mesclando as configurações dos dois arquivos
+- Nenhum dos dois: o conflito impede a configuração
+> Os arquivos são processados em ordem lexicográfica e, para cada interface, vale o primeiro que corresponde (por isso se recomenda prefixar os nomes com números). Para complementar a configuração sem substituir o arquivo, o systemd usa diretórios `.d` de ajustes, não arquivos de mesmo [Match].
+
+### 109.2-055 | unica | 3
+ref: 102:p.436-439
+tags: nmcli, connection, static
+Qual comando altera, de forma persistente, a conexão `lan` do NetworkManager para IP fixo 192.168.1.50/24 com gateway 192.168.1.1?
+= nmcli connection modify lan ipv4.method manual ipv4.addresses 192.168.1.50/24 ipv4.gateway 192.168.1.1
+- nmcli connection modify lan ipv4.method static ipv4.addresses 192.168.1.50/24 ipv4.gateway 192.168.1.1
+- nmcli device modify lan ip 192.168.1.50/24 gw 192.168.1.1
+- nmcli connection set lan address 192.168.1.50/24 gateway 192.168.1.1
+> No NetworkManager o método de IP fixo é `manual` (`ipv4.method manual`), com `ipv4.addresses` e `ipv4.gateway`. Depois é preciso reativar a conexão (`nmcli connection up lan`) para aplicar.
+> `static` é o método do ifupdown, não do NetworkManager; `ip`/`gw` e o subcomando `connection set` não existem no `nmcli`.
+
+### 109.2-056 | unica | 1
+ref: 102:p.421
+tags: nmcli, device
+Qual comando do NetworkManager lista os dispositivos de rede com seu tipo, estado e a conexão associada?
+= nmcli device
+- nmcli connection show
+- nmcli general
+- nmcli radio
+> `nmcli device` (equivalente a `nmcli device status`) exibe DEVICE, TYPE, STATE e CONNECTION de cada interface, inclusive `lo`. Como não modifica a configuração, pode ser usado por um usuário comum.
+> `nmcli connection show` lista as conexões salvas; `general` mostra o estado global do NetworkManager e `radio` mostra o estado dos rádios Wi-Fi e WWAN.
+
+### 109.2-057 | multipla | 2
+ref: 102:p.427-429
+tags: /etc/hosts, /etc/nsswitch.conf, /etc/resolv.conf
+Quais arquivos participam diretamente da resolução do nome de outros hosts (hosts remotos) em um Linux típico?
+= /etc/hosts
+= /etc/nsswitch.conf
+= /etc/resolv.conf
+- /etc/hostname
+- /etc/services
+- /etc/network/interfaces
+> `/etc/nsswitch.conf` define a ordem das fontes (`files`, `dns`), `/etc/hosts` é a fonte local (`files`) e `/etc/resolv.conf` configura o resolvedor DNS.
+> `/etc/hostname` guarda apenas o nome da própria máquina; `/etc/services` mapeia nomes de serviços a portas; `/etc/network/interfaces` configura as interfaces para o `ifup`/`ifdown`.
+
+### 109.2-058 | multipla | 3
+ref: 102:p.428-429
+tags: /etc/resolv.conf
+Quais linhas são válidas em um arquivo `/etc/resolv.conf`?
+= nameserver 8.8.8.8
+= search lpi.org
+= options timeout:3
+- dns 8.8.8.8
+- server=8.8.8.8
+- resolver 8.8.8.8 lpi.org
+> As palavras-chave usadas aqui existem: `nameserver` (IP do servidor DNS), `search` (domínios para nomes curtos) e `options` (ajustes do resolvedor, como `timeout:n`, em segundos, e `attempts:n`).
+> `dns`, `server=` e `resolver` não são palavras-chave do arquivo: o resolvedor as ignoraria.
+
+### 109.2-059 | multipla | 1
+ref: 102:p.426
+tags: hostnamectl
+Quais opções do `hostnamectl` selecionam o tipo de nome de host a ser alterado?
+= --static
+= --pretty
+= --transient
+- --fqdn
+- --short
+- --domain
+> `--static` (nome em `/etc/hostname`), `--pretty` (nome descritivo livre) e `--transient` (nome temporário do kernel) selecionam o tipo. `--fqdn`, `--short` e `--domain` são opções do comando `hostname` (como `-f`, `-s` e `-d`), não do `hostnamectl`.

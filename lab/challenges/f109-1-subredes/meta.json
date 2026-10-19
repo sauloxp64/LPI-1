@@ -1,0 +1,25 @@
+{
+  "id": "f109-1-subredes",
+  "obj": "109.1",
+  "titulo": "Calcular rede, broadcast e sub-redes",
+  "nivel": 2,
+  "minutos": 10,
+  "params": {
+    "ip": { "escolha": ["10.14.200.77", "10.130.5.9", "10.200.33.130", "172.16.45.200", "172.20.37.141", "172.31.250.18", "192.168.1.130", "192.168.77.45", "192.168.200.250", "172.15.9.40", "172.32.8.99", "11.22.33.44", "200.17.65.201", "100.64.12.5"] },
+    "cidr": { "faixa": [20, 29] },
+    "bloco": { "escolha": ["192.168.40.0/24", "192.168.120.0/24", "10.8.0.0/22", "10.50.64.0/21", "172.20.16.0/21", "172.24.0.0/22"] },
+    "extra": { "faixa": [2, 3] }
+  },
+  "enunciado": "Você recebeu o endereço **`{ip}/{cidr}`** para configurar uma interface e precisa documentar a rede. Na pasta `~/lab/subredes/` há o modelo `resposta.txt`. Preencha **cada linha** com o valor correto (formato `chave=valor`, sem espaços):\n\n* `rede` = endereço da rede (ex.: `192.168.0.0`);\n* `mascara` = máscara em notação decimal pontuada;\n* `broadcast` = endereço de broadcast;\n* `primeiro` e `ultimo` = primeiro e último endereço **utilizável por hosts**;\n* `hosts` = quantidade de endereços utilizáveis por hosts;\n* `privado` = `sim` se o endereço está numa das faixas privadas reservadas pela RFC 1918 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), senão `nao`.\n\nDepois, o bloco **`{bloco}`** deve ser dividido em sub-redes do mesmo tamanho **emprestando {extra} bits** da parte de hosts. Grave em `~/lab/subredes/subredes.txt` o endereço de rede de **cada** sub-rede resultante no formato `A.B.C.D/NN`, uma por linha, em ordem crescente.\n\nDica de ambiente: o `python3` está disponível se quiser conferir seus cálculos, mas treine fazer à mão: na prova não haverá calculadora.",
+  "verifica": [
+    "`resposta.txt` tem rede, máscara, broadcast, primeiro, último, número de hosts e a classificação privado/público corretos para `{ip}/{cidr}`",
+    "`subredes.txt` lista, em ordem crescente, todas as sub-redes de `{bloco}` com {extra} bits emprestados, no formato `A.B.C.D/NN`"
+  ],
+  "dicas": [
+    "A máscara /N tem N bits 1 seguidos de zeros. Os octetos completos valem 255; o octeto 'quebrado' vale 256 menos o tamanho do bloco naquele octeto.",
+    "O tamanho do bloco é 2^(32−N) endereços. A rede é o múltiplo desse tamanho que contém o IP; o broadcast é o último endereço do bloco. Hosts utilizáveis = tamanho − 2.",
+    "Emprestar k bits cria 2^k sub-redes, cada uma com prefixo (N+k). Os endereços de rede avançam de tamanho_novo em tamanho_novo a partir do início do bloco.",
+    "Exemplo do raciocínio para /26: bloco de 64; redes 0, 64, 128, 192 no último octeto; máscara 255.255.255.192; hosts = 62."
+  ],
+  "solucao": "Passo a passo (exemplo com /26): bloco = 2^(32−26) = 64 endereços; as redes na última parte são múltiplos de 64 (0, 64, 128, 192); `rede` = maior múltiplo ≤ IP; `broadcast` = rede + 63; `primeiro` = rede + 1; `ultimo` = broadcast − 1; `hosts` = 64 − 2 = 62; máscara = 255.255.255.192 (o octeto quebrado vale 256 − 64). Para prefixos entre /17 e /24 o octeto quebrado é o 3º, e blocos de hosts passam a valer múltiplos de 256 (por exemplo /22 = 4 × 256).\n\nConferência com Python (opcional):\n```\npython3 -c \"import ipaddress as i; n=i.ip_interface('{ip}/{cidr}').network; print(n.network_address, n.netmask, n.broadcast_address, n.num_addresses-2)\"\npython3 -c \"import ipaddress as i; print(*i.ip_network('{bloco}').subnets(prefixlen_diff={extra}), sep='\\n')\"\n```\nSub-redes: emprestar {extra} bit(s) cria 2^{extra} blocos com prefixo maior em {extra}. Faixas privadas (RFC 1918): `10.0.0.0/8`, `172.16.0.0/12` (172.16.0.0–172.31.255.255) e `192.168.0.0/16`; armadilhas comuns: `172.15.x.x` e `172.32.x.x` são públicos, e `100.64.0.0/10` (CGNAT) não é RFC 1918."
+}

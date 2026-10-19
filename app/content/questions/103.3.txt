@@ -1,0 +1,709 @@
+### 103.3-001 | multipla | 2
+ref: 101:p.243-244
+tags: ls, tipos de arquivo
+Quais associações entre o primeiro caractere de uma linha da saída de `ls -l` e o tipo do arquivo estão corretas?
+= `-` é um arquivo regular
+= `d` é um diretório
+= `l` é um link simbólico
+- `c` é um arquivo compactado
+- `b` é um link físico (hard link)
+> O primeiro caractere da listagem longa indica o tipo: `-` arquivo regular, `d` diretório, `l` link simbólico, `c` arquivo especial de caracteres (por exemplo, `/dev/null`), `b` arquivo especial de bloco (discos) e `p` e `s` para pipe e socket. Um hard link não tem tipo próprio: é apenas outro nome para um arquivo regular.
+
+### 103.3-002 | unica | 2
+ref: 101:p.243-245
+tags: ls, -d
+Qual comando exibe os atributos do próprio diretório `/etc` (dono, permissões, data), e não a lista do seu conteúdo?
+= ls -ld /etc
+- ls -l /etc
+- ls -la /etc
+- ls -lR /etc
+> A opção `-d` faz o `ls` tratar o diretório como um item comum, sem listar o conteúdo. As demais mostram o que há dentro de `/etc`, incluindo ocultos (`-a`) ou subdiretórios (`-R`).
+
+### 103.3-003 | unica | 2
+ref: 101:p.243-245
+tags: ls, ordenação
+Qual comando lista os arquivos do diretório atual no formato longo, do modificado mais recentemente para o mais antigo?
+= ls -lt
+- ls -ltr
+- ls -lS
+- ls -lr
+> `-t` ordena por data de modificação, do mais novo para o mais velho. Com `-r` junto (`-ltr`), a ordem é invertida (o mais antigo primeiro). `-S` ordena por tamanho e `-r` sozinho inverte a ordem alfabética.
+
+### 103.3-004 | lacuna | 1
+ref: 101:p.244
+tags: ls, arquivos ocultos
+Qual opção do `ls` inclui na listagem os arquivos ocultos (nomes iniciados por ponto), inclusive as entradas `.` e `..`?
+
+`ls ____`
+= -a
+= --all
+> `ls -a` (`--all`) mostra tudo, incluindo `.` e `..`. A variante `-A` (`--almost-all`) mostra os ocultos, mas omite `.` e `..`.
+
+### 103.3-005 | unica | 1
+ref: 101:p.245
+tags: touch
+O que acontece quando se executa `touch relatorio.txt` e esse arquivo já existe, com conteúdo?
+= Os horários de acesso e modificação são atualizados e o conteúdo permanece
+- O arquivo é esvaziado e recriado do zero, ficando com o horário atual de criação
+- O comando falha informando que o arquivo já existe, sem alterar nada
+- É criada uma cópia chamada relatorio.txt~ com o horário atual e o conteúdo antigo
+> Se o arquivo não existe, `touch` o cria vazio; se existe, apenas atualiza os horários de acesso e de modificação para o momento atual, sem mexer no conteúdo. Para alterar só um dos horários, usam-se `-a` (acesso) ou `-m` (modificação).
+
+### 103.3-006 | lacuna | 2
+ref: 101:p.245
+tags: touch, -t
+Qual opção do `touch` permite definir um horário específico, no formato `[[CC]YY]MMDDhhmm[.ss]`, em vez do horário atual?
+
+`touch ____ 202501311530 relatorio.txt`
+= -t
+> `touch -t 202501311530 relatorio.txt` define o horário de modificação (e de acesso) como 31/01/2025, 15:30. Também existe `-d` para texto livre (`-d "2 days ago"`) e `-r` para copiar o horário de outro arquivo.
+
+### 103.3-007 | unica | 1
+ref: 101:p.248-249
+tags: mkdir, -p
+Qual comando cria a estrutura `projeto/src/lib` de uma só vez, mesmo que `projeto` ainda não exista?
+= mkdir -p projeto/src/lib
+- mkdir -m 755 projeto/src/lib
+- mkdir -r projeto/src/lib
+- mkdir -R projeto/src/lib
+> `-p` (`--parents`) cria também os diretórios intermediários que faltam. Sem ele, o `mkdir` falha com "No such file or directory"; `-m 755` só define as permissões e também falha se `projeto/src` não existir. `-r` e `-R` não são opções do `mkdir` (resultam em "invalid option").
+
+### 103.3-008 | unica | 2
+ref: 101:p.249
+tags: rmdir
+O que acontece ao executar `rmdir projeto` quando o diretório contém arquivos?
+= O comando falha com a mensagem "Directory not empty" e nada é removido
+- O diretório e todos os arquivos dentro dele são removidos
+- Apenas os arquivos são removidos, e o diretório vazio é mantido no disco
+- O comando pede confirmação e remove tudo se a resposta for sim
+> `rmdir` só remove diretórios vazios. Para apagar um diretório com conteúdo é preciso `rm -r` (ou esvaziá-lo antes). Com `rmdir -p a/b/c`, os diretórios `c`, `b` e `a` são removidos em sequência, desde que todos fiquem vazios.
+
+### 103.3-009 | multipla | 2
+ref: 101:p.250-252
+tags: rm, recursão
+Quais comandos removem o diretório `projeto` junto com todo o seu conteúdo?
+= rm -r projeto
+= rm -rf projeto
+= rm -R projeto
+- rmdir projeto
+- rm -d projeto
+> `-r` e `-R` (`--recursive`) fazem o `rm` descer pela árvore; `-f` apenas dispensa perguntas e avisos de arquivos inexistentes. `rmdir` e `rm -d` removem somente diretórios vazios, e falham com "Directory not empty" se houver conteúdo. Sem `-r`, `rm projeto` responde "Is a directory".
+
+### 103.3-010 | unica | 2
+ref: 101:p.251
+tags: cp, recursão
+`mydir` é um diretório com arquivos e subdiretórios. O que acontece com `cp mydir newcopy`, sem nenhuma opção?
+= O diretório é omitido com uma mensagem de erro, e nada é copiado
+- Apenas os arquivos de mydir são copiados, e os subdiretórios ficam de fora
+- Todo o conteúdo de mydir é copiado recursivamente para newcopy
+- Apenas é criado em newcopy um atalho (link) para mydir
+> Sem `-r` (ou `-R`, `-a`), o `cp` se recusa a copiar diretórios e avisa que o diretório foi omitido (nas versões atuais, "cp: -r not specified; omitting directory 'mydir'"). Para copiar a árvore inteira, use `cp -r mydir newcopy`.
+
+### 103.3-011 | unica | 3
+ref: 101:p.251
+tags: cp, -r
+O diretório `mydir` contém `file1` e `sub/file2`. O diretório `newcopy` já existe, mas `novo` não. Qual é o resultado de `cp -r mydir newcopy` e de `cp -r mydir novo`?
+= newcopy/mydir/... é criado, e novo passa a ser uma cópia de mydir
+- newcopy passa a ser uma cópia de mydir, e novo/mydir/... é criado
+- Ambos criam um subdiretório mydir dentro do destino, que é criado se necessário
+- Ambos mesclam o conteúdo de mydir diretamente dentro do destino
+> Se o destino já existe e é um diretório, o `cp -r` coloca a cópia dentro dele (`newcopy/mydir`). Se o destino não existe, ele é criado como cópia do diretório de origem (`novo/file1`, `novo/sub/file2`). O mesmo critério vale para `mv`.
+
+### 103.3-012 | unica | 3
+ref: 101:p.254
+tags: cp, curingas, arquivos ocultos
+Qual comando copia todo o conteúdo do diretório `origem`, inclusive os arquivos ocultos, para o diretório já existente `destino`?
+= cp -r origem/. destino
+- cp -r origem/* destino
+- cp -r origem destino
+- cp -r origem/*.* destino
+> O padrão `*` não casa com nomes iniciados por ponto, então `origem/*` deixa os ocultos para trás. `origem/.` representa o próprio diretório e leva tudo o que está dentro dele, ocultos incluídos. `cp -r origem destino` criaria `destino/origem`. `*.*` também não casa com nomes iniciados por ponto.
+
+### 103.3-013 | multipla | 2
+ref: 101:p.245-246, 101:p.251
+tags: cp, recursão
+Quais comandos copiam o diretório `projeto` e todo o seu conteúdo para `/backup`?
+= cp -r projeto /backup
+= cp -R projeto /backup
+= cp -a projeto /backup
+- cp projeto /backup
+- cp -f projeto /backup
+> `-r`, `-R` e `-a` são recursivos (o `-a` ainda preserva donos, permissões, horários e links). Sem opção recursiva, `cp` omite diretórios; `-f` apenas força a sobrescrita de destinos que não puderam ser abertos e não torna a cópia recursiva.
+
+### 103.3-014 | lacuna | 2
+ref: 101:p.245-246
+tags: cp, -i
+Qual opção do `cp` pede confirmação antes de sobrescrever um arquivo de destino que já existe?
+
+`cp ____ origem.txt destino.txt`
+= -i
+= --interactive
+> Com `-i`, o `cp` pergunta antes de sobrescrever (`cp: overwrite 'destino.txt'?`). O mesmo vale para `mv -i` e `rm -i` (neste, a pergunta é antes de remover). `-n` (`--no-clobber`) nunca sobrescreve, sem perguntar.
+
+### 103.3-015 | unica | 2
+ref: 101:p.246-247
+tags: mv, sobrescrever
+Os arquivos `a.txt` e `b.txt` existem. O que faz `mv a.txt b.txt`, sem nenhuma opção e sem nenhum alias definido para o `mv`?
+= Substitui b.txt pelo conteúdo de a.txt, sem perguntar, e a.txt deixa de existir
+- Pergunta se deve sobrescrever b.txt, e mantém o a.txt caso a resposta informada seja não
+- Falha informando que b.txt já existe, sem alterar nenhum dos arquivos
+- Troca os nomes dos arquivos entre si, preservando o conteúdo de ambos
+> Por padrão, o `mv` sobrescreve o destino sem avisar. Para pedir confirmação use `mv -i`, e para nunca sobrescrever, `mv -n`. A opção `-f` (padrão) força a sobrescrita sem perguntas. Atenção: em RHEL/CentOS/Fedora o `.bashrc` do root costuma definir `alias mv='mv -i'`, e então o root é questionado; sem esse alias, o comportamento é o descrito.
+
+### 103.3-016 | unica | 2
+ref: 101:p.246-247
+tags: mv, diretórios
+O diretório `d2` já existe e `d1` é outro diretório. O que faz `mv d1 d2`?
+= Move d1 para dentro de d2, que passa a conter o subdiretório d1
+- Substitui d2 por d1, apagando o conteúdo anterior de d2
+- Mescla o conteúdo de d1 diretamente dentro de d2 e remove d1
+- Renomeia d1 para d2 e preserva o d2 antigo com o nome d2.old, como backup
+> Quando o destino é um diretório existente, `mv` coloca a origem dentro dele (`d2/d1`). Só se `d2` não existisse é que o comando funcionaria como renomeação de `d1` para `d2`. O `mv` nunca cria cópias de segurança por padrão (isso exige `--backup`).
+
+### 103.3-017 | lacuna | 2
+ref: 101:p.263
+tags: mv, -t
+Qual opção do `mv` informa primeiro o diretório de destino, permitindo listar depois todos os arquivos a mover?
+
+`mv ____ animal/ dog cat`
+= -t
+= --target-directory
+> `mv -t animal/ dog cat` move `dog` e `cat` para `animal/`. A forma equivalente, com o destino no final, é `mv dog cat animal/`. A opção `-t` é útil em pipelines com `xargs`, nos quais os nomes de arquivo chegam ao final do comando.
+
+### 103.3-018 | unica | 3
+ref: 101:p.247-248
+tags: rm, nomes iniciados por hífen
+Existe um arquivo chamado `-relatorio` no diretório atual. Qual comando o remove?
+= rm -- -relatorio
+- rm "-relatorio"
+- rm \-relatorio
+- rm --force -relatorio
+> O `rm` interpreta qualquer argumento que começa com `-` como opção. O `--` marca o fim das opções (alternativa: `rm ./-relatorio`). Aspas e barra invertida são removidas pelo shell antes de o `rm` ser chamado, então o argumento continua sendo `-relatorio` e causa "invalid option".
+
+### 103.3-019 | unica | 2
+ref: 101:p.254-255
+tags: curingas, ?
+O diretório contém `last.txt`, `lest.txt`, `list.txt`, `lst.txt` e `past.txt`. Quais arquivos o comando `ls l?st.txt` mostra?
+= last.txt, lest.txt e list.txt
+- last.txt, lest.txt, list.txt e lst.txt
+- last.txt, lest.txt, list.txt e past.txt
+- Apenas list.txt
+> O `?` casa exatamente um caractere qualquer, então `l?st.txt` casa com `last.txt`, `lest.txt` e `list.txt`. `lst.txt` não casa, pois falta o caractere entre `l` e `st`; `past.txt` começa com `p`.
+
+### 103.3-020 | unica | 3
+ref: 101:p.255-256
+tags: curingas, colchetes
+O diretório contém `student-1A.txt`, `student-2A.txt`, `student-3.txt`, `student-10B.txt` e `student-1a.txt`. Quais arquivos o comando `ls student-[0-9][A-Z].txt` mostra?
+= student-1A.txt e student-2A.txt
+- student-1A.txt, student-2A.txt e student-10B.txt
+- student-1A.txt, student-2A.txt e student-1a.txt
+- Todos os cinco arquivos
+> Cada par de colchetes casa exatamente um caractere: um dígito, seguido de uma letra maiúscula. `student-10B.txt` tem dois dígitos, `student-1a.txt` tem letra minúscula, que não pertence ao intervalo `[A-Z]` e `student-3.txt` não tem letra.
+
+### 103.3-021 | unica | 3
+ref: 101:p.256
+tags: curingas, combinação
+O diretório contém `file1.txt`, `file.txt`, `file23.txt` e `fom23.txt`. Quais arquivos o comando `ls f*[0-9].txt` mostra?
+= file1.txt, file23.txt e fom23.txt
+- file.txt e file23.txt
+- Todos os quatro arquivos
+- file1.txt e file23.txt, apenas os que começam com file e terminam em dígito
+> O `*` casa zero ou mais caracteres e `[0-9]` exige um dígito logo antes de `.txt`. `file.txt` não tem dígito antes da extensão, e `fom23.txt` casa porque começa com `f` e termina em dígito + `.txt`.
+
+### 103.3-022 | unica | 2
+ref: 101:p.254-256
+tags: curingas, negação
+O diretório contém `a1`, `b1` e `c1`. O que mostra o comando `ls [!a]1`?
+= b1 e c1
+- a1
+- a1, b1 e c1
+- Nada, pois `!` é reservado para o histórico
+> Dentro de colchetes, `!` (ou `^`) no início nega o conjunto: `[!a]` casa com qualquer caractere diferente de `a`. Assim, `[!a]1` casa com `b1` e `c1`. Neste caso, o Bash não tenta expandir `!` como histórico dentro do padrão de colchetes, e o resultado é a lista correta.
+
+### 103.3-023 | unica | 3
+ref: 101:p.252-254
+tags: curingas, arquivos ocultos
+Em um diretório que contém somente `visivel.txt` e `.oculto.txt`, o que imprime `echo *.txt`?
+= visivel.txt
+- visivel.txt .oculto.txt
+- .oculto.txt
+- *.txt
+> O `*` não casa com um ponto inicial no nome; para incluir ocultos é preciso escrever o ponto explicitamente (`.*.txt`) ou usar `.[!.]*`. A string literal `*.txt` só seria impressa se nada casasse com o padrão.
+
+### 103.3-024 | unica | 3
+ref: 101:p.252-254
+tags: curingas, sem correspondência
+No Bash, com as configurações padrão, o que imprime `echo *.xyz` em um diretório sem nenhum arquivo `.xyz`?
+= *.xyz
+- Uma linha em branco
+- bash: no match found: *.xyz
+- Nada, e o comando termina com erro
+> Quando nenhum arquivo casa, o Bash deixa o padrão como está e o passa literalmente ao comando (o `echo` imprime `*.xyz`). Por isso `ls *.xyz` falha com "cannot access '*.xyz'". Mensagens como "no matches found" vêm do zsh, não do Bash, e `shopt -s nullglob` faria o padrão virar uma lista vazia.
+
+### 103.3-025 | multipla | 2
+ref: 101:p.253, 101:p.255-256
+tags: curingas, classes
+Quais padrões casam somente com nomes que começam com um dígito?
+= [0-9]*
+= [[:digit:]]*
+- [a-z]*
+- ?[0-9]*
+- *[0-9]
+> `[0-9]*` e `[[:digit:]]*` exigem um dígito na primeira posição, seguido de qualquer coisa. `[a-z]*` casa nomes que começam com letra minúscula, `?[0-9]*` exige o dígito na segunda posição, e `*[0-9]` casa nomes que terminam com dígito.
+
+### 103.3-026 | unica | 3
+ref: 101:p.265-266
+tags: find, curingas, aspas
+Em um diretório que contém `a.txt` e `b.txt`, qual é o resultado de `find /var -name *.txt`, sem aspas?
+= O shell expande `*.txt` antes; o find falha com "paths must precede expression"
+- Lista todos os arquivos `.txt` de /var e de seus subdiretórios, sem exceção
+- Lista somente `a.txt` e `b.txt`, caso existam em /var, ignorando os subdiretórios
+- Remove os arquivos `.txt` encontrados em /var, pois o padrão sem aspas é destrutivo
+> O shell expande `*.txt` para `a.txt b.txt` antes de executar o `find`, que então recebe `-name a.txt b.txt` e acusa um caminho depois da expressão. Sem arquivos `.txt` no diretório atual o padrão passaria intacto e funcionaria. Por isso se deve proteger o padrão: `find /var -name "*.txt"`.
+
+### 103.3-027 | unica | 3
+ref: 101:p.266-267
+tags: find, -mtime, -size
+Qual comando lista os arquivos regulares de `/var` com mais de 100 MiB e modificados nos últimos 7 dias?
+= find /var -type f -size +100M -mtime -7
+- find /var -type f -size +100M -mtime +7 -print
+- find /var -type f -size -100M -mtime -7
+- find /var -type f -size +100M -mtime 7
+> No `find`, `+n` significa "mais que n", `-n` "menos que n" e `n` "exatamente n". Em `-size +100M`, são arquivos maiores que 100 MiB; em `-mtime -7`, arquivos modificados há menos de 7 dias. `-mtime +7` seleciona os mais antigos que isso, e `-mtime 7` somente os modificados exatamente 7 períodos de 24 horas atrás.
+
+### 103.3-028 | lacuna | 2
+ref: 101:p.266-267
+tags: find, -mmin
+Qual teste do `find` seleciona arquivos modificados há menos de 30 minutos?
+
+`find /tmp -____ -30`
+= -mmin
+= mmin
+> `-mmin -30` usa minutos, enquanto `-mtime` conta períodos de 24 horas. Também existem `-amin` e `-cmin` (acesso e mudança de status/metadados).
+
+### 103.3-029 | multipla | 2
+ref: 101:p.267-268
+tags: find, -empty, -size
+Quais comandos listam arquivos regulares vazios (0 byte) a partir do diretório atual?
+= find . -type f -empty
+= find . -type f -size 0
+- find . -type f -size +0
+- find . -type d -empty
+- find . -type f -size 1c
+> `-empty` e `-size 0` (que equivale a `-size 0c`) selecionam arquivos de tamanho zero. `-size +0` seleciona justamente os que têm algum conteúdo, `-type d -empty` lista diretórios vazios, e `-size 1c` casa com arquivos de exatamente 1 byte.
+
+### 103.3-030 | unica | 2
+ref: 101:p.267-268
+tags: find, -size
+Qual comando lista os arquivos de `/var` maiores que 2 GiB?
+= find /var -size +2G
+- find /var -type f -size 2G
+- find /var -size -2G
+- find /var -size +2k
+> Os sufixos do `-size` são `c` (bytes), `k` (KiB), `M` (MiB) e `G` (GiB), e o sinal `+` significa "maior que". Sem sinal, o teste seria igualdade (com arredondamento), e com `-` seriam os menores. `+2k` seleciona arquivos maiores que 2 KiB.
+
+### 103.3-031 | lacuna | 1
+ref: 101:p.266
+tags: find, -type
+Qual valor de `-type` faz o `find` procurar apenas links simbólicos?
+
+`find / -type ____`
+= l
+> `-type f` seleciona arquivos regulares, `-type d` diretórios e `-type l` links simbólicos.
+
+### 103.3-032 | unica | 1
+ref: 101:p.266-267
+tags: find, -iname
+Os arquivos `Foto.PNG` e `a.png` existem no diretório atual. Qual comando lista os dois?
+= find . -iname '*.png'
+- find . -name '*.png'
+- find . -name '*.PNG'
+- find . -type f -name png
+> `-iname` ignora a diferença entre maiúsculas e minúsculas, ao contrário de `-name`, que a respeita. `-name '*.png'` encontra só `a.png`, e `-name '*.PNG'` só `Foto.PNG`.
+
+### 103.3-033 | lacuna | 1
+ref: 101:p.269
+tags: find, -delete
+Qual ação do `find` apaga diretamente os arquivos encontrados, sem usar `-exec`?
+
+`find . -name '*.bak' ____`
+= -delete
+> `-delete` remove os itens que satisfazem a expressão. Por segurança, convém executar antes o mesmo `find` sem a ação (ou com `-print`) para conferir o que será apagado.
+
+### 103.3-034 | unica | 3
+ref: 101:p.269
+tags: find, -delete, ordem
+Em `/tmp/lab` há `a.bak`, `b.txt` e um subdiretório com mais arquivos. O que faz `find /tmp/lab -delete -name '*.bak'`?
+= Apaga tudo em /tmp/lab, inclusive o próprio diretório, pois -delete é avaliado antes do teste
+- Apaga somente os arquivos `.bak` de todos os níveis, como se a ordem das opções fosse irrelevante para o find
+- Não apaga nada e mostra um erro, pois a ação deve ficar antes do teste
+- Apaga somente os arquivos `.bak` e todos os diretórios que ficarem vazios
+> O `find` avalia a expressão da esquerda para a direita. Como `-delete` vem antes de `-name`, ele é executado para todos os itens encontrados, e o teste por nome chega tarde demais. A forma segura é `find /tmp/lab -name '*.bak' -delete`, com o `-delete` no final.
+
+### 103.3-035 | unica | 2
+ref: 101:p.268-269
+tags: find, -exec
+Qual comando remove todos os arquivos `*.tmp` encontrados a partir do diretório atual, usando `-exec`?
+= find . -name '*.tmp' -exec rm {} \;
+- find . -name '*.tmp' -exec rm -v {} ;
+- find . -name '*.tmp' -exec rm \;
+- find . -name '*.tmp' | rm
+> No `-exec`, `{}` é substituído pelo nome de cada arquivo encontrado, e o comando termina em `;`, que precisa ser escapado (`\;`) para o shell não consumi-lo. Sem a barra, o `find` reclama de "missing argument to -exec". Sem `{}`, o `rm` seria chamado sem operandos, e `rm` não lê nomes de arquivo da entrada padrão, portanto o pipe não funciona.
+
+### 103.3-036 | unica | 3
+ref: 101:p.266-267
+tags: find, -maxdepth, -mindepth
+Qual comando lista somente os subdiretórios imediatos do diretório atual, sem incluir o próprio `.`?
+= find . -mindepth 1 -maxdepth 1 -type d
+- find . -maxdepth 1 -type d
+- find . -mindepth 1 -maxdepth 2 -type d
+- find . -mindepth 2 -maxdepth 2 -type d
+> `-maxdepth 1` limita a busca ao nível imediato, mas o ponto de partida (`.`) está no nível 0 e também seria listado; `-mindepth 1` o exclui. Com `-maxdepth 2`, a busca desce mais um nível e inclui os subdiretórios dos subdiretórios, e `-mindepth 2 -maxdepth 2` mostra apenas os diretórios do segundo nível.
+
+### 103.3-037 | unica | 1
+ref: 101:p.270
+tags: tar, listar
+Qual comando lista o conteúdo de `archive.tar` sem extraí-lo?
+= tar -tf archive.tar
+- tar -xf archive.tar
+- tar -cf archive.tar
+- tar -rf archive.tar
+> A operação `-t` (`--list`) lista os membros do pacote. `-x` extrai, `-c` cria (ou sobrescreve) um pacote e `-r` acrescenta arquivos ao final de um pacote existente.
+
+### 103.3-038 | unica | 2
+ref: 101:p.271
+tags: tar, -C
+Qual comando extrai o conteúdo de `archive.tar` no diretório `/tmp`?
+= tar -xvf archive.tar -C /tmp
+- tar -xvf archive.tar /tmp
+- tar -xzvf -C /tmp archive.tar
+- tar -cvf archive.tar -C /tmp
+> A opção `-C` muda o diretório de destino antes da extração. Em `tar -xvf archive.tar /tmp`, o `/tmp` seria entendido como o nome de um membro a extrair ("Not found in archive"). Em `-xvf -C ...`, o `-f` consome o argumento seguinte, e o tar tentaria abrir um arquivo chamado `-C`. `-cvf` cria um pacote, e não extrai.
+
+### 103.3-039 | unica | 3
+ref: 101:p.270-271
+tags: tar, extrair arquivo
+O pacote `archive.tar` contém `stuff/service.conf`. Qual comando extrai somente esse arquivo?
+= tar -xvf archive.tar stuff/service.conf
+- tar -xvf archive.tar service.conf
+- tar -xvf archive.tar -C stuff service.conf
+- tar -xvf stuff/service.conf archive.tar
+> Os nomes de membro informados na extração precisam coincidir com o caminho gravado no pacote, que você confere com `tar -tf`. Com `service.conf` apenas, o tar responde "Not found in archive". `-C stuff` não ajuda, pois o membro continua se chamando `stuff/service.conf`. Na última opção, o `-f` receberia `stuff/service.conf` como nome do pacote.
+
+### 103.3-040 | multipla | 2
+ref: 101:p.272
+tags: tar, compactação
+Quais comandos criam um pacote tar já compactado?
+= tar -czf a.tar.gz dir
+= tar -cjf a.tar.bz2 dir
+= tar -cJf a.tar.xz dir
+- tar -cvf a.tar.gz dir
+- tar -xzf a.tar.gz dir
+> `-z` compacta com gzip, `-j` com bzip2 e `-J` com xz. O nome do arquivo sozinho não compacta nada: `tar -cvf a.tar.gz dir` produz um tar comum, sem compressão, apenas com a extensão enganosa. `-xzf` extrai (operação `-x`).
+
+### 103.3-041 | unica | 2
+ref: 101:p.272, 101:p.278
+tags: tar, gzip, -z
+Um usuário executa `tar -cvf /home/frank/backup.tar.gz /home/frank/dir1`. O que ele obtém?
+= Um pacote tar sem compactação, apesar da extensão .tar.gz
+- Um pacote tar compactado com gzip, pois a extensão indica o formato
+- Um erro, pois a extensão .gz exige a opção -z para ser aceita
+- Um pacote compactado com gzip, que o tar detecta pela extensão
+> O `tar` não escolhe o algoritmo pela extensão do nome: sem `-z` (gzip), `-j` (bzip2) ou `-J` (xz) o pacote não é compactado, e o comando `file backup.tar.gz` revelaria "POSIX tar archive". A opção que faltava é `-z`.
+
+### 103.3-042 | unica | 3
+ref: 101:p.270-271
+tags: tar, caminho absoluto
+Qual é o comportamento padrão do GNU tar ao criar um pacote com `tar -cf abs.tar /tmp/dados/arq.txt`?
+= Remove a barra inicial dos nomes e avisa; o membro fica como tmp/dados/arq.txt
+- Grava /tmp/dados/arq.txt e, ao extrair, sobrescreve esse caminho absoluto
+- Recusa criar o pacote, pois caminhos absolutos só são aceitos com a opção -P
+- Grava somente arq.txt, descartando todo o caminho do diretório
+> Por segurança, o GNU tar elimina a barra inicial ("Removing leading `/' from member names"), de modo que a extração ocorra relativa ao diretório atual ou ao indicado em `-C`. Para manter o caminho absoluto, existe `-P` (`--absolute-names`).
+
+### 103.3-043 | unica | 2
+ref: 101:p.270
+tags: tar, acrescentar
+Qual comando acrescenta `novo.txt` ao final de um pacote `arquivo.tar` já existente, preservando os demais membros?
+= tar -rf arquivo.tar novo.txt
+- tar -cf arquivo.tar novo.txt
+- tar -xf arquivo.tar novo.txt
+- tar -tf arquivo.tar novo.txt
+> `-r` (`--append`) grava os arquivos no fim do pacote. `-c` criaria um novo pacote no lugar do antigo, que passaria a conter apenas `novo.txt`. `-x` extrai e `-t` lista. Observação: `-r` não funciona em pacotes compactados.
+
+### 103.3-044 | unica | 2
+ref: 101:p.273
+tags: cpio, extrair
+Qual comando extrai o conteúdo de `archive.cpio`, criando os diretórios necessários?
+= cpio -id < archive.cpio
+- cpio -o -v < archive.cpio
+- cpio -id archive.cpio
+- cpio -id > archive.cpio
+> No modo `-i` (copy-in), o `cpio` lê o pacote da entrada padrão, e `-d` cria os diretórios que faltarem. `-o` (copy-out) cria pacotes e leria uma lista de nomes. Em `cpio -id archive.cpio`, o argumento seria tratado como um padrão de nomes a extrair, e o `cpio` ficaria esperando o pacote na entrada padrão. Em `> archive.cpio`, o pacote seria sobrescrito.
+
+### 103.3-045 | unica | 3
+ref: 101:p.273
+tags: cpio, find, recursivo
+Qual comando cria `backup.cpio` com o diretório atual inteiro, incluindo os arquivos dos subdiretórios?
+= find . | cpio -o > backup.cpio
+- ls | cpio -o > backup.cpio
+- cpio -o . > backup.cpio
+- cpio -o < $(find .) > backup.cpio
+> O `cpio -o` não percorre diretórios: ele lê da entrada padrão a lista de nomes a arquivar, e `find .` gera a lista recursiva. Com `ls`, apenas os nomes do nível atual entram na lista; o subdiretório é gravado, mas sem o seu conteúdo. O `cpio` não aceita nomes de arquivo como argumentos ("Too many arguments").
+
+### 103.3-046 | lacuna | 2
+ref: 101:p.273
+tags: cpio, listar
+Qual opção do `cpio` lista o conteúdo de um pacote sem extraí-lo?
+
+`cpio ____ < archive.cpio`
+= -t
+= -it
+= --list
+> `cpio -t` (ou `-it`, com o modo explícito) mostra os nomes dos membros do pacote lido da entrada padrão, sem criar nenhum arquivo.
+
+### 103.3-047 | unica | 3
+ref: 101:p.273
+tags: cpio, modos
+Qual modo do `cpio` copia uma lista de arquivos recebida pela entrada padrão para outro diretório, sem criar um arquivo de pacote?
+= -p (pass-through)
+- -o (copy-out, cria um pacote)
+- -i (copy-in, extrai de um pacote)
+- -t (lista o conteúdo de um pacote)
+> O `cpio` tem três modos de operação: `-o` cria um pacote, `-i` extrai de um pacote e `-p` copia direto para um diretório, como em `find . | cpio -pdm /destino`. `-t` apenas lista o conteúdo de um pacote e funciona como variante do modo `-i`.
+
+### 103.3-048 | unica | 1
+ref: 101:p.273-274
+tags: dd, sintaxe
+Qual é a sintaxe correta do `dd` para copiar `entrada.img` para `/dev/sdb` usando blocos de 4096 bytes?
+= dd if=entrada.img of=/dev/sdb bs=4096
+- dd -if entrada.img -of /dev/sdb -bs 4096
+- dd --if=entrada.img --of=/dev/sdb --bs=4096
+- dd entrada.img /dev/sdb 4096
+> O `dd` usa a sintaxe `opção=valor`, sem hífens, ao contrário da maioria dos comandos GNU. `if=` indica o arquivo de entrada, `of=` o de saída e `bs=` o tamanho do bloco. Atenção: trocar `if` e `of` em um dispositivo sobrescreve o disco de origem.
+
+### 103.3-049 | lacuna | 1
+ref: 101:p.273
+tags: dd, if
+Qual parâmetro do `dd` indica o arquivo (ou dispositivo) de entrada?
+
+`dd ____=/dev/sda of=backup.dd`
+= if
+> `if` ("input file") é a origem, e `of` ("output file") é o destino. Sem eles, o `dd` lê a entrada padrão e escreve na saída padrão.
+
+### 103.3-050 | unica | 2
+ref: 101:p.273-274
+tags: dd, bs, count
+Qual será o tamanho do arquivo criado por `dd if=/dev/zero of=disco.img bs=1M count=10`?
+= 10 MiB (10485760 bytes)
+- 1 MiB (1048576 bytes)
+- 10 KiB (10240 bytes)
+- 10 blocos de 512 bytes (5120 bytes)
+> O `dd` copia `count` blocos de `bs` bytes cada: 10 blocos de 1 MiB, ou seja, 10 × 1048576 = 10485760 bytes. `/dev/zero` fornece bytes zero em quantidade ilimitada. Ele imprime `10+0 records in` e `10+0 records out` na saída de erro.
+
+### 103.3-051 | unica | 3
+ref: 101:p.273-274
+tags: dd, MBR, count
+Qual comando salva somente o primeiro setor (512 bytes) do disco `/dev/sda` no arquivo `mbr.bin`?
+= dd if=/dev/sda of=mbr.bin bs=512 count=1
+- dd if=mbr.bin of=/dev/sda bs=512 count=1
+- dd if=/dev/sda of=mbr.bin bs=512 count=1 skip=1
+- dd if=/dev/sda of=mbr.bin count=512
+> `bs=512 count=1` copia exatamente um bloco de 512 bytes. A segunda opção inverte entrada e saída e gravaria o arquivo sobre o disco. Com `skip=1`, o primeiro setor seria pulado e o comando salvaria o segundo. E `count=512` com o `bs` padrão (512 bytes) copiaria 512 blocos, ou seja, 256 KiB. Sem `count`, o `dd` copiaria o disco inteiro.
+
+### 103.3-052 | lacuna | 2
+ref: 101:p.274
+tags: dd, progresso
+Qual parâmetro faz o `dd` mostrar o andamento da cópia enquanto ela ocorre?
+
+`dd if=oldfile of=newfile ____`
+= status=progress
+> Por padrão, o `dd` só imprime o resumo ao terminar. Com `status=progress`, ele mostra periodicamente os bytes copiados e a velocidade.
+
+### 103.3-053 | unica | 2
+ref: 101:p.274
+tags: dd, conv
+Qual é a saída de `echo abc | dd conv=ucase 2>/dev/null`?
+= ABC
+- abc
+- Abc
+- 616263
+> `conv=ucase` converte o texto para maiúsculas durante a cópia (`conv=lcase` faz o inverso). As mensagens `records in/out` vão para a saída de erro, descartada aqui por `2>/dev/null`.
+
+### 103.3-054 | unica | 1
+ref: 101:p.272-273
+tags: gzip, compactação
+O que acontece com `arquivo.txt` quando se executa `gzip arquivo.txt`?
+= É substituído por arquivo.txt.gz, e o original deixa de existir
+- É compactado e fica guardado em arquivo.gz, mantendo o original
+- É compactado em arquivo.txt.gz, e o original permanece intacto no mesmo diretório
+- É apenas empacotado em arquivo.gz, sem nenhuma compactação
+> `gzip` cria `arquivo.txt.gz` e remove o original. Para manter o original, use `gzip -k` ou `gzip -c arquivo.txt > arquivo.txt.gz`. A extensão acrescentada é `.gz` sobre o nome completo, e `gunzip` faz o caminho inverso.
+
+### 103.3-055 | lacuna | 2
+ref: 101:p.272-273
+tags: gzip, -k
+Qual opção do `gzip` mantém o arquivo original depois de criar o arquivo compactado?
+
+`gzip ____ arquivo.txt`
+= -k
+= --keep
+> Com `-k` (`--keep`), o `gzip` não remove o arquivo de origem. A mesma opção existe em `bzip2` e `xz`.
+
+### 103.3-056 | unica | 1
+ref: 101:p.272-273
+tags: xz, compactação
+Qual comando gera o arquivo `dados.txt.xz` a partir de `dados.txt`?
+= xz dados.txt
+- gzip dados.txt
+- bzip2 dados.txt
+- unxz dados.txt
+> Cada compactador acrescenta a sua extensão: `gzip` gera `.gz`, `bzip2` gera `.bz2` e `xz` gera `.xz`. `unxz` faz o contrário (equivale a `xz -d`), então só funciona com arquivos `.xz` existentes.
+
+### 103.3-057 | unica | 2
+ref: 101:p.272-273
+tags: bunzip2, bzip2
+Qual comando restaura `relatorio.txt` a partir de `relatorio.txt.bz2`, removendo o arquivo `.bz2`?
+= bunzip2 relatorio.txt.bz2
+- gunzip -d relatorio.txt.bz2
+- unxz relatorio.txt.bz2
+- bzip2 relatorio.txt.bz2
+> `bunzip2` (equivalente a `bzip2 -d`) descompacta arquivos `.bz2`. `gunzip` serve para `.gz`, e `unxz` para `.xz`. `bzip2 relatorio.txt.bz2` tentaria compactar de novo o arquivo, e acusaria que ele já possui a extensão `.bz2`.
+
+### 103.3-058 | unica | 3
+ref: 101:p.272-273
+tags: bunzip2, erro
+O que acontece ao executar `bunzip2 dados.txt.gz` em um arquivo realmente compactado com gzip?
+= O bunzip2 informa que não é um arquivo bzip2 e deixa dados.txt.gz intacto
+- Ele detecta o formato gzip sozinho, descompacta o arquivo e remove dados.txt.gz do disco
+- Ele descompacta dados.txt.gz e mantém o original compactado
+- Ele converte dados.txt.gz para o formato bzip2, gerando dados.txt.bz2
+> Cada utilitário só entende o seu formato: `bunzip2: dados.txt.gz is not a bzip2 file`. Para esse arquivo seria `gunzip dados.txt.gz`. O `file dados.txt.gz` confirmaria o formato real ("gzip compressed data").
+
+### 103.3-059 | unica | 2
+ref: 101:p.242, 101:p.272-273
+tags: file, tipo de arquivo
+O arquivo `nota.txt` foi criado com `echo oi | gzip > nota.txt`. O que mostra `file nota.txt`?
+= nota.txt: gzip compressed data
+- nota.txt: ASCII text, with CRLF line terminators
+- nota.txt: POSIX tar archive (GNU)
+- nota.txt: Bourne-Again shell script, ASCII text executable
+> O `file` identifica o tipo pelo conteúdo (números mágicos), e não pela extensão. Apesar do nome `.txt`, os dois primeiros bytes são os do formato gzip. Isso o torna útil para descobrir qual comando (`zcat`, `bzcat`, `xzcat`) usar em um arquivo desconhecido.
+
+### 103.3-060 | multipla | 2
+ref: 101:p.272-273
+tags: gunzip, gzip -d
+Quais comandos restauram `dados.txt` a partir de `dados.txt.gz`, removendo o arquivo `.gz`?
+= gunzip dados.txt.gz
+= gzip -d dados.txt.gz
+- zcat dados.txt.gz
+- bunzip2 dados.txt.gz
+- unxz dados.txt.gz
+> `gunzip` é equivalente a `gzip -d`. `zcat` apenas escreve o conteúdo descompactado na saída padrão, sem criar `dados.txt` nem remover o `.gz`. `bunzip2` e `unxz` são para outros formatos e recusam o arquivo.
+
+### 103.3-061 | unica | 2
+ref: 101:p.272-273
+tags: bzip2, -k
+Qual comando cria `log.txt.bz2` a partir de `log.txt` e mantém o arquivo original `log.txt`?
+= bzip2 -k log.txt
+- bzip2 log.txt
+- bunzip2 -k log.txt
+- bzcat log.txt > log.txt.bz2
+> O `bzip2` substitui o original pelo `.bz2`; com `-k` (`--keep`), o original permanece. `bunzip2` descompacta (com `log.txt` não compactado, daria erro). `bzcat` também só descompacta, então `bzcat log.txt` reclamaria que o arquivo não está no formato bzip2.
+
+### 103.3-062 | unica | 1
+ref: 101:p.272-273
+tags: unxz, xz
+Qual comando descompacta `backup.tar.xz`, gerando `backup.tar` e removendo o arquivo `.xz`?
+= unxz backup.tar.xz
+- xz backup.tar.xz
+- xzcat backup.tar.xz
+- gunzip backup.tar.xz
+> `unxz` é equivalente a `xz -d`. Já `xz backup.tar.xz` tentaria compactar de novo e avisaria que o arquivo já tem o sufixo `.xz`. O `xzcat` apenas escreve o conteúdo descompactado na saída padrão, sem remover o `.xz`. O `gunzip` não reconhece o sufixo `.xz`.
+
+### 103.3-063 | lacuna | 1
+ref: 101:p.247-248
+tags: rm, -i
+Qual opção do `rm` pede confirmação antes de remover cada arquivo?
+
+`rm ____ arquivo.txt`
+= -i
+= --interactive
+> Com `-i`, o `rm` pergunta antes de cada remoção (`rm: remove regular file 'arquivo.txt'?`). Com `-f`, ele nunca pergunta e ignora arquivos inexistentes.
+
+### 103.3-064 | unica | 1
+ref: 101:p.250
+tags: ls, -R, recursão
+O diretório `pr` contém o arquivo `a.txt` e o subdiretório `sub`, que contém `b.txt`. Qual comando lista o conteúdo de `pr` e também o de `sub`?
+= ls -R pr
+- ls -lah pr
+- ls -d pr/*
+- ls -ld pr
+> `-R` (`--recursive`) lista o diretório e desce por todos os subdiretórios, mostrando um bloco para cada um. `ls -lah pr` lista só o nível de `pr` (com ocultos e tamanhos legíveis), `ls -d pr/*` mostra os nomes `pr/a.txt` e `pr/sub` sem entrar em `sub`, e `ls -ld pr` mostra os atributos do próprio `pr`.
+
+### 103.3-065 | unica | 2
+ref: 101:p.246-247
+tags: mv, cp, ln
+Qual comando renomeia `velho.txt` para `novo.txt` no mesmo diretório, sem manter o nome antigo?
+= mv velho.txt novo.txt
+- cp velho.txt novo.txt
+- ln velho.txt novo.txt
+- touch velho.txt novo.txt
+> Renomear é o uso de `mv` com origem e destino no mesmo diretório. `cp` duplica o arquivo e mantém `velho.txt`; `ln` cria um segundo nome (hard link) para o mesmo conteúdo, e `velho.txt` continua existindo; `touch` apenas cria ou atualiza arquivos.
+
+### 103.3-066 | unica | 2
+ref: 101:p.245-246
+tags: cp, vários arquivos
+`c.txt` é um arquivo regular, e não um diretório. O que acontece ao executar `cp a.txt b.txt c.txt`?
+= O cp falha, pois com vários arquivos de origem o último argumento deve ser um diretório
+- O conteúdo de a.txt e b.txt é concatenado e gravado em c.txt
+- O cp copia a.txt para b.txt e depois b.txt para c.txt
+- O cp sobrescreve c.txt com a.txt e ignora b.txt
+> Quando há mais de uma origem, o `cp` considera o último argumento o diretório de destino e acusa "Not a directory" se não for. Para copiar vários arquivos, usa-se `cp a.txt b.txt c.txt diretorio/`; para concatenar, `cat a.txt b.txt > c.txt`.
+
+### 103.3-067 | lacuna | 1
+ref: 101:p.250-251
+tags: cp, recursão
+Qual opção do `cp`, em letra minúscula, faz com que ele copie diretórios com todo o seu conteúdo?
+
+`cp ____ origem destino`
+= -r
+= --recursive
+> `cp -r` (também `-R` ou `--recursive`) percorre a árvore do diretório de origem. Sem ela, o `cp` omite diretórios. O `-a` (archive) também é recursivo, mas ainda preserva atributos.
+
+### 103.3-068 | lacuna | 1
+ref: 101:p.245
+tags: touch
+Qual comando cria um arquivo vazio, caso ele não exista, ou apenas atualiza seus horários, caso já exista?
+
+`____ anotacoes.txt`
+= touch
+> `touch` cria arquivos vazios e atualiza os carimbos de data/hora de arquivos e diretórios existentes.
+
+### 103.3-069 | lacuna | 1
+ref: 101:p.249
+tags: rmdir
+Qual comando remove um diretório somente se ele estiver vazio?
+
+`____ projeto`
+= rmdir
+> `rmdir` falha com "Directory not empty" se houver qualquer conteúdo no diretório. Para remover diretórios com conteúdo é necessário `rm -r`.
+
+### 103.3-070 | lacuna | 2
+ref: 101:p.271
+tags: tar, -C
+Qual opção do `tar` define o diretório de destino da extração?
+
+`tar -xvf archive.tar ____ /tmp`
+= -C
+= --directory
+> `-C /tmp` muda para `/tmp` antes de extrair. Deve vir depois do `-f archive.tar` (o `-f` precisa receber o nome do pacote logo em seguida).
+
+### 103.3-071 | lacuna | 1
+ref: 101:p.273
+tags: dd, of
+Qual parâmetro do `dd` indica o arquivo (ou dispositivo) de saída?
+
+`dd if=/dev/sda ____=backup.dd bs=4096`
+= of
+> `of` ("output file") é o destino da cópia. Tome cuidado: apontar `of=` para o dispositivo errado sobrescreve os dados dele.

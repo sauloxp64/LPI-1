@@ -1,0 +1,297 @@
+### 104.6-001 | unica | 1
+ref: 101:p.531-532
+tags: ln, link simbólico
+Qual comando cria, no diretório atual, um link simbólico chamado `atalho` que aponta para `/etc/os-release`?
+- ln /etc/os-release atalho
+- ln -s atalho /etc/os-release
+= ln -s /etc/os-release atalho
+- ln -s /etc/os-release
+> A sintaxe é `ln -s ALVO NOME_DO_LINK`: primeiro o alvo (o que já existe), depois o nome do link a criar.
+> `ln /etc/os-release atalho` (sem `-s`) cria um hardlink, não um link simbólico.
+> `ln -s atalho /etc/os-release` inverte os argumentos: tentaria criar um link chamado `/etc/os-release`, que já existe, e falharia com "File exists".
+> `ln -s /etc/os-release` cria um link simbólico, mas com o nome `os-release` no diretório atual, e não `atalho`.
+
+### 104.6-002 | lacuna | 1
+ref: 101:p.531-532
+tags: ln, opção -s
+Complete o comando para que ele crie um link **simbólico** em vez de um hardlink:
+
+```
+$ ln ____ /var/www/site /srv/site
+```
+= -s
+= --symbolic
+> `ln -s` (ou `ln --symbolic`) cria um link simbólico. Sem essa opção, `ln` cria um hardlink, que só funciona para arquivos regulares e dentro do mesmo sistema de arquivos.
+
+### 104.6-003 | unica | 2
+ref: 101:p.530-531, 101:p.540
+tags: hardlink, link simbólico, rm
+Observe os comandos executados em um diretório vazio:
+
+```
+$ echo dados > orig
+$ ln orig hard
+$ ln -s orig soft
+$ rm orig
+```
+
+O que acontece depois ao executar `cat hard` e `cat soft`?
+- Os dois exibem `dados`, pois ambos apontam para os mesmos dados no disco
+- `cat hard` falha e `cat soft` exibe `dados`, pois o link simbólico guarda uma cópia
+= `cat hard` exibe `dados` e `cat soft` falha com "No such file or directory"
+- Os dois falham, pois o inode é liberado quando o nome original é removido
+> O hardlink `hard` é só outro nome para o mesmo inode. O `rm orig` remove apenas um dos nomes, e os dados continuam acessíveis enquanto houver pelo menos um nome apontando para o inode.
+> O link simbólico `soft` guarda apenas o caminho `orig`. Como esse nome não existe mais, o link fica "quebrado" e o `cat` falha.
+> Um link simbólico não guarda cópia do conteúdo. Os dados só são liberados quando o contador de links do inode chega a zero, o que não ocorreu com `hard` ainda existindo.
+
+### 104.6-004 | unica | 2
+ref: 101:p.531, 101:p.541
+tags: hardlink, contagem de links, ls -l
+Considere a sequência de comandos:
+
+```
+$ echo teste > relatorio.txt
+$ ln relatorio.txt bkp1.txt
+$ ln -s relatorio.txt bkp2.txt
+$ ln relatorio.txt bkp3.txt
+```
+
+Qual valor aparece na coluna de contagem de links (logo após as permissões) para `relatorio.txt` em `ls -l`?
+- 1
+- 2
+= 3
+- 4
+> Todo arquivo começa com contagem 1. Cada hardlink criado (`bkp1.txt` e `bkp3.txt`) soma 1, resultando em 3.
+> O link simbólico `bkp2.txt` não altera a contagem, pois é um arquivo à parte que apenas guarda o caminho do alvo. Por isso 4 está errado.
+> Os valores 1 e 2 desconsideram um ou ambos os hardlinks.
+
+### 104.6-005 | lacuna | 1
+ref: 101:p.531, 101:p.541
+tags: ls, inode
+Qual opção do `ls` exibe o número do inode de cada arquivo (por exemplo, `ls -l ____`)?
+= -i
+= --inode
+> A opção `-i` (ou `--inode`) imprime o número do inode na primeira coluna. Dois nomes com o mesmo inode, no mesmo sistema de arquivos, são hardlinks do mesmo arquivo.
+
+### 104.6-006 | unica | 2
+ref: 101:p.531, 101:p.540
+tags: hardlink, sistemas de arquivos, erro
+Um administrador executa o comando abaixo, sabendo que `/dev/shm` é um sistema de arquivos `tmpfs` separado do sistema de arquivos raiz:
+
+```
+# ln /etc/passwd /dev/shm/passwd.bak
+ln: failed to create hard link '/dev/shm/passwd.bak' => '/etc/passwd': Invalid cross-device link
+```
+
+Qual é a causa do erro e a alternativa disponível com `ln`?
+- Falta permissão de escrita em `/dev/shm`; usar `ln -f` para forçar a criação
+= Hardlinks não atravessam sistemas de arquivos; usar um link simbólico com `ln -s`
+- O arquivo `/etc/passwd` pertence ao root; usar `ln -u` para criar o link como outro usuário
+- O alvo de um hardlink precisa estar em um diretório vazio; esvaziar `/dev/shm` antes
+> Um hardlink é uma entrada que aponta para um inode, e números de inode só têm significado dentro de um mesmo sistema de arquivos. Entre dispositivos diferentes, o erro é "Invalid cross-device link".
+> A solução é o link simbólico (`ln -s /etc/passwd /dev/shm/passwd.bak`), que guarda apenas o caminho e pode atravessar partições e sistemas de arquivos.
+> `-f` só remove destinos já existentes e não contorna a restrição. O `ln` não tem opção `-u` para isso, e não há exigência de diretório vazio.
+
+### 104.6-007 | unica | 3
+ref: 101:p.532-533, 101:p.542
+tags: link simbólico, caminho relativo, mv
+Em `~/docs` existe o arquivo `notas.txt` com o texto `raiz`. Dentro de `~/docs/sub` existe outro `notas.txt` com o texto `sub`. Os comandos a seguir são executados:
+
+```
+$ cd ~/docs/sub
+$ ln -s notas.txt atalho
+$ mv atalho ..
+$ cd ..
+$ cat atalho
+```
+
+O que `cat atalho` exibe?
+- sub
+- O link continua apontando para `~/docs/sub/notas.txt` e exibe `sub`, pois o `mv` não altera o alvo
+= raiz
+- cat: atalho: No such file or directory
+> O alvo foi gravado como `notas.txt`, um caminho relativo, que é interpretado a partir do diretório onde o link está. Depois do `mv`, o link está em `~/docs`, onde existe outro `notas.txt` (com `raiz`), e é esse que é lido.
+> O erro "No such file or directory" ocorreria se não houvesse um `notas.txt` em `~/docs`. Aqui há uma coincidência de nomes.
+> Para evitar o problema, crie links simbólicos com o caminho completo do alvo (por exemplo, `ln -s ~/docs/sub/notas.txt atalho`).
+
+### 104.6-008 | unica | 2
+ref: 101:p.532-533
+tags: link simbólico, caminho relativo, quebrado
+O administrador cria o link `current` e o move para outro diretório:
+
+```
+$ cd /srv/app
+$ ln -s releases/v2 current
+$ mv current /opt/current
+```
+
+Considerando que `/opt/releases/v2` não existe, qual é o resultado?
+= O link continua existindo, mas fica quebrado: `releases/v2` passa a ser resolvido a partir de `/opt`
+- O link continua funcionando, pois o `ln` gravou o alvo como caminho absoluto no momento da criação
+- O `mv` falha, pois o sistema não permite mover um link simbólico para fora do diretório do alvo
+- O link é removido automaticamente pelo sistema, porque o diretório onde ele foi criado mudou
+> O alvo `releases/v2` foi gravado como caminho relativo e é resolvido em relação ao diretório do link. Depois do `mv`, o link permanece, e `ls -l /opt/current` ainda mostra `-> releases/v2`, mas aponta para algo inexistente.
+> Links simbólicos podem ser movidos e renomeados com `mv`, como arquivos comuns, e nunca são removidos sozinhos.
+> O caminho só seria absoluto se tivesse sido criado com `ln -s /srv/app/releases/v2 current`.
+
+### 104.6-009 | unica | 3
+ref: 101:p.531, 101:p.541
+tags: hardlink, ls -li, inode, interpretar saída
+Observe a saída de um diretório:
+
+```
+$ ls -li
+131100 -rw-r--r-- 2 ana ana 1024 Mar  3 10:00 a.txt
+131100 -rw-r--r-- 2 ana ana 1024 Mar  3 10:00 b.txt
+131107 lrwxrwxrwx 1 ana ana    5 Mar  3 10:05 c.txt -> a.txt
+131120 -rw-r--r-- 1 ana ana 1024 Mar  3 10:07 d.txt
+```
+
+Qual conclusão é correta?
+- `c.txt` e `a.txt` são hardlinks um do outro, pois `c.txt` aponta para `a.txt`
+- `d.txt` é hardlink de `a.txt`, pois os dois arquivos têm exatamente o mesmo tamanho
+= `a.txt` e `b.txt` são o mesmo arquivo; `c.txt` é link simbólico; `d.txt` é independente
+- `b.txt` é uma cópia de `a.txt`, pois os dois ocupam 1024 bytes cada e têm a mesma data
+> O mesmo número de inode (131100) e a contagem de links 2 mostram que `a.txt` e `b.txt` são dois nomes para o mesmo arquivo (hardlinks).
+> `c.txt` começa com `l` e exibe `-> a.txt`, ou seja, é um link simbólico com inode próprio (131107) e contagem 1.
+> `d.txt` tem inode diferente e contagem 1, portanto é um arquivo independente (possivelmente uma cópia). Tamanho igual não prova nada: cópias também têm o mesmo tamanho, mas ocupam inodes diferentes.
+
+### 104.6-010 | multipla | 2
+ref: 101:p.530-531
+tags: hardlink, características
+Quais afirmações sobre hardlinks no Linux são verdadeiras?
+= Todos os nomes têm o mesmo número de inode
+= Só podem ser criados dentro do mesmo sistema de arquivos do alvo
+= Remover um dos nomes não apaga os dados enquanto existir outro nome para o arquivo
+- Podem ser criados para diretórios por qualquer usuário, como os links simbólicos
+- Deixam de funcionar quando o nome original é renomeado com `mv`
+- Aparecem em `ls -l` com a letra `l` no início das permissões
+> Hardlinks são entradas adicionais que apontam para o mesmo inode. Por isso compartilham o inode, só valem dentro de um mesmo sistema de arquivos e a remoção de um nome não libera os dados enquanto restar outro.
+> Hardlinks de diretórios não são permitidos (o `ln` responde "hard link not allowed for directory"). Links simbólicos é que podem apontar para diretórios.
+> Renomear um dos nomes não afeta os demais, pois todos referenciam o inode, e não o nome. É o link simbólico que quebra quando o nome do alvo muda.
+> A letra `l` identifica links simbólicos. Um hardlink é exibido como arquivo regular (`-`).
+
+### 104.6-011 | multipla | 2
+ref: 101:p.532
+tags: link simbólico, identificar, ls, file, find
+Quais comandos permitem reconhecer que `x` é um link simbólico?
+= `ls -l x`
+= `file x`
+= `find . -maxdepth 1 -name x -type l`
+- `ls -i x`
+- `ls -a x`
+> `ls -l` mostra `l` como primeiro caractere das permissões e a seta `x -> alvo`. O `file` informa "symbolic link to ...". O `find` com `-type l` seleciona apenas links simbólicos.
+> `ls -i` mostra somente o número do inode e `ls -a` apenas inclui arquivos ocultos. Nenhum dos dois distingue um link simbólico de um arquivo comum.
+
+### 104.6-012 | unica | 2
+ref: 101:p.532, 101:p.543
+tags: link simbólico, permissões
+O usuário `aluno` cria um link para um arquivo que só o root e o grupo `shadow` podem ler:
+
+```
+$ ln -s /etc/shadow x
+$ ls -l x
+lrwxrwxrwx 1 aluno aluno 11 Oct 19 17:33 x -> /etc/shadow
+$ cat x
+cat: x: Permission denied
+```
+
+Por que `cat x` falha apesar de o link exibir `rwxrwxrwx`?
+- O usuário comum precisa de `chmod 777` no alvo para que o link funcione
+- Links simbólicos só podem ser lidos pelo root, independentemente das permissões exibidas
+- O `cat` não segue links simbólicos, e por isso precisa receber o caminho `/etc/shadow` diretamente
+= O acesso é decidido pelas permissões do alvo (`/etc/shadow`); o `rwxrwxrwx` do link não é usado
+> Em `ls -l`, links simbólicos sempre aparecem com `rwxrwxrwx`, mas essas permissões não controlam nada. Ao abrir o link, o kernel resolve o caminho e aplica as permissões do arquivo de destino.
+> O `cat` segue links simbólicos normalmente (o erro vem de o destino negar a leitura), e conceder `chmod 777` ao `/etc/shadow` seria um grave erro de segurança.
+
+### 104.6-013 | unica | 3
+ref: 101:p.532
+tags: link simbólico, ls -l, tamanho
+Em um diretório, o comando `ln -s original.txt softlink` foi executado. Em seguida:
+
+```
+$ ls -l softlink
+lrwxrwxrwx 1 carol carol 12 Jun  7 19:23 softlink -> original.txt
+```
+
+O que representa o número `12` nessa saída?
+- A contagem de hardlinks que o arquivo `original.txt` possui no sistema de arquivos
+- O tamanho, em bytes, do conteúdo do arquivo `original.txt` para o qual o link aponta
+= O número de caracteres do caminho do alvo, gravado dentro do link
+- A quantidade de blocos de disco que o sistema reservou para armazenar o link simbólico
+> O conteúdo de um link simbólico é apenas o caminho do alvo, e o tamanho exibido por `ls -l` é o comprimento desse caminho. `original.txt` tem 12 caracteres.
+> A contagem de links vem logo após as permissões (aqui é `1`). O tamanho do arquivo de destino não aparece na linha do link, e o valor exibido não é um número de blocos.
+
+### 104.6-014 | unica | 2
+ref: 101:p.530, 101:p.532
+tags: ln, argumento omitido
+No diretório `~/bin`, o usuário executa:
+
+```
+$ ln -s /usr/share/doc/dpkg/copyright
+```
+
+Qual é o resultado?
+- O comando falha com erro de sintaxe, pois o nome do link é um argumento obrigatório do `ln`
+- Um hardlink chamado `copyright` é criado em `~/bin`, ligado ao arquivo em `/usr/share/doc/dpkg`
+- É criado, em `/usr/share/doc/dpkg`, um link simbólico chamado `copyright` que aponta para `~/bin`
+= Cria `~/bin/copyright -> /usr/share/doc/dpkg/copyright`, um link simbólico
+> Quando o último argumento (nome do link) é omitido, `ln` cria o link no diretório atual com o mesmo nome base do alvo. Com `-s`, o resultado é um link simbólico.
+> Sem `-s` seria criado um hardlink (e, neste caso, só se estivessem no mesmo sistema de arquivos). O destino do link é sempre o diretório atual, nunca o diretório do alvo.
+
+### 104.6-015 | unica | 2
+ref: 101:p.539
+tags: cópia, hardlink, cp
+Observe a sequência executada em um diretório vazio:
+
+```
+$ echo um > o
+$ cp o copia
+$ ln o hl
+$ echo dois >> o
+```
+
+Qual será o conteúdo de `copia` e de `hl`?
+- `copia` tem as linhas `um` e `dois`, e `hl` tem apenas a linha `um`
+- Os dois arquivos continuam com apenas a linha `um`, pois `o` foi alterado
+- Os dois arquivos passam a ter as linhas `um` e `dois`, porque ambos acompanham `o`
+= `copia` tem apenas `um`; `hl` tem `um` e `dois`
+> `cp` cria um arquivo novo e independente (outro inode), então as alterações posteriores em `o` não o afetam. `hl` é só outro nome para o mesmo inode de `o`, por isso reflete a alteração.
+> Esse é o ponto principal da diferença entre copiar e criar um hardlink: a cópia ocupa espaço próprio em disco, e o hardlink não.
+
+### 104.6-016 | lacuna | 2
+ref: 101:p.530-531
+tags: contagem de links, diretório
+Um diretório recém-criado e vazio, listado com `ls -ld`, exibe qual valor na coluna de contagem de links?
+= 2
+> Todo diretório já nasce com 2 links: o nome dele no diretório pai e a entrada `.` dentro dele. Cada subdiretório criado aumenta a contagem em 1, por causa da entrada `..`. Arquivos regulares começam com contagem 1.
+
+### 104.6-017 | unica | 2
+ref: 101:p.531-532
+tags: ln, administração, atualizar link
+O link `/usr/local/bin/py` já existe e aponta para `/usr/bin/python3`. O administrador precisa fazer com que ele passe a apontar para `/usr/bin/python3.12`. Qual comando faz isso em uma única etapa?
+- ln -s /usr/bin/python3.12 /usr/local/bin/py
+- ln -sv /usr/bin/python3.12 /usr/local/bin/py
+= ln -sf /usr/bin/python3.12 /usr/local/bin/py
+- ln -s -r /usr/bin/python3.12 /usr/local/bin/py
+> Com `-f` (force), `ln` remove o destino já existente antes de criar o novo link, atualizando-o. É uma prática comum para manter nomes genéricos (como `py` ou `current`) apontando para a versão em uso.
+> Sem `-f`, o `ln` falha com "File exists". `-v` apenas exibe mensagens, e `-r` cria o link com caminho relativo. Nenhum dos dois substitui um link existente.
+
+### 104.6-018 | unica | 3
+ref: 101:p.530-532
+tags: ln, diretório, administração, partições
+O diretório `/opt/app` está em uma partição separada e precisa ficar acessível também em `/srv/app`. Qual comando resolve isso?
+- ln /opt/app /srv/app
+= ln -s /opt/app /srv/app
+- ln -sf /srv/app /opt/app
+- ln -d /opt/app /srv/app
+> Um link simbólico pode apontar para diretórios e atravessar partições. `ln -s /opt/app /srv/app` cria `/srv/app -> /opt/app`.
+> Sem `-s`, o `ln` tenta criar um hardlink de diretório, que não é permitido ("hard link not allowed for directory").
+> `ln -sf /srv/app /opt/app` inverte os argumentos. Como `/opt/app` é um diretório existente, o `ln` criaria o link `/opt/app/app -> /srv/app` (dentro dele), no sentido oposto ao desejado. `-d` só serve para o superusuário tentar hardlinks de diretórios, e o kernel Linux recusa a operação ("Operation not permitted").
+
+### 104.6-019 | lacuna | 1
+ref: 101:p.532
+tags: link simbólico, ls -l
+Qual é a letra que aparece como primeiro caractere das permissões, em `ls -l`, para identificar um link simbólico?
+= l
+> Em `ls -l`, o primeiro caractere indica o tipo do arquivo: `-` para arquivo regular, `d` para diretório e `l` para link simbólico. Hardlinks aparecem como arquivos regulares (`-`).

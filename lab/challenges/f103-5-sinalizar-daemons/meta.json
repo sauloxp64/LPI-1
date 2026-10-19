@@ -1,0 +1,51 @@
+{
+  "id": "f103-5-sinalizar-daemons",
+  "obj": "103.5",
+  "titulo": "Sinais certos para os processos certos",
+  "nivel": 2,
+  "minutos": 6,
+  "params": {
+    "d1": {
+      "escolha": [
+        "coletor",
+        "agendador",
+        "relayd",
+        "filad",
+        "cachemgr",
+        "auditor",
+        "indexador",
+        "notificad"
+      ]
+    },
+    "d2": {
+      "escolha": [
+        "sincronizad",
+        "faturad",
+        "exportad",
+        "metricsd",
+        "limpad",
+        "rotulad"
+      ]
+    }
+  },
+  "distintos": [
+    [
+      "d1",
+      "d2"
+    ]
+  ],
+  "enunciado": "Três serviços foram iniciados em segundo plano neste laboratório e rodam como **root** (por isso você vai precisar de `sudo`): **`{d1}`**, **`{d1}-aux`** (um auxiliar do primeiro) e **`{d2}`**. Cada um registra no seu log, em `~/lab/f103-5-sinalizar-daemons/logs/`, os sinais que recebe.\n\nVocê precisa:\n\n1. fazer **`{d1}` reler a sua configuração**, **sem encerrá-lo** e sem reiniciá-lo (o mesmo processo continua rodando);\n2. pedir que **`{d2}` termine normalmente** (encerramento educado, que lhe permite fechar com calma — sem forçar);\n3. **não mexer** em `{d1}-aux` (cuidado: o nome dele contém o nome de `{d1}`).\n\nOs PIDs não foram informados: descubra-os.",
+  "verifica": [
+    "`{d1}` continua em execução (mesmo PID) e registrou o recebimento do sinal de recarga de configuração",
+    "`{d2}` foi encerrado após receber o pedido educado de término (e não por um sinal que não pode ser tratado)",
+    "`{d1}-aux` continua em execução e não recebeu nenhum sinal",
+    "`{d1}` não recebeu o sinal de término"
+  ],
+  "dicas": [
+    "Liste os processos com `ps aux` ou `ps -e`, ou procure por nome com `pgrep`. Observe que `{d1}` e `{d1}-aux` têm nomes parecidos.",
+    "Sinais têm número e nome (`kill -l` lista). Um é conhecido por pedir a daemons que releiam a configuração; outro pede que terminem normalmente; o mais \"bruto\" não pode ser tratado pelo processo.",
+    "`kill -SINAL PID` envia a um PID. `pkill`/`pgrep` casam **padrões do nome**: por padrão, qualquer nome que **contenha** o texto; `-x` exige nome exato.",
+    "Como os processos são do root, use `sudo` antes do `kill`/`pkill`."
+  ],
+  "solucao": "```\npgrep -a -x {d1}                 # confirma o PID (nome exato)\nsudo pkill -HUP -x {d1}          # ou: sudo kill -HUP <PID>\nsudo pkill -TERM -x {d2}         # ou: sudo kill <PID>   (TERM é o padrão do kill)\n```\n`SIGHUP` (1) é a convenção para daemons relerem a configuração sem reiniciar; `SIGTERM` (15, o padrão do `kill`) pede o término e permite ao processo limpar e sair; `SIGKILL` (9) não pode ser capturado nem ignorado e não dá chance de limpeza — fica como último recurso. A pegadinha da prova: `pkill {d1}` (sem `-x`) casa também `{d1}-aux`, porque o padrão é uma expressão regular procurada **dentro** do nome do processo; `-x` exige o nome exato. Como os processos são de outro usuário (root), só o root (`sudo`) pode sinalizá-los."
+}

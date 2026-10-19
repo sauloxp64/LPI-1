@@ -1,0 +1,29 @@
+{
+  "id": "f108-2-rsyslog-regra",
+  "obj": "108.2",
+  "titulo": "Regra do rsyslog para o log de uma aplicação",
+  "nivel": 3,
+  "minutos": 10,
+  "params": {
+    "fac": { "escolha": ["local0", "local1", "local2", "local3", "local4", "local5"] },
+    "fac2": { "escolha": ["local6", "local7"] },
+    "prio": { "escolha": ["notice", "warning", "err"] },
+    "arquivo": { "escolha": ["vendas", "estoque", "fiscal", "pagamentos"] },
+    "tok": { "faixa": [1000, 9999] }
+  },
+  "enunciado": "A aplicação de `{arquivo}` registra seus eventos via syslog na facility **`{fac}`**. A equipe quer um arquivo próprio para ela. Crie, com `sudo`, um arquivo de configuração em **`/etc/rsyslog.d/`** (nome terminado em `.conf`, à sua escolha) com uma regra que:\n\n* grave em **`/var/log/app-{arquivo}.log`** as mensagens da facility `{fac}` com prioridade **`{prio}` ou mais grave**;\n* **não** grave ali mensagens da `{fac}` menos graves que `{prio}` (por exemplo `debug`) nem mensagens de outras facilities (por exemplo `{fac2}`);\n* impeça que as mensagens gravadas por essa regra apareçam **também** em `/var/log/syslog`.\n\nO rsyslog só lê a configuração ao iniciar e neste laboratório não há systemd: para aplicar a regra é preciso reiniciar o `rsyslogd` (encerre o processo e inicie de novo com `sudo`). Em seguida, use o `logger` para enviar **uma mensagem de teste** com a facility e a prioridade `{fac}.{prio}`, com a marca (tag) que quiser e o texto `teste-{tok}`, e confirme que ela caiu em `/var/log/app-{arquivo}.log`.",
+  "verifica": [
+    "existe um `.conf` em `/etc/rsyslog.d/` que menciona `/var/log/app-{arquivo}.log` e a configuração é válida (`rsyslogd -N1`)",
+    "o `rsyslogd` está em execução e já aplicou a regra: mensagens `{fac}.{prio}` e `{fac}.alert` chegam a `/var/log/app-{arquivo}.log`",
+    "`{fac}.debug` e `{fac2}.{prio}` **não** chegam a esse arquivo",
+    "as mensagens que a regra grava não aparecem em `/var/log/syslog`",
+    "a sua mensagem `teste-{tok}`, enviada com `logger`, está no arquivo (no formato de linha do rsyslog)"
+  ],
+  "dicas": [
+    "Seletor clássico do syslog: `facility.prioridade acao`, por exemplo `mail.err /var/log/arquivo`. A prioridade vale como **piso**: `local3.warning` inclui `warning`, `err`, `crit`, `alert` e `emerg`.",
+    "Para parar o processamento depois de gravar, a linha seguinte pode ser `& stop` (sintaxe moderna; a antiga era `& ~`). As regras de `/etc/rsyslog.d/` são lidas **antes** da regra geral que grava em `/var/log/syslog`.",
+    "Valide a sintaxe com `sudo rsyslogd -N1`. Para reiniciar sem systemd: `sudo pkill rsyslogd` e depois `sudo rsyslogd`. Teste com `logger -p facility.prioridade -t tag \"texto\"`.",
+    "Conteúdo: uma linha `{fac}.{prio}  /var/log/app-{arquivo}.log` e uma linha `& stop`, em `/etc/rsyslog.d/40-app-{arquivo}.conf`."
+  ],
+  "solucao": "```\nsudo tee /etc/rsyslog.d/40-app-{arquivo}.conf <<'X'\n{fac}.{prio}\t/var/log/app-{arquivo}.log\n& stop\nX\nsudo rsyslogd -N1            # valida a configuração\nsudo pkill rsyslogd; sudo rsyslogd   # reinicia (sem systemd)\nlogger -p {fac}.{prio} -t lab \"teste-{tok}\"\nsudo tail /var/log/app-{arquivo}.log\n```\nNo seletor `facility.prioridade` a prioridade funciona como **mínimo** (`.{prio}` = `{prio}` e todas mais graves); para exatamente uma prioridade seria `.={prio}`, e para excluir `.!{prio}`. `& stop` (antigo `& ~`) descarta a mensagem depois da ação: sem ele ela continuaria para a regra `*.*` que grava em `/var/log/syslog`. Os arquivos de `/etc/rsyslog.d/*.conf` entram pelo `$IncludeConfig` do `rsyslog.conf`, antes das regras padrão, por isso o `stop` funciona. Mudança de configuração exige **reiniciar** o rsyslogd (`kill -HUP` só reabre os arquivos de log); numa máquina com systemd seria `systemctl restart rsyslog`. A ordem importa: mensagens enviadas antes do reinício não são reprocessadas."
+}

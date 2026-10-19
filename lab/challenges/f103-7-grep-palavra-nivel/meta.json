@@ -1,0 +1,35 @@
+{
+  "id": "f103-7-grep-palavra-nivel",
+  "obj": "103.7",
+  "titulo": "grep: palavras inteiras e alternância",
+  "nivel": 1,
+  "minutos": 5,
+  "params": {
+    "a": {
+      "escolha": [
+        "ERROR",
+        "FATAL",
+        "ALERT"
+      ]
+    },
+    "b": {
+      "escolha": [
+        "CRITICAL",
+        "PANIC",
+        "SEVERE"
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-7-grep-palavra-nivel/` está o `app.log` de uma aplicação (uma linha por evento, no formato `data hora [NÍVEL] módulo: mensagem`). O time de plantão só quer ver os eventos graves.\n\nGrave em `criticos.txt` (na mesma pasta) **todas as linhas que contenham a palavra `{a}` ou a palavra `{b}`** (em maiúsculas, **como palavras inteiras**, em qualquer posição da linha), cada uma **precedida do seu número de linha no arquivo original**, no formato `número:linha`, na ordem original.\n\nO log tem linhas-isca, como `NO{a}`, `{a}S=0` ou `{a}_COUNT`, e a mesma palavra em minúsculas: elas **não** devem entrar.",
+  "verifica": [
+    "`criticos.txt` tem exatamente as linhas com `{a}` ou `{b}` como palavra inteira em maiúsculas",
+    "cada linha vem prefixada pelo número da linha original (`N:linha`)",
+    "`app.log` continua intacto"
+  ],
+  "dicas": [
+    "O `grep` tem opções para mostrar o número da linha (`-n`) e para casar apenas palavras inteiras (`-w`).",
+    "Para buscar uma coisa **ou** outra em um só comando existem dois caminhos: a alternância `A|B` com regex estendida (`-E`) ou duas opções `-e`.",
+    "Sem `-i`, o `grep` diferencia maiúsculas de minúsculas — é o que você quer aqui."
+  ],
+  "solucao": "```\ncd ~/lab/f103-7-grep-palavra-nivel\ngrep -nwE '{a}|{b}' app.log > criticos.txt\n```\n`-w` exige que o trecho encontrado esteja cercado por caracteres que **não** são de palavra (letras, dígitos e `_`) — por isso `NO{a}` e `{a}_COUNT` ficam de fora, enquanto `[{a}]` e `classificada como {a} (` casam normalmente. `-n` prefixa o número da linha original. `-E` liga a regex estendida, onde `|` é a alternância (na regex básica seria `\\|`). Sem `-i`, `{a}` em minúsculas também não casa. Alternativa equivalente: `grep -nw -e {a} -e {b} app.log`."
+}

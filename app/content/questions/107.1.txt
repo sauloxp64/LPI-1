@@ -1,0 +1,533 @@
+### 107.1-001 | unica | 1
+ref: 102:p.196-197
+tags: /etc/passwd, campos
+Quantos campos, separados por dois-pontos, cada linha do arquivo `/etc/passwd` possui?
+- 4
+- 6
+= 7
+- 10
+> `/etc/passwd` tem sete campos: login, senha (normalmente `x`), UID, GID do grupo principal, GECOS (comentário), diretório inicial e shell.
+> Quatro campos é o formato de `/etc/group` (e de `/etc/gshadow`); nove campos é o formato de `/etc/shadow`.
+
+### 107.1-002 | lacuna | 1
+ref: 102:p.196-199
+tags: /etc/shadow, campos
+Quantos campos, separados por dois-pontos, cada linha do arquivo `/etc/shadow` possui?
+Responda apenas com o número.
+= 9
+> O `/etc/shadow` tem nove campos: login, senha criptografada, data da última alteração, idade mínima, idade máxima, período de aviso, período de inatividade, data de expiração da conta e um campo reservado. Lembre-se de que `/etc/passwd` tem 7 e `/etc/group` tem 4.
+
+### 107.1-003 | unica | 1
+ref: 102:p.197
+tags: /etc/passwd, shadow
+Observe a linha de `/etc/passwd`:
+
+```
+joana:x:1004:1004:Joana Reis:/home/joana:/bin/bash
+```
+
+O que significa o `x` no segundo campo?
+- A conta de joana não possui senha definida e aceita login sem digitá-la
+= A senha criptografada está guardada em /etc/shadow
+- A conta de joana está bloqueada e não aceita login por senha
+- O shell de joana não permite nenhum login interativo no sistema
+> O `x` é apenas um marcador: indica que o hash da senha está em `/etc/shadow`, legível somente pelo root. Uma conta sem senha teria o campo de hash vazio em `/etc/shadow`, e um bloqueio aparece como `!` no início do hash também em `/etc/shadow`, nunca no `x`. O impedimento de login interativo depende do shell (último campo), que aqui é `/bin/bash`.
+
+### 107.1-004 | unica | 2
+ref: 102:p.197
+tags: /etc/passwd, interpretar
+Considere esta linha de `/etc/passwd`:
+
+```
+suporte:x:1210:1300:Equipe de TI,Sala 2:/srv/suporte:/bin/zsh
+```
+
+Qual afirmação está correta?
+- O UID é 1300 e o GID do grupo principal é 1210
+- O diretório inicial é /bin/zsh e o shell é /srv/suporte
+- "Equipe de TI,Sala 2" é o nome do grupo principal da conta
+= O GID do grupo principal é 1300 e o shell de login é /bin/zsh
+> Os campos, em ordem, são: login (`suporte`), senha (`x`), UID (`1210`), GID (`1300`), GECOS (`Equipe de TI,Sala 2`, que pode ter várias entradas separadas por vírgula), diretório inicial (`/srv/suporte`) e shell (`/bin/zsh`). As demais opções trocam a posição dos campos.
+
+### 107.1-005 | unica | 2
+ref: 102:p.197-198
+tags: /etc/group, campos
+Em uma linha de `/etc/group` como a abaixo, o que representa o quarto campo (`ana,bruno`)?
+
+```
+devs:x:1050:ana,bruno
+```
+= A lista de usuários que são membros do grupo devs
+- A lista de administradores autorizados a mudar a senha do grupo
+- A lista de usuários impedidos de usar o grupo devs
+- A lista de usuários cujo grupo principal é devs
+> O quarto campo de `/etc/group` é a lista de membros, separados por vírgula. O grupo principal de um usuário não vem dessa lista, e sim do GID no quarto campo de `/etc/passwd`. Os administradores do grupo ficam no terceiro campo de `/etc/gshadow`. Não existe lista de proibidos em `/etc/group`.
+
+### 107.1-006 | unica | 2
+ref: 102:p.198-199
+tags: /etc/shadow, inatividade
+Observe a linha de `/etc/shadow`:
+
+```
+luiza:$6$Ab12$x9Qz:19800:1:90:14:5::
+```
+
+O que significa o valor `5` (sétimo campo)?
+- A senha só poderá ser trocada novamente depois de passados 5 dias
+- O usuário é avisado a partir de 5 dias antes de a senha expirar
+= A conta é desativada se a senha ficar 5 dias expirada sem troca
+- A conta expira em 5 dias, contados da data de criação da conta
+> Ordem dos campos: login, hash, última alteração (`19800`), idade mínima (`1`), idade máxima (`90`), aviso (`14`), inatividade (`5`), expiração da conta (vazio), reservado (vazio). O sétimo campo é o período de inatividade, o mesmo configurado por `chage -I` ou `passwd -i`. O aviso é o sexto campo (14) e a idade mínima é o quarto (1).
+
+### 107.1-007 | unica | 3
+ref: 102:p.199
+tags: /etc/shadow, expiração, chage
+O administrador executa `chage -E 2030-01-01 ana`. Que valor passa a constar no oitavo campo (expiração da conta) da linha de `ana` em `/etc/shadow`?
+= 21915
+- 2030-01-01
+- 1893456000
+- 20300101
+> Em `/etc/shadow` as datas são gravadas como número de dias desde 01/01/1970, e não como data legível. De 1970-01-01 a 2030-01-01 passam-se 21915 dias. `1893456000` seria a mesma data em segundos (timestamp Unix), formato que o `shadow` não usa. Os formatos `2030-01-01` e `20300101` só existem na linha de comando, na entrada do `chage`.
+
+### 107.1-008 | unica | 2
+ref: 102:p.198
+tags: /etc/shadow, última alteração
+Na linha de `/etc/shadow` de um usuário, o terceiro campo (data da última alteração de senha) contém o valor `0`. O que isso provoca?
+- A conta nunca expira e a senha não precisa mais ser trocada
+- A conta está bloqueada e não pode mais ser usada por ninguém
+= O usuário será obrigado a trocar a senha no próximo login
+- A senha está vazia e o login é permitido sem digitá-la
+> O valor `0` nesse campo é um valor especial: força a troca da senha no próximo login. É o que fazem `passwd -e usuario` e `chage -d 0 usuario`. Conta bloqueada é indicada por `!` no início do hash (segundo campo), e a expiração da conta fica no oitavo campo.
+
+### 107.1-009 | multipla | 2
+ref: 102:p.197-199
+tags: permissões, /etc/shadow, /etc/passwd
+Em uma instalação Debian padrão, quais arquivos podem ser lidos por um usuário comum, sem usar `sudo`?
+= /etc/passwd
+= /etc/group
+- /etc/shadow
+- /etc/gshadow
+- /etc/sudoers
+> `/etc/passwd` e `/etc/group` têm permissão 644 e precisam ser legíveis por todos, porque programas como `ls -l` e `id` convertem UIDs e GIDs em nomes consultando-os. `/etc/shadow` e `/etc/gshadow` guardam hashes de senha e têm permissão 640 (dono root, grupo shadow); `/etc/sudoers` é 440, legível apenas por root.
+
+### 107.1-010 | unica | 3
+ref: 102:p.199, 102:p.208
+tags: /etc/gshadow, grupos
+Uma linha de `/etc/gshadow` contém:
+
+```
+editor:!::emma,dave,frank
+```
+
+Qual conclusão está correta?
+- emma administra o grupo, e dave e frank são membros comuns
+- O grupo tem senha definida, conhecida por emma, dave e frank
+- O grupo não tem membros: a lista fica em /etc/group
+= Sem administradores; emma, dave e frank são membros comuns
+> Os campos de `/etc/gshadow` são: nome do grupo, senha criptografada, administradores e membros. Aqui o terceiro campo (administradores) está vazio, e o quarto traz os membros. O `!` na senha significa que ninguém consegue ingressar no grupo com `newgrp` usando senha.
+
+### 107.1-011 | lacuna | 1
+ref: 102:p.180-181
+tags: useradd, home
+Complete o comando para que a conta `ana` seja criada junto com seu diretório inicial:
+
+`useradd ____ ana`
+= -m
+= --create-home
+> A opção `-m` (`--create-home`) cria o diretório inicial e copia para ele o conteúdo de `/etc/skel`. A opção oposta, `-M`, impede a criação.
+
+### 107.1-012 | unica | 3
+ref: 102:p.179-181
+tags: useradd, Debian, login.defs
+Em uma instalação Debian padrão (`CREATE_HOME` não definido e `USERGROUPS_ENAB yes` em `/etc/login.defs`), o que faz o comando abaixo, executado pelo root?
+
+```
+# useradd ana
+```
+- Cria apenas a entrada em /etc/passwd, sem grupo próprio nem entrada em shadow
+- Cria a conta e o diretório /home/ana, copiando o conteúdo de /etc/skel
+= Cria passwd, shadow e o grupo ana, mas não cria o diretório inicial
+- Cria a conta no grupo users (GID 100), sem criar um grupo próprio para ela
+> Sem opções, `useradd` atualiza os bancos de contas: `/etc/passwd`, `/etc/shadow` (hash `!`, conta bloqueada até a definição de uma senha) e `/etc/group`, onde cria o grupo privado `ana` por causa de `USERGROUPS_ENAB yes`. Sem `-m` e sem `CREATE_HOME yes`, o diretório inicial não é criado. Em RHEL/Fedora o `login.defs` já traz `CREATE_HOME yes`, e o home seria criado. O GID 100 de `GROUP=100` em `useradd -D` é ignorado quando `USERGROUPS_ENAB` está ativo.
+
+### 107.1-013 | unica | 3
+ref: 102:p.181
+tags: useradd, shell, Debian
+Em uma instalação Debian padrão, qual shell é gravado no sétimo campo de `/etc/passwd` quando se executa `useradd ana` sem a opção `-s`?
+= /bin/sh
+- /bin/bash
+- /usr/sbin/nologin
+- Nenhum: o campo fica vazio
+> O padrão do `useradd` vem de `/etc/default/useradd` (`SHELL=/bin/sh` no Debian, visível com `useradd -D`). Quem usa `/bin/bash` por padrão é o `adduser` do Debian, e distribuições como RHEL definem `/bin/bash` para o `useradd`. Para fixar o shell, use `-s` na criação ou `usermod -s` depois.
+
+### 107.1-014 | unica | 2
+ref: 102:p.181
+tags: useradd, skel
+Qual comando cria a conta `ana` com diretório inicial preenchido a partir de `/opt/modelo`, em vez de `/etc/skel`?
+- useradd --skel /opt/modelo ana
+- useradd -m -s /opt/modelo ana
+= useradd -m -k /opt/modelo ana
+- useradd -M -k /opt/modelo ana
+> `-k` indica o diretório de esqueleto alternativo, mas só funciona junto com `-m`; sozinho ele gera o erro `useradd: -k flag is only allowed with the -m flag`. `-s` define o shell, e `-M` impede a criação do diretório inicial, o que anularia a cópia.
+
+### 107.1-015 | lacuna | 1
+ref: 102:p.184
+tags: /etc/skel
+Qual é o caminho padrão do diretório de esqueleto, cujo conteúdo é copiado para o diretório inicial de novas contas?
+Informe o caminho completo.
+= /etc/skel
+= /etc/skel/
+> Tudo que está em `/etc/skel` (por exemplo `.bashrc`, `.profile`, `.bash_logout`) é copiado para o novo diretório inicial quando a conta é criada com `-m`.
+
+### 107.1-016 | unica | 2
+ref: 102:p.184
+tags: /etc/skel
+O administrador colocou o arquivo `LEIAME.txt` em `/etc/skel`. Quais usuários receberão uma cópia dele?
+- Todas as contas existentes, no próximo login de cada uma delas
+- Todas as contas existentes, assim que o arquivo for salvo
+= Somente as contas cujo home for criado a partir daí
+- Somente as contas que usam o shell /bin/bash como shell de login
+> `/etc/skel` é consultado apenas no momento da criação do diretório inicial (`useradd -m`, ou ferramentas gráficas equivalentes). Contas já existentes não são alteradas; o administrador precisa copiar o arquivo manualmente. O shell da conta não influencia a cópia.
+
+### 107.1-017 | unica | 2
+ref: 102:p.183
+tags: useradd, grupos
+O grupo `contabil` não existe. O que acontece ao executar `useradd -g contabil carla`?
+- A conta é criada e o grupo contabil é criado automaticamente
+- A conta é criada com o grupo principal carla, ignorando a opção -g
+= Dá erro "group does not exist" e a conta não é criada
+- A conta é criada com o grupo principal root (GID 0)
+> O grupo principal indicado por `-g` e os grupos secundários de `-G` precisam existir antes do `useradd`. O comando aborta com `useradd: group 'contabil' does not exist` e código de saída 6. Para resolver, crie o grupo antes com `groupadd contabil`.
+
+### 107.1-018 | multipla | 2
+ref: 102:p.180-181
+tags: useradd, opções
+Considere o comando abaixo, executado por root em um Debian padrão, com os grupos `dev` e `ops` já existentes:
+
+```
+# useradd -m -d /srv/ana -s /bin/zsh -c "Ana Souza" -G dev,ops ana
+```
+
+Quais afirmações são verdadeiras?
+= O diretório /srv/ana é criado como diretório inicial de ana
+= O sétimo campo da linha de ana em /etc/passwd é /bin/zsh
+= dev e ops são grupos secundários de ana
+- O grupo principal de ana é dev
+- "Ana Souza" é gravado no campo de senha de /etc/shadow
+> `-m -d /srv/ana` define e cria o diretório inicial; `-s` fixa o shell (sétimo campo); `-G dev,ops` lista os grupos secundários. Como `-g` não foi usado e `USERGROUPS_ENAB` está ativo, o grupo principal é o grupo privado `ana`, e não `dev`. O texto de `-c` vai para o campo GECOS (quinto campo de `/etc/passwd`), nunca para o `shadow`.
+
+### 107.1-019 | unica | 2
+ref: 102:p.181, 102:p.195
+tags: useradd, id, grupos
+A saída de `id emma` é:
+
+```
+uid=1050(emma) gid=1028(administrators) groups=1028(administrators),1029(developers)
+```
+
+Qual comando criou a conta, considerando que os dois grupos já existiam?
+- useradd -u 1050 -g developers -G administrators -N emma
+- useradd -u 1050 -G administrators,developers emma
+= useradd -u 1050 -g administrators -G developers emma
+- useradd -g 1050 -G administrators,developers emma
+> O `gid=` mostrado é o grupo principal (`-g administrators`), e `groups=` lista o principal mais os secundários (`-G developers`). `-u 1050` define o UID. Sem `-g`, o `useradd` criaria o grupo privado `emma` como principal (e `id` mostraria `gid=...(emma)`). Inverter `-g` e `-G` trocaria quem é o grupo principal.
+
+### 107.1-020 | unica | 2
+ref: 102:p.181
+tags: useradd, -r, conta de sistema
+O que a opção `-r` faz no comando `useradd -r backup-svc`?
+- Cria a conta e a remove automaticamente ao fim do primeiro login
+= Cria uma conta de sistema, com UID abaixo de UID_MIN
+- Cria a conta com UID 0, com os mesmos privilégios do root
+- Cria a conta sem grupo primário e sem diretório inicial
+> `-r` (`--system`) cria uma conta de sistema: o UID vem da faixa de sistema (menor que `UID_MIN`, ou seja, abaixo de 1000 no Debian), e o diretório inicial não é criado por padrão. É o caminho usual para contas de serviço. Não confunda com o `-r` de `userdel`, que remove o diretório inicial.
+
+### 107.1-021 | unica | 2
+ref: 102:p.205
+tags: nologin, contas limitadas
+A conta de serviço `svc2` tem `/usr/sbin/nologin` como shell. O que acontece quando o root executa `su - svc2`?
+- Abre um shell restrito, sem acesso à rede e fora do diretório inicial
+- Pede a senha de svc2 e recusa com "Authentication failure"
+= Encerra de imediato, exibindo "This account is currently not available."
+- Abre um shell /bin/sh normal, pois o root ignora o shell da conta
+> O `nologin` encerra a sessão imediatamente, exibindo "This account is currently not available." (o `su` retorna código 1). O root não precisa de senha para usar `su`, e o shell registrado na conta é respeitado (só `su -s` o substituiria). É o método mais comum para impedir login interativo em contas de serviço. Com `/bin/false` o efeito é parecido, mas sem mensagem alguma.
+
+### 107.1-022 | multipla | 2
+ref: 102:p.205
+tags: nologin, false, contas limitadas
+Quais shells, atribuídos como shell de login, impedem uma sessão interativa de uma conta de serviço?
+= /usr/sbin/nologin
+= /bin/false
+- /bin/rbash
+- /bin/dash
+- /bin/bash
+> `nologin` e `false` terminam imediatamente, o que bloqueia o login interativo; por isso são os shells típicos de contas de serviço como `mail`, `ftp` e `daemon`. `rbash` é um bash restrito, mas ainda abre uma sessão interativa (com limitações). `dash` e `bash` são shells normais.
+
+### 107.1-023 | unica | 2
+ref: 102:p.182
+tags: usermod, -G
+A usuária dora tem como grupos secundários `ops` e `qa`. O administrador executa:
+
+```
+# usermod -G devs dora
+```
+
+Quais passam a ser os grupos secundários de dora?
+= Apenas devs; ops e qa são removidos
+- ops, qa e devs
+- Apenas ops e qa; devs é ignorado sem a opção -a
+- Nenhum: o comando falha por faltar a opção -a
+> `usermod -G` substitui a lista inteira de grupos secundários. Para acrescentar sem perder os atuais é preciso usar `-a` junto com `-G` (`usermod -aG devs dora`). A ausência de `-a` não gera erro: o comando é executado e remove os demais.
+
+### 107.1-024 | lacuna | 2
+ref: 102:p.182, 102:p.194
+tags: usermod, -aG
+Complete o comando para acrescentar dora ao grupo `devs` sem removê-la de seus outros grupos secundários:
+
+`usermod ____ devs dora`
+= -aG
+= -a -G
+= --append -G
+= --append --groups
+> `-G` informa a lista de grupos e `-a` (`--append`) faz com que ela seja somada à lista atual. Sem `-a`, os grupos secundários existentes seriam apagados.
+
+### 107.1-025 | unica | 3
+ref: 102:p.182-183
+tags: usermod, -l
+O administrador executa `usermod -l anita ana`. O que permanece com o nome antigo?
+= O grupo principal ana e o diretório /home/ana
+- Nada: login, grupo e diretório inicial são renomeados automaticamente
+- Somente o diretório /home/ana, pois o grupo é renomeado junto
+- Somente o grupo ana, pois o diretório é movido para /home/anita
+> `usermod -l` altera apenas o nome de login. O grupo privado continua se chamando `ana`, e o diretório inicial continua sendo `/home/ana` (o campo continua apontando para ele). Para completar a mudança é preciso renomear o grupo com `groupmod -n anita ana` e mover o home com `usermod -d /home/anita -m anita`.
+
+### 107.1-026 | unica | 3
+ref: 102:p.182
+tags: usermod, -d, -m
+Qual comando altera o diretório inicial de ana para `/srv/ana` e também move o conteúdo do diretório antigo?
+- usermod --home /srv/ana ana
+- usermod -m /srv/ana ana
+= usermod -d /srv/ana -m ana
+- usermod -h /srv/ana ana
+> `-d` sozinho só muda o caminho registrado em `/etc/passwd`; os arquivos ficam onde estavam. Com `-m` (válido somente junto com `-d`) o conteúdo é movido, e o novo diretório é criado se não existir. `usermod -m` sem `-d` gera o erro "-m flag is only allowed with the -d flag". `-h` é a opção de ajuda.
+
+### 107.1-027 | unica | 3
+ref: 102:p.183
+tags: usermod, -u, UID
+A conta ana (UID 1001) possui arquivos em `/home/ana` e em `/srv/dados`. O administrador executa `usermod -u 3000 ana`. O que acontece com esses arquivos?
+= Os de /home/ana passam a ter UID 3000; os de /srv/dados ficam com 1001
+- Todos os arquivos do sistema que pertenciam a ana passam a ter UID 3000
+- Nenhum arquivo é alterado, nem os de /home/ana
+- Os de /srv/dados passam a ter UID 3000, e os de /home/ana continuam com 1001
+> Ao mudar o UID, o `usermod` ajusta automaticamente a propriedade do diretório inicial (e da caixa de e-mail), mas não procura arquivos em outros lugares. Os de `/srv/dados` ficam com o UID numérico antigo (sem dono no `ls -l`) e precisam de `chown` manual, por exemplo localizados com `find / -uid 1001`.
+
+### 107.1-028 | lacuna | 2
+ref: 102:p.182, 102:p.195
+tags: usermod, expiração
+Complete o comando para definir 31/12/2030 como data de expiração da conta ana:
+
+`usermod ____ 2030-12-31 ana`
+= -e
+= --expiredate
+> `usermod -e` (`--expiredate`) é o equivalente de `chage -E`: grava a data no oitavo campo de `/etc/shadow` (em dias desde 1970). Não confunda com `-f`, que define o período de inatividade da senha.
+
+### 107.1-029 | multipla | 2
+ref: 102:p.182-183, 102:p.186, 102:p.193
+tags: usermod, passwd, bloqueio
+Quais comandos bloqueiam a conta ana, acrescentando `!` antes do hash em `/etc/shadow`?
+= usermod -L ana
+= passwd -l ana
+- usermod -U ana
+- passwd -u ana
+- chage -E 0 ana
+> `usermod -L` (`--lock`) e `passwd -l` (`--lock`) prefixam o hash com `!`. Os comandos `usermod -U` e `passwd -u` fazem o inverso, removendo o `!`. `chage -E 0` define a expiração da conta para uma data já passada: bloqueia o acesso por outro mecanismo e não altera o hash.
+
+### 107.1-030 | unica | 1
+ref: 102:p.186
+tags: passwd, status
+A saída de `passwd -S ana` no Debian 12 é:
+
+```
+ana L 2026-10-19 0 99999 7 -1
+```
+
+O que a letra `L` indica?
+= A senha da conta está bloqueada
+- A senha é válida e pode ser usada
+- A conta não possui senha definida
+- A conta está com login limitado a um terminal
+> No segundo campo de `passwd -S`, `P` indica senha utilizável, `L` senha bloqueada e `NP` ausência de senha. Os demais campos são a data da última alteração, idade mínima, idade máxima, período de aviso e período de inatividade.
+
+### 107.1-031 | unica | 2
+ref: 102:p.186
+tags: passwd, -d
+Qual o efeito de `passwd -d ana` no arquivo `/etc/shadow`?
+= Apaga a senha, deixando o campo do hash vazio
+- Bloqueia a senha, colocando ! antes do hash
+- Força a troca de senha, zerando a data da última alteração
+- Remove a linha de ana do arquivo
+> `passwd -d` (`--delete`) remove a senha: o segundo campo fica vazio e `passwd -S` passa a mostrar `NP`. É uma operação perigosa, porque, dependendo da configuração do PAM, a conta pode acessar o sistema sem senha. O bloqueio é feito por `-l`, e a troca forçada por `-e`.
+
+### 107.1-032 | multipla | 3
+ref: 102:p.186-187, 102:p.192
+tags: passwd, chage, expiração
+Quais comandos obrigam ana a trocar a senha no próximo login?
+= passwd -e ana
+= chage -d 0 ana
+- chage -E 0 ana
+- passwd -d ana
+- chage -m 0 ana
+- usermod -L ana
+> `passwd -e` (`--expire`) e `chage -d 0` zeram a data da última alteração de senha, o que obriga a troca no próximo login. `chage -E 0` expira a conta (e não a senha), `passwd -d` apaga a senha, `chage -m 0` apenas permite trocas a qualquer momento (idade mínima zero) e `usermod -L` bloqueia a senha.
+
+### 107.1-033 | lacuna | 1
+ref: 102:p.187
+tags: chage, listar
+Complete o comando para exibir as informações de validade da senha e da conta de ana:
+
+`chage ____ ana`
+= -l
+= --list
+> `chage -l` lista a data da última alteração, quando a senha expira, o período de inatividade, a expiração da conta e os limites mínimo, máximo e de aviso. Usuários comuns só podem usá-lo para a própria conta; as demais opções do `chage` exigem root.
+
+### 107.1-034 | unica | 2
+ref: 102:p.186-187, 102:p.192
+tags: passwd, chage, equivalência
+Qual comando do `chage` equivale a `passwd -x 90 ana`?
+- chage -m 90 ana
+- chage --warndays 90 ana
+= chage -M 90 ana
+- chage --inactive 90 ana
+> `passwd -x` e `chage -M` definem a idade máxima da senha (campo 5 de `/etc/shadow`). As outras equivalências são: `passwd -n` = `chage -m` (mínima), `passwd -w` = `chage -W` (aviso), `passwd -i` = `chage -I` (inatividade) e `passwd -S` = `chage -l` (status).
+
+### 107.1-035 | unica | 3
+ref: 102:p.187, 102:p.199
+tags: chage, inatividade, datas
+O administrador executa `chage -d 2026-01-01 -M 90 -I 7 ana`. Se ana nunca trocar a senha, em que data a conta será desativada por inatividade (linha "Password inactive" de `chage -l`)?
+- 1º de abril de 2026
+- 8 de janeiro de 2026
+= 8 de abril de 2026
+- 25 de março de 2026
+> Última alteração em 01/01/2026 mais 90 dias dá 01/04/2026, quando a senha expira. A partir daí contam-se os 7 dias de inatividade, e a conta é desativada em 08/04/2026. 01/04 é apenas a data de expiração da senha, e as outras datas resultam de somar a inatividade à data errada ou de subtraí-la.
+
+### 107.1-036 | unica | 2
+ref: 102:p.183
+tags: userdel, -r
+O que `userdel -r ana` remove a mais do que `userdel ana`?
+= O diretório inicial de ana e o seu spool de e-mail
+- Todos os arquivos pertencentes a ana em qualquer ponto do sistema
+- As entradas de ana em /etc/passwd e /etc/shadow
+- Os processos em execução de ana
+> Sem `-r`, o `userdel` remove só as entradas de conta (passwd, shadow, group, gshadow); com `-r` também apaga o diretório inicial e o spool de e-mail. Arquivos de ana em outros diretórios permanecem e ficam órfãos; é preciso procurá-los (por exemplo com `find / -nouser`) e tratá-los manualmente.
+
+### 107.1-037 | unica | 2
+ref: 102:p.184
+tags: groupdel, grupo primário
+`groupdel ana` falha com a mensagem "cannot remove the primary group of user 'ana'". Qual é a causa?
+- O grupo ainda possui arquivos espalhados pelo sistema
+- Falta a opção -r, necessária para apagar grupos com arquivos
+- O grupo está bloqueado com ! em /etc/gshadow
+= O grupo é o grupo principal de uma conta existente
+> O `groupdel` recusa-se a apagar um grupo que ainda é o grupo principal de alguma conta. É preciso remover a conta antes (`userdel`) ou trocar seu grupo principal (`usermod -g`). Arquivos pertencentes ao grupo não impedem a remoção: eles ficam no disco com o GID numérico antigo. `groupdel` não possui opção `-r`.
+
+### 107.1-038 | unica | 3
+ref: 102:p.184
+tags: groupmod, GID
+O grupo `developer` (GID 1050) é renomeado e recebe novo GID com `groupmod -n web-developer -g 1060 developer`. O que ocorre com os arquivos que pertenciam ao grupo, por exemplo `/srv/proj`?
+- São atualizados automaticamente para o novo GID 1060 pelo groupmod
+- Passam a pertencer ao grupo root por segurança, até alguém corrigi-los
+= Mantêm o GID 1050 e passam a exibir só o número, até serem corrigidos
+- Continuam exibindo o nome developer, mantido como apelido do novo grupo
+> O `groupmod` altera apenas o cadastro do grupo em `/etc/group`. Os arquivos gravam o GID numérico, e portanto continuam com 1050; como esse GID não corresponde mais a nenhum grupo, o `ls -l` mostra o número. Quem muda o GID deve ajustar manualmente os arquivos que devem permanecer no grupo (`chgrp -R web-developer /srv/proj`, por exemplo).
+
+### 107.1-039 | lacuna | 2
+ref: 102:p.186
+tags: gpasswd, grupos
+Complete o comando para remover o usuário ana apenas do grupo secundário `devs`, usando o `gpasswd`:
+
+`gpasswd ____ ana devs`
+= -d
+= --delete
+> `gpasswd -d usuario grupo` remove o usuário do grupo; `gpasswd -a usuario grupo` o acrescenta. O `gpasswd` também define administradores do grupo (`-A`), membros (`-M`) e a senha do grupo. Observação: o material da LPI afirma que o `usermod` não consegue remover um único grupo; versões recentes do shadow-utils (como a do Debian 12) já aceitam `usermod -r -G grupo usuario` para isso.
+
+### 107.1-040 | lacuna | 2
+ref: 102:p.186
+tags: newgrp, senha de grupo
+Qual comando permite que um usuário, conhecendo a senha de um grupo do qual não é membro, ingresse temporariamente nele na sessão atual?
+= newgrp
+> Grupos podem ter senha (definida com `gpasswd`, e guardada em `/etc/gshadow`). O `newgrp grupo` inicia um novo shell com aquele grupo como grupo efetivo; se a senha do grupo for `!`, ninguém que não seja membro consegue entrar por esse caminho.
+
+### 107.1-041 | unica | 2
+ref: 102:p.199-200
+tags: getent, NSS
+Qual é a principal vantagem de `getent passwd ana` em relação a `grep ana /etc/passwd`?
+- Exibe também o hash da senha de ana, sem exigir nenhuma permissão especial de leitura
+- Permite alterar a entrada de ana diretamente, sem precisar usar o usermod
+= Consulta todas as fontes de /etc/nsswitch.conf, não só o arquivo local
+- Funciona apenas para contas que possuem diretório inicial criado em /home
+> O `getent` usa as bibliotecas NSS (Name Service Switch) e lê os bancos conforme `/etc/nsswitch.conf`: arquivos locais, LDAP, SSSD etc. Assim, mostra contas que não estão em `/etc/passwd`. Ele é somente de consulta, não exige root e respeita as permissões de leitura de cada banco (o hash fica em `shadow`).
+
+### 107.1-042 | lacuna | 1
+ref: 102:p.200
+tags: getent, group
+Qual nome de banco de dados deve ser informado ao `getent` para consultar a entrada do grupo `developers`?
+
+`getent ____ developers`
+= group
+> A sintaxe é `getent banco chave`. Os bancos mais usados são `passwd`, `group`, `shadow` e `gshadow`; sem a chave, o `getent` lista todas as entradas do banco (se ele permitir enumeração).
+
+### 107.1-043 | unica | 3
+ref: 102:p.199-200
+tags: getent, shadow, permissões
+Um usuário comum executa `getent shadow ana`. O que acontece?
+= Nada é exibido e o código de saída é diferente de zero
+- Exibe a linha de ana com o hash substituído por asteriscos
+- Exibe a linha completa, pois o getent ignora as permissões de arquivo
+- Exibe "Permission denied" e encerra com código de saída 0
+> O `getent` não concede privilégios: para consultar o banco `shadow` é preciso ter permissão de leitura nele (no Debian, só root e o grupo shadow). Para o usuário comum a chave simplesmente não é encontrada, sem saída alguma e com código diferente de zero (2). Já `getent passwd ana` funciona para qualquer um.
+
+### 107.1-044 | lacuna | 1
+ref: 102:p.184, 102:p.206
+tags: login.defs, UID_MIN
+Nas distribuições atuais (Debian, RHEL), qual é o primeiro UID atribuído a usuários comuns, definido por `UID_MIN` em `/etc/login.defs`?
+Responda com o número.
+= 1000
+> Por convenção, UIDs abaixo de 1000 são reservados ao root (0) e às contas de sistema, e os usuários comuns começam em `UID_MIN`, normalmente 1000. Sistemas antigos, como RHEL 6, usavam 500.
+
+### 107.1-045 | lacuna | 1
+ref: 102:p.184-185
+tags: login.defs
+Qual arquivo define padrões como `UID_MIN`, `GID_MIN`, `USERGROUPS_ENAB` e `PASS_MAX_DAYS` usados pelos comandos de criação de contas?
+Informe o caminho completo.
+= /etc/login.defs
+> O `/etc/login.defs` controla a criação de usuários e grupos: faixas de UID e GID, criação de grupo privado, criação do home (`CREATE_HOME`), diretório de e-mail (`MAIL_DIR`) e a política padrão de envelhecimento de senhas (`PASS_MAX_DAYS`, `PASS_MIN_DAYS`, `PASS_WARN_AGE`).
+
+### 107.1-046 | unica | 3
+ref: 102:p.184-185
+tags: login.defs, PASS_MAX_DAYS
+O administrador alterou `PASS_MAX_DAYS` de 99999 para 45 em `/etc/login.defs`. Qual é o efeito?
+= Só as contas criadas depois recebem 45; as existentes não mudam
+- Todas as contas existentes passam a ter senhas válidas por 45 dias
+- Somente o root é afetado, pois o arquivo só vale para o superusuário
+- O valor é ignorado porque /etc/shadow já existe
+> Os valores de `/etc/login.defs` são os padrões aplicados no momento da criação da conta (`useradd` os grava em `/etc/shadow`). Contas existentes mantêm o que já está no `shadow`; para alterá-las é preciso usar `chage -M 45 usuario` ou `passwd -x 45 usuario`.
+
+### 107.1-047 | lacuna | 1
+ref: 102:p.183
+tags: groupadd, GID
+Complete o comando para criar o grupo `developer` com o GID 1090:
+
+`groupadd ____ 1090 developer`
+= -g
+= --gid
+> `groupadd -g GID nome` cria o grupo com o GID indicado (que ainda não pode estar em uso). Sem `-g`, o sistema escolhe o próximo GID livre na faixa definida por `GID_MIN` e `GID_MAX` em `/etc/login.defs`.
+
+### 107.1-048 | unica | 2
+ref: 102:p.183
+tags: groupadd, GID
+O GID 1002 já pertence ao grupo `qa`. O que acontece ao executar `groupadd -g 1002 audit`?
+= Ocorre o erro "GID '1002' already exists" e o grupo audit não é criado
+- O grupo audit é criado e recebe o próximo GID livre no lugar do 1002
+- O grupo audit é criado com o GID 1002, passando a compartilhá-lo com qa
+- O grupo qa é renomeado para audit, mantendo o GID 1002
+> O `groupadd` recusa GIDs duplicados e encerra com erro (código de saída 4). Só com a opção `-o` (`--non-unique`) é possível criar um grupo com GID já usado, o que normalmente não é recomendado. Sem `-g`, o sistema escolheria sozinho um GID livre.

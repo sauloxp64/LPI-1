@@ -1,0 +1,367 @@
+### 104.3-001 | unica | 1
+ref: 101:p.483
+tags: mount, listar
+O que o comando `mount`, executado sem nenhum argumento, exibe?
+= Os sistemas de arquivos montados no momento, no formato `origem on destino type tipo (opções)`
+- O conteúdo do arquivo /etc/fstab, com uma linha para cada sistema de arquivos configurado
+- Todas as partições detectadas pelo kernel, estejam elas montadas ou não
+- Uma mensagem de uso, pois mount exige dispositivo e ponto de montagem
+> Sem argumentos, `mount` lista o que está montado agora, lendo a tabela de montagens do kernel, em linhas como `proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)`.
+> O conteúdo do fstab é mostrado com `cat /etc/fstab`; partições não montadas aparecem em `lsblk` ou `blkid`. Com `-t tipo` a lista pode ser filtrada por tipo de sistema de arquivos.
+
+### 104.3-002 | unica | 1
+ref: 101:p.486-487
+tags: fstab, campos
+Qual é a ordem correta dos seis campos de cada linha ativa do arquivo /etc/fstab?
+= dispositivo, ponto de montagem, tipo, opções, dump, pass
+- ponto de montagem, dispositivo, tipo, opções, dump, pass
+- dispositivo, tipo, ponto de montagem, opções, pass, dump
+- dispositivo, ponto de montagem, opções, tipo, dump, pass
+- dispositivo, ponto de montagem, tipo, dump, pass, opções
+> A ordem é: sistema de arquivos (dispositivo, UUID= ou LABEL=), ponto de montagem, tipo, opções de montagem, dump (backup) e pass (ordem do fsck). As demais combinações trocam campos de posição e fariam o `mount` interpretar valores no campo errado.
+
+### 104.3-003 | unica | 2
+ref: 101:p.487, 101:p.497
+tags: fstab, noauto, mount -a
+O arquivo /etc/fstab contém a linha abaixo. O que acontece quando o root executa `mount -a`?
+
+```
+/dev/sdb1  /data  ext4  noatime,noauto,async  0  0
+```
+= O sistema de arquivos não é montado, pois a opção noauto exclui a linha de `mount -a`
+- Ele é montado em /data, pois noatime e async são opções válidas para o tipo ext4
+- Ele é montado somente leitura, pois noauto equivale a uma montagem restrita
+- Ele não é montado, pois falta a opção defaults, obrigatória em toda linha do fstab
+> `mount -a` monta todas as entradas do fstab, exceto as que contêm `noauto`; a mesma regra vale para a montagem automática no boot. Uma entrada noauto continua válida e pode ser montada manualmente com `mount /data`.
+> `noauto` não muda leitura/escrita (isso é `ro`/`rw`) e `defaults` é apenas um atalho, não uma obrigação.
+
+### 104.3-004 | unica | 2
+ref: 101:p.484, 101:p.497
+tags: mount, opções, ro
+Qual comando monta o sistema ext4 de /dev/sdc1 em /mnt/external somente para leitura, com as opções noatime e async?
+= mount -t ext4 -o noatime,async,ro /dev/sdc1 /mnt/external
+- mount -t ext4 -o noatime,async,rw /dev/sdc1 /mnt/external
+- mount -t ext4 -w -o noatime,async /dev/sdc1 /mnt/external
+- mount -t ext4 -o noatime,sync,ro /dev/sdc1 /mnt/external
+- mount -t ext4 -o noatime,async,noexec /dev/sdc1 /mnt/external
+> A opção `-o` recebe a lista de opções separadas por vírgula, e `ro` (ou o atalho `-r`) faz a montagem somente leitura. `rw` e `-w` montam para leitura e escrita; `sync` é o oposto de `async` (gravação síncrona); `noexec` só impede executar binários, sem impedir gravação.
+> Testado: `-r` não aceita argumento, então `mount -t ext4 -r noatime,async ...` falha com "bad usage".
+
+### 104.3-005 | unica | 2
+ref: 101:p.485, 101:p.497
+tags: umount, lsof, busy
+Ao executar `umount /dev/sdd2`, o sistema responde "target is busy". Qual comando mostra quais processos estão com arquivos abertos nesse sistema de arquivos?
+= lsof /dev/sdd2
+- lsblk /dev/sdd2
+- blkid /dev/sdd2
+- df /dev/sdd2
+- findmnt /dev/sdd2
+> `lsof` seguido do dispositivo lista os processos e os arquivos que eles mantêm abertos no sistema de arquivos; depois de fechar esses programas, a desmontagem funciona. (`fuser -vm` também serve para isso, mas não está entre as alternativas.)
+> `lsblk` e `blkid` descrevem dispositivos e identificadores, `df` mostra uso de espaço e `findmnt` mostra onde está montado, mas nenhum deles indica processos.
+
+### 104.3-006 | unica | 2
+ref: 101:p.485, 101:p.499
+tags: umount, -f, -r
+Um sistema de arquivos remoto montado em /mnt/server ficou inacessível por falha de rede. Qual comando tenta forçar a desmontagem e, se ela não for possível, remonta o sistema como somente leitura?
+= umount -f -r /mnt/server
+- umount -a -r /mnt/server
+- umount -n -r /mnt/server
+- mount -f -r /mnt/server
+- mount -o remount,ro /mnt/server
+> `-f` (force) força a desmontagem, útil com NFS inalcançável, e `-r` (read-only) faz o umount tentar remontar como somente leitura quando a desmontagem falha. As opções também podem ser agrupadas: `umount -fr /mnt/server`.
+> `-a` desmonta tudo o que está registrado, `-n` apenas evita gravar em /etc/mtab, `mount -f` é uma montagem simulada ("fake") e o remount isolado não tenta desmontar nada.
+
+### 104.3-007 | unica | 1
+ref: 101:p.487
+tags: fstab, defaults
+No campo de opções do /etc/fstab, a palavra `defaults` equivale a qual conjunto de opções?
+= rw, suid, dev, exec, auto, nouser, async
+- rw, nosuid, nodev, noexec, auto, nouser, async
+- rw, suid, dev, exec, noauto, user, async
+- ro, suid, dev, exec, auto, nouser, sync
+- rw, suid, nodev, exec, auto, users, async
+> `defaults` passa `rw, suid, dev, exec, auto, nouser, async` ao mount (confirmado na man page). Em particular, `nouser` significa que usuários comuns não podem montar, e `auto` que a entrada entra em `mount -a`.
+> As demais alternativas trocam opções por seus opostos (nosuid/nodev/noexec, noauto, user, ro, sync).
+
+### 104.3-008 | unica | 3
+ref: 101:p.488
+tags: fstab, user, noexec, nosuid
+Uma linha do /etc/fstab usa a opção `user` para que usuários comuns possam montar o dispositivo. Quais opções o `user` ativa implicitamente, a menos que sejam sobrescritas depois dele?
+= noexec, nosuid e nodev
+- ro, noexec e nosuid
+- noauto, nosuid e nodev
+- sync, noexec e nodev
+- noatime, nosuid e nodev
+> Pela man page do mount, `user` (e também `users`) implica `noexec`, `nosuid` e `nodev`; `owner` e `group` implicam apenas `nosuid` e `nodev`. Para liberar uma delas é preciso escrevê-la depois, como em `user,exec,dev,suid`.
+> `user` não implica `ro`, `noauto`, `sync` nem `noatime`; `noauto` é uma escolha à parte, comum em entradas de mídia removível.
+
+### 104.3-009 | unica | 2
+ref: 101:p.488, 101:p.495, 101:p.499
+tags: fstab, nouser, mount
+O /etc/fstab contém a linha abaixo, e um usuário comum executa `mount /backup`. Qual é o resultado?
+
+```
+/dev/sdc1  /backup  ext4  noatime,nouser,async  0  0
+```
+= A montagem é recusada, pois nouser não permite que usuários comuns montem o sistema de arquivos
+- A montagem é feita, pois a entrada existe no fstab e o ponto de montagem foi informado
+- A montagem é feita somente leitura, pois nouser limita o usuário a operações de leitura
+- A montagem é recusada, pois falta a opção noauto exigida em montagens manuais
+> Com `nouser` (o padrão de `defaults`) só o root monta. Testado como usuário comum: `mount: /backup: must be superuser to use mount.`
+> Para permitir a montagem por usuários comuns seria necessário `user`, `users`, `owner` ou `group`. `noauto` apenas tira a entrada do boot e do `mount -a`.
+
+### 104.3-010 | unica | 2
+ref: 101:p.488
+tags: fstab, user, noauto, mídia removível
+Qual entrada do /etc/fstab permite que um usuário comum monte o pendrive com `mount /mnt/usb` e impede que ele seja montado automaticamente na inicialização?
+= /dev/sdb1  /mnt/usb  vfat  user,noauto  0  0
+- /dev/sdb1  /mnt/usb  vfat  nouser,noauto  0  0
+- /dev/sdb1  /mnt/usb  vfat  user,auto  0  0
+- /dev/sdb1  /mnt/usb  vfat  defaults  0  0
+- /dev/sdb1  /mnt/usb  vfat  group,auto  0  0
+> `user` autoriza o usuário comum a montar e `noauto` evita a montagem no boot e em `mount -a`.
+> `nouser` e `defaults` mantêm a montagem restrita ao root; `user,auto` e `group,auto` fariam o sistema montar o dispositivo na inicialização (se ele estiver presente).
+
+### 104.3-011 | unica | 2
+ref: 101:p.489-490
+tags: fstab, UUID, blkid
+Observe a saída de `blkid`. Qual linha do /etc/fstab monta essa partição em /dados identificando-a pelo UUID?
+
+```
+# blkid /dev/sdb1
+/dev/sdb1: LABEL="dados" UUID="3f1c2a64-9b7e-4d21-8c55-0a1b2c3d4e5f" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="8a1d77c2-01"
+```
+= UUID=3f1c2a64-9b7e-4d21-8c55-0a1b2c3d4e5f  /dados  ext4  defaults  0  2
+- LABEL=3f1c2a64-9b7e-4d21-8c55-0a1b2c3d4e5f  /dados  ext4  defaults  0  2
+- /dados  UUID=3f1c2a64-9b7e-4d21-8c55-0a1b2c3d4e5f  ext4  defaults  0  2
+- UUID=dados  /dados  ext4  defaults  0  2
+- UUID=3f1c2a64-9b7e-4d21-8c55-0a1b2c3d4e5f  ext4  /dados  defaults  0  2
+> O primeiro campo aceita `UUID=<uuid>` (ou `LABEL=<rótulo>`), seguido do ponto de montagem, do tipo e das opções. O valor do UUID vem do atributo `UUID` da saída do blkid.
+> Nas outras linhas: o UUID aparece sob a palavra-chave LABEL, os campos dispositivo/ponto de montagem estão invertidos, o rótulo foi usado como se fosse UUID, ou tipo e ponto de montagem trocaram de lugar.
+
+### 104.3-012 | unica | 3
+ref: 101:p.490-491
+tags: systemd, mount unit, fstab
+Uma unidade de montagem do systemd contém as linhas abaixo na seção [Mount]. Qual entrada do /etc/fstab é equivalente?
+
+```
+What=/dev/disk/by-uuid/56C11DCC5D2E1334
+Where=/mnt/external
+Type=ntfs
+Options=defaults
+```
+= UUID=56C11DCC5D2E1334  /mnt/external  ntfs  defaults  0  0
+- LABEL=56C11DCC5D2E1334  /mnt/external  ntfs  defaults  0  0
+- UUID=56C11DCC5D2E1334  /mnt/external  defaults  ntfs  0  0
+- /mnt/external  UUID=56C11DCC5D2E1334  ntfs  defaults  0  0
+- UUID=56C11DCC5D2E1334  ntfs  /mnt/external  defaults  0  0
+> `What=` corresponde ao primeiro campo (`UUID=` equivale ao caminho em /dev/disk/by-uuid/), `Where=` ao ponto de montagem, `Type=` ao tipo e `Options=` às opções. Os dois últimos campos (dump e pass) valem 0 quando não são informados.
+> As outras linhas usam LABEL para um UUID ou embaralham a ordem dos campos.
+
+### 104.3-013 | unica | 2
+ref: 101:p.491-492
+tags: systemd, mount unit, daemon-reload
+Você criou o arquivo /etc/systemd/system/mnt-external.mount. Qual comando faz o systemd reler os arquivos de unidade do disco para que a nova configuração seja reconhecida?
+= systemctl daemon-reload
+- systemctl reload mnt-external.mount
+- systemctl restart mnt-external.mount
+- systemctl enable mnt-external.mount
+- systemctl isolate mnt-external.mount
+> `systemctl daemon-reload` faz o gerenciador reler as unidades; na lição, ele é executado antes de `systemctl start mnt-external.mount`.
+> `reload` e `restart` agem sobre a própria unidade (o que ela faz em execução), não sobre a leitura dos arquivos pelo gerenciador; `enable` apenas cria a ativação no boot e `isolate` serve para trocar de targets.
+
+### 104.3-014 | unica | 3
+ref: 101:p.491-492
+tags: systemd, mount unit, nome
+Para qual ponto de montagem o arquivo de unidade `var-backup.mount` foi nomeado corretamente?
+= /var/backup
+- /var-backup
+- /var/backup.mount
+- /backup/var
+- /var_backup
+> Em uma unidade `.mount`, o nome do arquivo precisa ser o caminho do ponto de montagem sem a barra inicial e com as barras trocadas por hífens, mais o sufixo `.mount`. Assim, /mnt/external corresponde a `mnt-external.mount` e /var/backup a `var-backup.mount`.
+> Os outros caminhos gerariam nomes diferentes: /var-backup vira `var\x2dbackup.mount` (o hífen original é escapado), /backup/var vira `backup-var.mount` e /var_backup vira `var_backup.mount`. O nome do ponto de montagem em si não inclui o sufixo `.mount`.
+
+### 104.3-015 | unica | 3
+ref: 101:p.492-493
+tags: systemd, automount
+O volume de /mnt/external já é montado pela unidade `mnt-external.mount`. O administrador quer que a montagem ocorra apenas quando o diretório for acessado. O que deve ser feito?
+= Criar mnt-external.automount com a seção [Automount] e Where=/mnt/external, e iniciá-lo
+- Criar external.automount com a seção [Automount] e Where=/mnt/external, e iniciá-lo
+- Acrescentar a linha AutoMount=yes na seção [Mount] de mnt-external.mount
+- Definir Type=automount na seção [Mount] de mnt-external.mount
+> A montagem sob demanda usa uma unidade `.automount` com o mesmo nome do ponto de montagem (aqui `mnt-external.automount`), contendo `[Automount]` com `Where=` e `[Install]`. Depois: `systemctl daemon-reload` e `systemctl start mnt-external.automount` (e `enable` para valer em todo boot).
+> O nome `external.automount` não casa com o caminho /mnt/external; `AutoMount=` não existe na seção [Mount] e `Type=` nessa seção indica o tipo do sistema de arquivos (ntfs, ext4...), não o modo de ativação.
+
+### 104.3-016 | unica | 2
+ref: 101:p.487
+tags: fstab, pass, fsck
+Qual é a função do sexto campo (pass) de uma linha do /etc/fstab?
+= Definir a ordem de verificação do sistema de arquivos com fsck na inicialização; 0 desativa a verificação
+- Informar ao comando dump se o sistema de arquivos deve entrar nas cópias de segurança
+- Indicar a prioridade com que o sistema de arquivos é montado em relação aos outros
+- Limitar o número de tentativas de montagem antes de o boot prosseguir sem o volume
+> O campo `pass` (fs_passno) define a ordem do fsck no boot: 0 não verifica, 1 é reservado ao sistema raiz e 2 aos demais. Confirmado em `man fstab`.
+> A decisão de entrar em backup do `dump` é do quinto campo (dump). A ordem de montagem segue a posição no arquivo (e dependências), e não há campo para contar tentativas.
+
+### 104.3-017 | unica | 3
+ref: 101:p.494, 101:p.497
+tags: remount, mount
+Um sistema de arquivos exFAT com UUID 6e2c12e3-472d-4bac-a257-c49ac07f3761 está montado em /mnt/data com permissão de escrita. Qual comando o remonta como somente leitura, sem desmontar?
+= mount -o remount,ro /mnt/data
+- mount -o remount,rw /mnt/data
+- mount -r remount /mnt/data
+- umount -r /mnt/data
+- mount -t exfat -o ro UUID=6e2c12e3-472d-4bac-a257-c49ac07f3761 /mnt/data
+> `remount` altera as opções de um sistema já montado; basta o ponto de montagem (ou o dispositivo), sem precisar do tipo ou do UUID. Aqui: `mount -o remount,ro /mnt/data`.
+> `remount,rw` faz o oposto, `-r remount` não é sintaxe válida (`-r` não recebe argumento), `umount -r` tenta desmontar e só remonta como somente leitura se a desmontagem falhar, e a última opção tenta uma segunda montagem em vez de alterar a existente.
+
+### 104.3-018 | unica | 1
+ref: 101:p.486
+tags: /media, mídia removível
+Em um desktop Debian/Ubuntu, o usuário john conecta um pendrive com o rótulo FlashDrive. Em qual diretório ele costuma ser montado automaticamente?
+= /media/john/FlashDrive
+- /mnt/john/FlashDrive
+- /media/FlashDrive/john
+- /home/john/media/FlashDrive
+- /dev/john/FlashDrive
+> Ambientes de desktop modernos montam a mídia removível em `/media/USUARIO/RÓTULO`. O diretório /mnt é o local tradicional para montagens manuais temporárias feitas pelo administrador.
+> No Fedora/RHEL o padrão é `/run/media/USUARIO/RÓTULO`, mas o esquema por usuário e rótulo é o mesmo. /dev contém arquivos de dispositivo, não pontos de montagem.
+
+### 104.3-019 | unica | 2
+ref: 101:p.483
+tags: mount, ponto de montagem
+Um diretório que já contém arquivos é usado como ponto de montagem de uma partição. O que acontece com esses arquivos enquanto a partição estiver montada?
+= Ficam inacessíveis pelo nome e voltam a aparecer depois que a partição for desmontada
+- São apagados definitivamente, pois o mount exige que o diretório esteja vazio
+- São mesclados com o conteúdo da partição, ficando visíveis junto com os novos arquivos
+- São movidos automaticamente para /lost+found até a partição ser desmontada
+> O ponto de montagem precisa existir, mas não precisa estar vazio. Enquanto há algo montado sobre ele, os arquivos originais do diretório ficam ocultos, e reaparecem no `umount`.
+> O mount não apaga, mescla nem move esses arquivos.
+
+### 104.3-020 | multipla | 2
+ref: 101:p.488-489
+tags: fstab, UUID, LABEL, nomes de dispositivo
+Um pendrive aparece às vezes como /dev/sdb1 e às vezes como /dev/sdc1, dependendo da ordem de conexão. Quais valores do primeiro campo do /etc/fstab identificam o dispositivo de forma que não dependa dessa ordem?
+= UUID=3f1c2a64-9b7e-4d21-8c55-0a1b2c3d4e5f
+= LABEL=dados
+- /dev/sdb1
+- /dev/sdc1
+- /dev/sdb
+> O UUID e o rótulo são gravados no sistema de arquivos ao criá-lo e não mudam enquanto ele não for recriado ou renomeado, por isso são imunes à troca de nomes sdb/sdc.
+> `/dev/sdb1` e `/dev/sdc1` são nomes atribuídos pelo kernel conforme a ordem de detecção, e `/dev/sdb` seria o disco inteiro, não a partição.
+
+### 104.3-021 | multipla | 2
+ref: 101:p.488
+tags: fstab, user, group, owner
+Quais opções de montagem do /etc/fstab permitem que um usuário sem privilégios de root monte o sistema de arquivos?
+= user
+= group
+= owner
+- nouser
+- noauto
+- nosuid
+> `user` libera a montagem para qualquer usuário comum (apenas quem montou desmonta); `group` exige que o usuário pertença ao grupo do dispositivo; `owner` exige que o usuário seja o dono do dispositivo. Existe também `users`, que deixa qualquer usuário montar e desmontar.
+> `nouser` é o oposto de user e vem em `defaults`; `noauto` só tira a entrada de `mount -a`; `nosuid` desativa os bits suid/sgid.
+
+### 104.3-022 | multipla | 2
+ref: 101:p.486
+tags: /mnt, /media
+Quais afirmações sobre os diretórios /mnt e /media estão corretas?
+= /media é o local padrão onde os ambientes de desktop montam mídias removíveis, como pendrives
+= /mnt é o local tradicionalmente usado para montagens manuais temporárias feitas pelo administrador
+- O mount cria o diretório do ponto de montagem automaticamente quando ele não existe
+- Um diretório só pode ser usado como ponto de montagem se estiver vazio
+- /mnt foi criado para guardar os arquivos de configuração dos dispositivos montados
+> Dispositivos removíveis são montados em /media/USUARIO/RÓTULO pelos ambientes gráficos; para montagens manuais, a lição recomenda /mnt.
+> O mount não cria o ponto de montagem: ele precisa existir (testado como root com um caminho inexistente: `mount point is not a directory`). O diretório não precisa estar vazio, e a configuração de montagens fica em /etc/fstab.
+
+### 104.3-023 | multipla | 2
+ref: 101:p.489, 101:p.494
+tags: blkid, lsblk, UUID
+Quais comandos mostram o UUID do sistema de arquivos de /dev/sdb1?
+= blkid /dev/sdb1
+= lsblk -f /dev/sdb1
+- df -T /dev/sdb1
+- fsck -N /dev/sdb1
+- mount -l /dev/sdb1
+- ls -l /dev/sdb1
+> `blkid` exibe LABEL, UUID e TYPE do dispositivo; `lsblk -f` mostra as colunas FSTYPE, LABEL, UUID e MOUNTPOINT.
+> `df -T` informa tipo e uso de espaço, `fsck -N` apenas simula a verificação, `mount -l` acrescenta o rótulo (e não o UUID) à listagem de montagens e `ls -l` mostra permissões e o major/minor do arquivo de dispositivo.
+
+### 104.3-024 | unica | 3
+ref: 101:p.488
+tags: fstab, user, users, umount
+O /etc/fstab possui a linha `/dev/sdb1 /mnt/usb vfat noauto,user 0 0`. A usuária ana monta o dispositivo com `mount /mnt/usb`. Quem pode desmontá-lo com `umount /mnt/usb`?
+= Somente ana (além do root), pois a opção user registra quem fez a montagem
+- Qualquer usuário comum, pois o ponto de montagem é compartilhado
+- Somente o root, pois usuários comuns nunca podem desmontar
+- Qualquer usuário que pertença ao grupo proprietário do dispositivo
+> Com `user`, o nome de quem montou é registrado e somente esse mesmo usuário (ou o root) pode desmontar. Com `users`, qualquer usuário pode montar e desmontar, mesmo que outro tenha montado.
+> A pertinência ao grupo do dispositivo é a regra da opção `group` para montar, não para desmontar.
+
+### 104.3-025 | lacuna | 2
+ref: 101:p.492
+tags: systemd, mount unit, nome
+Qual deve ser o nome do arquivo da unidade de montagem do systemd para o ponto de montagem /mnt/external?
+= mnt-external.mount
+= /etc/systemd/system/mnt-external.mount
+> O nome da unidade é o caminho do ponto de montagem sem a barra inicial, com as barras trocadas por hífens e o sufixo `.mount`: `mnt-external.mount`. Ele é colocado em /etc/systemd/system/.
+
+### 104.3-026 | lacuna | 1
+ref: 101:p.492
+tags: systemd, enable
+Complete o comando para que a unidade seja montada automaticamente em todas as inicializações: systemctl ____ mnt-external.mount
+= enable
+> `systemctl start` monta apenas na sessão atual; `systemctl enable` cria a ativação no boot, via `WantedBy=multi-user.target` da seção [Install].
+
+### 104.3-027 | lacuna | 1
+ref: 101:p.484
+tags: mount, -a
+Qual comando monta, de uma só vez, todos os sistemas de arquivos do /etc/fstab, exceto os marcados com noauto?
+= mount -a
+= mount --all
+> `mount -a` (`--all`) monta tudo o que está em /etc/fstab, ignorando as linhas com noauto (e as que já estão montadas).
+
+### 104.3-028 | lacuna | 2
+ref: 101:p.488
+tags: mount, remount
+Complete a opção para alterar as opções de um sistema de arquivos já montado: mount -o ____,ro /mnt/data
+= remount
+> `remount` reaplica as opções a um sistema de arquivos já montado, sem exigir tipo ou UUID. Em `mount -o remount,ro /mnt/data` ele passa a ser somente leitura.
+
+### 104.3-029 | lacuna | 1
+ref: 101:p.484, 101:p.489
+tags: mount, label
+Qual opção curta do mount seleciona a partição a montar pelo seu rótulo (por exemplo, `mount ____ dados /mnt/dados`)?
+= -L
+> `-L` (ou `--label`) indica o rótulo e `-U` (ou `--uuid`) indica o UUID. Equivale a usar `mount LABEL=dados /mnt/dados`. Testado: com um rótulo inexistente, o mount responde "can't find LABEL=...".
+
+### 104.3-030 | lacuna | 2
+ref: 101:p.490, 101:p.495
+tags: fstab, LABEL
+Complete o primeiro campo da linha do fstab para montar o volume btrfs de rótulo Backup, com as opções padrão e sem execução de binários: ____ /mnt/backup btrfs defaults,noexec 0 0
+= LABEL=Backup
+= LABEL="Backup"
+> No primeiro campo, `LABEL=` seguido do rótulo identifica o sistema de arquivos sem depender do nome /dev/sdXN. Letras maiúsculas e minúsculas do rótulo precisam coincidir.
+
+### 104.3-031 | lacuna | 1
+ref: 101:p.483-484, 101:p.497-498
+tags: mount, -t, filtro
+Qual comando `mount` lista somente os sistemas de arquivos dos tipos ext3 e ntfs que estão montados no momento (informe os tipos separados por vírgula, sem espaços)?
+= mount -t ext3,ntfs
+= mount -t ntfs,ext3
+= mount --types ext3,ntfs
+= mount --types ntfs,ext3
+= mount -l -t ext3,ntfs
+= mount -t ext3,ntfs -l
+> Com `-t`, o `mount` sem outros argumentos filtra a listagem pelo tipo; vários tipos são separados por vírgula, sem espaços, e a ordem não importa. Testado com `mount -t proc,tmpfs`, que lista apenas esses dois tipos. (`findmnt -t ext3,ntfs` faz algo parecido, mas o enunciado pede o comando `mount`.)
+
+### 104.3-032 | lacuna | 1
+ref: 101:p.489
+tags: lsblk, UUID, LABEL
+Qual opção curta do `lsblk` exibe de uma vez as informações do sistema de arquivos (tipo, rótulo, UUID, espaço livre e ponto de montagem), sem que seja preciso listar colunas com `-o`? `lsblk ____ /dev/sda1`
+= -f
+= --fs
+> `lsblk -f` (ou `--fs`) é o atalho para as colunas de sistema de arquivos: FSTYPE, FSVER, LABEL, UUID, FSAVAIL, FSUSE% e MOUNTPOINTS (testado no util-linux 2.38). Sem essa opção, o lsblk mostra colunas como NAME, SIZE, TYPE e MOUNTPOINTS, sem rótulo nem UUID.
+> Também seria possível obter o UUID com `lsblk -o NAME,UUID`, mas aí as colunas são escolhidas uma a uma; o enunciado pede o atalho que dispensa o `-o`.

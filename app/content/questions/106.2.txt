@@ -1,0 +1,238 @@
+### 106.2-001 | unica | 2
+ref: 102:p.154-155
+tags: Gnome, Gnome Shell, Gnome Classic
+Qual é o nome da interface do Gnome 3 que, com seu iniciador de tela cheia (Activities), substituiu o iniciador de aplicativos e a barra de tarefas tradicionais?
+- KDE Plasma
+- MATE
+- Cinnamon
+= Gnome Shell
+- Gnome Classic
+> O Gnome Shell é a interface introduzida no Gnome 3, com o iniciador de tela cheia Activities. O Gnome Classic é uma opção da tela de login que recupera o visual antigo (barra de tarefas tradicional), Plasma é o desktop do KDE, e Cinnamon e MATE são ambientes do Linux Mint, derivados do Gnome 3 e do Gnome 2.
+
+### 106.2-002 | unica | 1
+ref: 102:p.155
+tags: KDE, Qt
+Qual biblioteca de widgets (kit de ferramentas) é a base do KDE e dá aos seus aplicativos a aparência característica?
+- Tk
+- GTK+
+- Xlib
+- Motif
+= Qt
+> O KDE é construído sobre a biblioteca Qt. O Gnome é baseado em GTK+. Os dois kits de ferramentas oferecem widgets equivalentes, e aplicativos feitos com um ou com outro podem rodar ao mesmo tempo em qualquer desktop.
+
+### 106.2-003 | unica | 2
+ref: 102:p.163
+tags: KDE, Qt, GTK
+O cliente BitTorrent Transmission tem duas versões, `transmission-gtk` e `transmission-qt`. Qual pacote deve ser instalado para obter a melhor integração com o KDE?
+- `transmission-gtk`
+- `transmission-xfce`
+- `transmission-kde`
+= `transmission-qt`
+- `transmission-cli`
+> Como o KDE usa a biblioteca Qt, a versão Qt do aplicativo se integra melhor ao desktop. A versão GTK também funciona no KDE, mas pode ter aparência distinta. `transmission-cli` é a versão de linha de comando.
+
+### 106.2-004 | unica | 2
+ref: 102:p.156
+tags: Xfce, LXDE, baixo consumo
+Quais ambientes de desktop são indicados para computadores de baixo custo, de placa única ou com pouco poder de processamento, por usarem poucos efeitos visuais?
+= Xfce e LXDE
+- GNOME Shell e Cinnamon
+- KDE Plasma e Cinnamon
+- KDE Plasma e GNOME Shell
+- GNOME Shell e Unity
+> O Xfce busca ser agradável sem consumir muitos recursos, e o LXDE foi adaptado especificamente para baixo consumo, sendo boa escolha para equipamentos antigos e computadores de placa única. Os demais pares incluem ambientes com mais efeitos visuais e maior consumo.
+
+### 106.2-005 | unica | 2
+ref: 102:p.156
+tags: MATE, Cinnamon, Linux Mint
+No Linux Mint, o ambiente de desktop MATE é um fork de qual ambiente?
+- LXDE
+- KDE 3
+- Gnome 3
+= Gnome 2
+- Xfce 4, em sua versão antiga
+> O Linux Mint oferece dois ambientes próprios: o Cinnamon, um fork do Gnome 3, e o MATE, um fork do Gnome 2 que preserva o desktop tradicional.
+
+### 106.2-006 | unica | 2
+ref: 102:p.152-153
+tags: ambiente de desktop, gerenciador de janelas
+Qual afirmação descreve corretamente um ambiente de desktop?
+- Outro nome do servidor X, responsável por desenhar as janelas na tela e tratar a entrada
+= Conjunto formado por gerenciador de janelas, kit de widgets e aplicativos acessórios
+- Protocolo de rede usado para abrir janelas de aplicativos em máquinas remotas
+- Programa que substitui o servidor X para exibir a interface gráfica do usuário
+- Driver da placa de vídeo carregado pelo servidor X durante a inicialização
+> O X fornece apenas os recursos básicos de desenho e entrada. O ambiente de desktop (Gnome, KDE, Xfce etc.) reúne gerenciador de janelas, kit de ferramentas de widgets, iniciador de aplicativos, ferramentas de configuração e aplicativos acessórios (terminal, gerenciador de arquivos, editor), entregando uma experiência consistente. Ele roda sobre o X (ou o Wayland) em vez de substituí-lo.
+
+### 106.2-007 | unica | 2
+ref: 102:p.157
+tags: freedesktop.org, .desktop
+Segundo as especificações de interoperabilidade do freedesktop.org, que tipo de arquivo de texto descreve os aplicativos disponíveis para o iniciador do ambiente de desktop?
+- Arquivos terminados em `.appentry`
+- Arquivos terminados em `.shortcut`
+- Arquivos terminados em `.launcher`
+= Arquivos terminados em `.desktop`
+- Arquivos terminados em `.xapp`
+> Os itens da área de trabalho (desktop entries) são arquivos de texto terminados em `.desktop` que informam ao ambiente de desktop quais aplicativos existem e como executá-los. Também são usados para o início automático de aplicativos após o login. As outras extensões não fazem parte da especificação.
+
+### 106.2-008 | unica | 1
+ref: 102:p.158
+tags: XDMCP
+Qual protocolo permite ao X acessar nativamente sessões de desktop gráfico remotas, comunicando-se com um gerenciador de exibição remoto?
+= XDMCP
+- Spice
+- RFB
+- SSH
+- RDP, da Microsoft
+> O XDMCP (X Display Manager Control Protocol) é o mecanismo nativo do X para sessões de desktop remoto. RDP é o protocolo da Microsoft, Spice é voltado a máquinas virtualizadas, RFB é o protocolo usado pelo VNC e SSH não transporta a interface gráfica por padrão (apenas com encaminhamento X11).
+
+### 106.2-009 | multipla | 3
+ref: 102:p.158
+tags: XDMCP, segurança
+Quais são desvantagens do XDMCP citadas no material de estudo?
+= Alto consumo de largura de banda, o que o torna pouco prático em redes lentas
+- Não permite abrir sessões completas de desktop
+- Exige que o Wayland esteja instalado nos clientes
+- Funciona somente entre máquinas Windows
+= Exige instâncias do X em execução nas duas extremidades da conexão
+= Uma vulnerabilidade pode permitir execução de comandos privilegiados na máquina remota
+> O XDMCP consome muita banda, depende do X nos dois lados e, como o display local se comunica com um gerenciador de exibição remoto privilegiado, uma falha de segurança pode permitir executar comandos privilegiados. Por isso é raro na Internet ou em LANs lentas; ele é nativo do X (não do Windows), permite sessões completas e não depende do Wayland.
+
+### 106.2-010 | lacuna | 1
+ref: 102:p.158
+tags: VNC, portas
+Por convenção, a porta TCP de um servidor VNC é uma porta base somada ao número do display (`:0`, `:1`, `:2`...). Qual é essa porta base, usada pelo primeiro servidor VNC da máquina (display `:0`)?
+= 5900
+> O primeiro servidor VNC (display `:0`) usa a porta TCP 5900, o segundo (`:1`) usa 5901 e assim por diante, pois cada servidor precisa de uma porta exclusiva. Na prática, muitos servidores VNC do Linux iniciam pelo display `:1` (porta 5901), mas a convenção do protocolo e do material de estudo parte de 5900.
+
+### 106.2-011 | unica | 2
+ref: 102:p.158
+tags: VNC, portas
+Uma máquina executa três servidores VNC, nos displays `:0`, `:1` e `:2`. Por convenção (porta TCP = 5900 + número do display), em qual porta o cliente deve se conectar para acessar o terceiro servidor, o do display `:2`?
+- 3389, porta do RDP
+- 6002
+= 5902
+- 5901
+- 5900
+> Os servidores VNC são numerados a partir da porta 5900: o display `:0` escuta na 5900, o `:1` na 5901 e o `:2` na 5902. A 6002 seguiria a numeração do próprio servidor X (6000 + display), não a do VNC, e a 3389 é a porta do RDP.
+
+### 106.2-012 | unica | 3
+ref: 102:p.158-159
+tags: VNC, segurança, ssh
+O que se deve levar em conta ao usar VNC por redes não confiáveis?
+- Ele exige que o servidor VNC seja executado pelo usuário root
+- Ele só funciona se o cliente e o servidor usarem o mesmo ambiente de desktop
+- Ele criptografa todo o tráfego por padrão com TLS 1.3 e dispensa outros recursos
+= Não tem criptografia e autenticação modernas nativas; use túnel SSH ou VPN
+- Ele envia apenas os eventos do teclado; o vídeo é transmitido por outro canal
+> O VNC (protocolo RFB) não oferece nativamente métodos modernos de criptografia e autenticação, por isso é comum encapsulá-lo em túneis SSH ou VPN. Qualquer cliente VNC acessa qualquer servidor, independentemente do desktop, e o servidor não precisa de privilégios especiais.
+
+### 106.2-013 | unica | 2
+ref: 102:p.158-159
+tags: VNC, xstartup
+Qual arquivo é um script de shell executado quando o servidor VNC inicia e permite definir qual ambiente de desktop será disponibilizado ao cliente?
+= `~/.vnc/xstartup`
+- `/etc/X11/Xsession`
+- `~/.Xauthority`
+- `/etc/vnc.conf`
+- `~/.vnc/passwd`
+> O `~/.vnc/xstartup` é o script executado ao iniciar o servidor VNC e escolhe o desktop apresentado. `~/.vnc/passwd` guarda a senha do VNC, `~/.Xauthority` guarda cookies do X, `/etc/X11/Xsession` é o script de sessão do display manager e `/etc/vnc.conf` não faz parte da convenção descrita.
+
+### 106.2-014 | unica | 1
+ref: 102:p.159
+tags: RDP
+Qual protocolo é o mais adequado para acessar, a partir de um desktop Linux, a área de trabalho de um computador com Windows, usando por padrão a porta TCP 3389?
+- FTP
+- XDMCP
+= RDP
+- SSH
+- Spice
+> O Remote Desktop Protocol (RDP) é o protocolo da Microsoft para desktop remoto no Windows e usa a porta TCP 3389; os clientes para Linux são programas de código aberto. XDMCP é nativo do X, Spice é voltado a máquinas virtuais e SSH/FTP não são protocolos de desktop gráfico.
+
+### 106.2-015 | unica | 2
+ref: 102:p.159
+tags: Spice
+Qual protocolo é voltado ao acesso a desktops de sistemas virtualizados e oferece recursos como acesso a dispositivos USB e áudio do cliente e compartilhamento de arquivos?
+- XDMCP
+- RFB
+- RDP, da Microsoft
+= Spice
+- VNC
+> O Spice (Simple Protocol for Independent Computing Environments) é usado para acessar o desktop de máquinas virtuais, local ou remotamente, e integra dispositivos do cliente (alto-falantes, USB) e compartilhamento de arquivos. RFB é o protocolo do VNC (que não tem esses recursos de integração nativos).
+
+### 106.2-016 | lacuna | 1
+ref: 102:p.159
+tags: Remmina, VNC, RDP, Spice, XDMCP
+Qual cliente gráfico de desktop remoto, com plugins para XDMCP, VNC, RDP e Spice, permite guardar as configurações de conexão para uso posterior?
+= Remmina
+= remmina
+> O Remmina fornece uma interface única para vários protocolos de desktop remoto, via plugins, e pode armazenar as conexões. A escolha do protocolo depende dos sistemas envolvidos, da qualidade da rede e dos recursos necessários.
+
+### 106.2-017 | unica | 2
+ref: 102:p.164
+tags: terminal, copiar e colar, X11
+Em um emulador de terminal sob o X, qual é a forma recomendada de colar o texto que foi selecionado com o mouse?
+- Pressionar Alt+F2 dentro da janela do terminal
+- Pressionar Ctrl+C dentro da janela do terminal
+= Clicar com o botão do meio do mouse
+- Pressionar Ctrl+V dentro da janela do terminal
+- Pressionar Ctrl+Z dentro da janela do terminal
+> No X, o texto selecionado fica disponível para ser colado com o botão do meio. No terminal, Ctrl+C é atribuído à interrupção de programas (SIGINT), então o método do botão do meio é o mais recomendado (em muitos emuladores, Ctrl+Shift+V também cola, mas Ctrl+V sozinho em geral não); Ctrl+Z suspende o processo e Alt+F2 abre a janela "Executar programa" na maioria dos desktops.
+
+### 106.2-018 | lacuna | 1
+ref: 102:p.164
+tags: KDE, konsole
+Qual é o nome do emulador de terminal do KDE, que pode ser iniciado pela janela "Executar programa" (Alt+F2)?
+= konsole
+= Konsole
+> O Konsole é o emulador de terminal do KDE. Termos genéricos, como `terminal`, também costumam funcionar na janela de execução. Gnome Terminal e xterm são alternativas em outros ambientes.
+
+### 106.2-019 | unica | 3
+ref: 102:p.158
+tags: VNC, privilégios
+Um usuário comum, sem privilégios de administrador, precisa acessar remotamente o seu desktop. Qual afirmação sobre o VNC é correta?
+- O servidor VNC só pode ser iniciado pelo root e compartilhado entre usuários
+- É obrigatório alterar o `xorg.conf` para permitir conexões VNC
+- O VNC exige que o gerenciador de exibição esteja configurado para XDMCP
+= Ele pode iniciar o próprio servidor VNC, sem privilégios especiais
+- Cada usuário precisa de uma entrada em `/etc/vnc.conf` para usar o VNC
+> O servidor VNC não precisa de privilégios especiais: o usuário faz login remoto (por exemplo, via SSH) e inicia seu próprio servidor, com uma porta TCP exclusiva. Qualquer cliente VNC acessa essa sessão. O VNC não depende do XDMCP nem de alterações no `xorg.conf`.
+
+### 106.2-020 | multipla | 2
+ref: 102:p.158-159
+tags: protocolos, XDMCP, VNC, Spice, RDP
+Quais dos itens abaixo são protocolos usados para acessar sessões de desktop remoto?
+= VNC
+= XDMCP
+- GTK+
+= Spice
+- Remmina
+- freedesktop.org
+> XDMCP, VNC (protocolo RFB) e Spice são protocolos de desktop remoto, assim como o RDP. O GTK+ é um kit de ferramentas de widgets, o Remmina é um cliente que usa esses protocolos por plugins e o freedesktop.org é uma organização que mantém especificações de interoperabilidade.
+
+### 106.2-021 | lacuna | 1
+ref: 102:p.159
+tags: RDP, portas
+Qual porta TCP é usada pelo protocolo RDP para acessar a área de trabalho remota de um sistema Windows?
+= 3389
+> O Remote Desktop Protocol usa a porta TCP 3389. Os servidores VNC usam, por convenção, as portas a partir da 5900.
+
+### 106.2-022 | lacuna | 1
+ref: 102:p.158
+tags: VNC, RFB
+Qual protocolo de desktop remoto utiliza o protocolo Remote Frame Buffer (RFB) para enviar os eventos de teclado e mouse e receber as atualizações de tela?
+= VNC
+= vnc
+= Virtual Network Computing
+> O VNC (Virtual Network Computing) é independente de plataforma e usa o protocolo RFB: os eventos locais de teclado e mouse seguem para o desktop remoto, que devolve as atualizações da tela.
+
+### 106.2-023 | unica | 2
+ref: 102:p.152
+tags: X11, ambiente de desktop
+Qual função cabe ao X Window System (X11), e não ao ambiente de desktop construído sobre ele?
+= Tratar eventos de entrada e fornecer a interface de baixo nível para desenhar na tela
+- Estabelecer os atalhos de teclado padrão do desktop
+- Definir o conjunto de aplicativos acessórios, como calendário e calculadora
+- Gerenciar o chaveiro e o gerenciador de sessão do usuário
+- Decidir a aparência dos botões e das barras de título das janelas
+> O X fornece os recursos de baixo nível: tratamento de eventos do mouse e do teclado, cópia e colagem entre aplicativos e a interface de programação para desenhar elementos gráficos. Formas, cores, decorações e atalhos ficam por conta dos aplicativos, do gerenciador de janelas e do ambiente de desktop, que também reúne acessórios e serviços de sessão.

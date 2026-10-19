@@ -1,0 +1,31 @@
+{
+  "id": "f107-2-cron-d-sistema",
+  "obj": "107.2",
+  "titulo": "Tarefa do sistema em /etc/cron.d rodando como outro usuário",
+  "nivel": 3,
+  "minutos": 9,
+  "params": {
+    "robo": { "escolha": ["rob-relatorio", "rob-faturas", "rob-conciliacao", "rob-estoque"] },
+    "script": { "escolha": ["fecha-caixa.sh", "concilia-faturas.sh", "confere-estoque.sh", "gera-balancete.sh"] },
+    "d1": { "faixa": [1, 10] },
+    "d2": { "faixa": [15, 28] },
+    "hora": { "faixa": [0, 23] },
+    "minuto": { "faixa": [1, 58] },
+    "m1": { "faixa": [1, 4] },
+    "m2": { "faixa": [8, 12] }
+  },
+  "enunciado": "O script `/usr/local/bin/{script}` já está instalado e precisa rodar automaticamente como o usuário de serviço **`{robo}`** (não como `root`). Em vez de usar o crontab de um usuário, a equipe quer a tarefa **no cron do sistema**, em um arquivo dentro de `/etc/cron.d/` (use `sudo`).\n\nAgendamento:\n\n* **minuto `{minuto}` da hora `{hora}`**;\n* nos **dias do mês `{d1}` e `{d2}`**;\n* apenas nos **meses `{m1}` a `{m2}`** (numéricos, inclusive);\n* qualquer dia da semana.\n\nVocê escolhe o nome do arquivo em `/etc/cron.d/`, mas lembre que o cron é exigente com nomes e permissões desses arquivos. Ao final, o comando agendado, executado como o usuário indicado na própria linha, tem de funcionar.",
+  "verifica": [
+    "existe um arquivo em `/etc/cron.d/` com nome aceito pelo cron (sem ponto), do `root`, sem escrita para grupo/outros, que agenda `/usr/local/bin/{script}`",
+    "a linha tem os 5 campos de tempo corretos (minuto `{minuto}`, hora `{hora}`, dias do mês `{d1}` e `{d2}`, meses `{m1}-{m2}`, qualquer dia da semana)",
+    "o 6º campo (usuário) é `{robo}`",
+    "executando o comando da linha como `{robo}` o script funciona (grava o marcador no diretório do serviço)"
+  ],
+  "dicas": [
+    "Os arquivos de `/etc/cron.d/` têm o mesmo formato do `/etc/crontab`: 5 campos de tempo, **depois o usuário**, depois o comando.",
+    "No Debian/Ubuntu o cron ignora arquivos de `/etc/cron.d/` cujo nome tenha caracteres fora de letras, números, `_` e `-` (por exemplo, um ponto, como em `tarefa.cron`). O arquivo também deve ser do `root` e não pode ser gravável por outros.",
+    "Lista de dias: `d1,d2`. Intervalo de meses: `m1-m2`. Não é preciso rodar `crontab` nem reiniciar nada: o cron relê `/etc/cron.d/` sozinho.",
+    "Exemplo de forma: `MIN HORA DIA1,DIA2 MES1-MES2 * usuario /caminho/comando`."
+  ],
+  "solucao": "```\necho '{minuto} {hora} {d1},{d2} {m1}-{m2} * {robo} /usr/local/bin/{script}' | sudo tee /etc/cron.d/tarefa-{robo}\nsudo chmod 644 /etc/cron.d/tarefa-{robo}\nls -l /etc/cron.d/tarefa-{robo}\n```\nDiferenças em relação ao `crontab -e`: nos arquivos de `/etc/cron.d/` (e no `/etc/crontab`) existe um **campo extra com o usuário** entre os 5 campos de tempo e o comando; o crontab de um usuário não tem esse campo. O arquivo deve pertencer ao root e não ser gravável por grupo/outros (senão o cron o ignora com `INSECURE MODE`), e no Debian o nome só pode ter letras, dígitos, `_` e `-`: `tarefa.cron` seria ignorado silenciosamente (as regras de `run-parts`). Dias do mês e dia da semana juntos são combinados com **OU**; aqui o dia da semana é `*`, então só valem os dias do mês."
+}

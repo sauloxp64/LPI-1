@@ -1,0 +1,29 @@
+{
+  "id": "f105-2-script-arquivos",
+  "obj": "105.2",
+  "titulo": "Script que audita caminhos recebidos como argumentos",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "script": { "escolha": ["auditar.sh", "inspecionar.sh", "conferir.sh", "vistoria.sh"] },
+    "r_arq": { "escolha": ["ARQ", "FILE", "ARQUIVO"] },
+    "r_dir": { "escolha": ["DIR", "PASTA", "DIRETORIO"] },
+    "r_aus": { "escolha": ["AUSENTE", "FALTA", "INEXISTENTE"] },
+    "uso": { "escolha": [2, 3, 64] }
+  },
+  "enunciado": "Escreva o script **`~/lab/scripts/{script}`** (a pasta já existe e tem uma `amostra/` para você testar). Ele recebe **um ou mais caminhos** como argumentos e, para cada um, **na ordem recebida**, imprime uma linha na saída padrão:\n\n* se for um **arquivo comum legível**: `{r_arq} <caminho> <N>`, onde `N` é o número de linhas do arquivo (o mesmo que o `wc -l` informa);\n* se for um **diretório**: `{r_dir} <caminho>`;\n* em **qualquer outro caso** (não existe, ou existe mas não é legível): `{r_aus} <caminho>`.\n\nO **código de saída** do script é a **quantidade de caminhos** classificados como `{r_aus}` (0 quando todos existem). **Sem nenhum argumento**, o script não escreve nada na saída padrão: imprime `uso: {script} caminho...` na **saída de erro** e termina com código **{uso}**.\n\nRequisitos: o arquivo precisa ser **executável**, começar com a linha **shebang** do interpretador e funcionar com caminhos que tenham **espaços**. O verificador o executa como `aluno`, com argumentos sorteados a cada verificação.",
+  "verifica": [
+    "o script existe, é executável e começa com um shebang válido",
+    "caminhos existentes (arquivos e pasta): linhas `{r_arq} caminho N` / `{r_dir} caminho` corretas, código de saída 0",
+    "mistura com ausentes e arquivo ilegível: linhas `{r_aus}` e código de saída = quantidade de ausentes",
+    "um único caminho com nome completo, com espaços tratados corretamente",
+    "sem argumentos: nada na saída padrão, mensagem de uso na saída de erro, código {uso}"
+  ],
+  "dicas": [
+    "Estrutura geral: um teste de `$#` para o caso sem argumentos, um `for` sobre os argumentos e, dentro dele, `if / elif / else` com os testes de arquivo (`-d`, `-f`, `-r`).",
+    "Use `\"$@\"` (com aspas) no `for` e `\"$p\"` ao usar cada caminho, senão nomes com espaço quebram. `wc -l < \"$p\"` imprime só o número, sem o nome do arquivo.",
+    "Para acumular o código de saída, conte os ausentes em uma variável (`falta=$((falta + 1))`) e termine com `exit $falta`. Mensagens de erro vão para o stderr com `>&2`.",
+    "Teste com `chmod +x`, `./{script} amostra/a.txt amostra/pasta nada`, e confira o código com `echo $?`."
+  ],
+  "solucao": "```\n#!/bin/bash\nif [ $# -eq 0 ]; then\n  echo \"uso: {script} caminho...\" >&2\n  exit {uso}\nfi\nfalta=0\nfor p in \"$@\"; do\n  if [ -d \"$p\" ]; then\n    echo \"{r_dir} $p\"\n  elif [ -f \"$p\" ] && [ -r \"$p\" ]; then\n    echo \"{r_arq} $p $(wc -l < \"$p\")\"\n  else\n    echo \"{r_aus} $p\"\n    falta=$((falta + 1))\n  fi\ndone\nexit $falta\n```\nDepois `chmod +x ~/lab/scripts/{script}`. `\"$@\"` expande cada argumento como uma palavra só (preservando espaços); `-d`, `-f` e `-r` testam diretório, arquivo comum e leitura; `wc -l < arquivo` evita que o nome apareça na saída; e `exit N` define o código de retorno (o `$?` de quem chamou). Mensagens de erro/uso vão para o `stderr` (`>&2`). Pegadinhas: esquecer as aspas em `\"$p\"`, testar só `-e` (um diretório existe, mas não é arquivo comum) e esquecer o `chmod +x` ou o shebang."
+}

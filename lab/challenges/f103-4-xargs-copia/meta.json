@@ -1,0 +1,37 @@
+{
+  "id": "f103-4-xargs-copia",
+  "obj": "103.4",
+  "titulo": "find com xargs: copiar e somar linhas",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "ext": {
+      "escolha": [
+        "cfg",
+        "conf",
+        "ini"
+      ]
+    },
+    "base": {
+      "escolha": [
+        "servicos",
+        "filiais",
+        "modulos",
+        "ambientes"
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-4-xargs-copia/{base}/` há uma árvore de subpastas com arquivos de configuração `*.{ext}` espalhados (**alguns têm espaços no nome**) e outros arquivos parecidos que **não** terminam em `.{ext}`.\n\nA partir de `~/lab/f103-4-xargs-copia/`, usando `find` junto com `xargs`:\n\n1. **Copie** todos os arquivos `*.{ext}` da árvore para a pasta `destino/` (que já existe e está vazia), todos juntos na mesma pasta, sem recriar as subpastas. Os originais devem continuar onde estão.\n2. Grave em `linhas.txt` o **total de linhas somadas** de todos esses arquivos `*.{ext}` (um único número).",
+  "verifica": [
+    "os arquivos originais continuam nos seus lugares",
+    "`destino/` tem exatamente os arquivos `*.{ext}` (inclusive os de nome com espaço), com o conteúdo original",
+    "`linhas.txt` traz a soma das linhas de todos os `*.{ext}`"
+  ],
+  "dicas": [
+    "O `xargs` transforma linhas da entrada em **argumentos** de outro comando — exatamente o que o `find` precisa quando o resultado é grande.",
+    "Nomes com espaço quebram a leitura por linhas. O `find` tem `-print0` (separa por byte nulo) e o `xargs` tem `-0` para ler assim.",
+    "No `cp` do GNU, `-t DESTINO` coloca o diretório de destino **antes** dos arquivos, o que combina com o `xargs`.",
+    "Para a soma de linhas, concatene tudo (`cat`) e conte com `wc -l`; `xargs wc -l` imprimiria uma linha por arquivo e um total por lote."
+  ],
+  "solucao": "```\ncd ~/lab/f103-4-xargs-copia\nfind {base} -type f -name '*.{ext}' -print0 | xargs -0 cp -t destino\nfind {base} -type f -name '*.{ext}' -print0 | xargs -0 cat | wc -l > linhas.txt\n```\n`find ... -print0 | xargs -0` separa os nomes por byte nulo, o único caractere que não pode aparecer em um nome de arquivo — por isso funciona com espaços (o par `find | xargs` sem isso racha `regras de envio.{ext}` em três argumentos). `cp -t destino` aceita vários arquivos depois do destino; a alternativa `xargs -0 -I{} cp {} destino/` roda um `cp` por arquivo. Também serve `find ... -exec cp -t destino {} +`, mas a prova cobra o `xargs`. Na soma, `cat` junta tudo e `wc -l` conta uma vez só; com `xargs wc -l` você teria de ler o `total` (ou vários, se a lista fosse muito longa)."
+}

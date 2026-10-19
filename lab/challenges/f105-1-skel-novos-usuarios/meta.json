@@ -1,0 +1,29 @@
+{
+  "id": "f105-1-skel-novos-usuarios",
+  "obj": "105.1",
+  "titulo": "Modelo (skel) para contas novas",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "dir": { "escolha": ["projetos", "relatorios", "scripts", "rascunhos"] },
+    "equipe": { "escolha": ["alfa", "beta", "gama", "omega"] },
+    "apelido": { "escolha": ["lt", "lla", "lsx", "ll2"] },
+    "opcao": { "escolha": ["-lA", "-lAh", "-ltr", "-lS"] },
+    "umask": { "escolha": ["027", "077", "037"] }
+  },
+  "enunciado": "A empresa vai contratar vários usuários e todos devem receber o mesmo ambiente inicial. Configure o **diretório modelo** (`/etc/skel`, use `sudo`) para que **toda conta criada a partir de agora** com `useradd -m` já nasça com:\n\n1. uma pasta **`~/{dir}`** (vazia);\n2. um arquivo **`~/LEIA-ME.txt`** contendo uma linha exatamente igual a `Equipe: {equipe}`;\n3. um **alias** `{apelido}` que execute `ls {opcao}`, disponível em shells interativos (que não são de login);\n4. **umask `{umask}`** já ativa em **qualquer shell de login** da conta.\n\nNão apague o conteúdo padrão dos arquivos `.bashrc` e `.profile` do modelo: acrescente suas linhas. Contas que já existem não são afetadas pelo `/etc/skel`, então não precisa mexer nelas. O verificador cria uma conta de teste para conferir o resultado.",
+  "verifica": [
+    "conta nova recebe a pasta `~/{dir}` pertencente a ela",
+    "conta nova recebe `~/LEIA-ME.txt` com a linha `Equipe: {equipe}`",
+    "conta nova: o alias `{apelido}` funciona em um bash interativo",
+    "conta nova: `umask` de um shell de login é `0{umask}`",
+    "o `.bashrc`/`.profile` originais do modelo continuam lá"
+  ],
+  "dicas": [
+    "Quando `useradd -m` cria a home, ele copia tudo o que houver em `/etc/skel` (arquivos, pastas e permissões) para ela. É lá que se edita o modelo.",
+    "Pastas e arquivos comuns: `sudo mkdir /etc/skel/NOME` e `echo ... | sudo tee /etc/skel/arquivo`. Para acrescentar a um arquivo existente, use `>>` (com `sudo tee -a`, pois o redirecionamento não herda o sudo).",
+    "Alias vai no `.bashrc` do modelo; umask de login vai no `.profile` do modelo (o `.bashrc` não é lido por logins não interativos).",
+    "Para testar sem esperar o verificador: `sudo useradd -m teste` e olhe `/home/teste` (e remova com `sudo userdel -r teste`)."
+  ],
+  "solucao": "```\nsudo mkdir /etc/skel/{dir}\necho 'Equipe: {equipe}' | sudo tee /etc/skel/LEIA-ME.txt\necho \"alias {apelido}='ls {opcao}'\" | sudo tee -a /etc/skel/.bashrc\necho 'umask {umask}' | sudo tee -a /etc/skel/.profile\n# teste:\nsudo useradd -m teste && sudo ls -la /home/teste && sudo su -l teste -c umask ; sudo userdel -r teste\n```\n`/etc/skel` é o *esqueleto* copiado para a home de cada conta nova — só contas criadas depois da alteração são afetadas. O alias vai no `.bashrc` (lido por shells interativos sem login) e a `umask` no `.profile` (lido por shells de login). Pegadinhas: `sudo echo ... >> arquivo` falha, pois o redirecionamento é feito pelo seu shell, sem privilégio — use `tee -a`; e `>` em vez de `>>` apagaria o `.bashrc` padrão do modelo."
+}

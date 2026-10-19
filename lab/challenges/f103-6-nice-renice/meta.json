@@ -1,0 +1,51 @@
+{
+  "id": "f103-6-nice-renice",
+  "obj": "103.6",
+  "titulo": "nice e renice: baixar a prioridade",
+  "nivel": 2,
+  "minutos": 6,
+  "params": {
+    "nome": {
+      "escolha": [
+        "renderiza",
+        "compila",
+        "transcodifica",
+        "indexa",
+        "calcpi"
+      ]
+    },
+    "job": {
+      "escolha": [
+        "fecha",
+        "relato",
+        "varre",
+        "limpa"
+      ]
+    },
+    "n1": {
+      "faixa": [
+        6,
+        15
+      ]
+    },
+    "n2": {
+      "faixa": [
+        4,
+        12
+      ]
+    }
+  },
+  "enunciado": "O processo **`{nome}`**, do seu usuário, é um trabalho pesado que está atrapalhando os serviços do servidor. Ele já está rodando em segundo plano neste laboratório, com a prioridade normal (**nice 0**); o PID não foi informado.\n\nFaça duas coisas:\n\n1. Reduza a prioridade do `{nome}` **sem reiniciá-lo** (o mesmo PID deve continuar rodando): ele deve passar a ter **nice {n1}**.\n2. Em `~/lab/f103-6-nice-renice/` há o script `lote-{job}.sh`, outra tarefa em lote demorada. Inicie-o **em segundo plano**, já com prioridade reduzida, **nice {n2}**, e deixe-o rodando.\n\nAtenção: um usuário comum só consegue **aumentar** o nice de um processo, nunca voltar atrás; se errar o valor, reinicie o desafio. Nota do ambiente: como o processo é seu, faça tudo com o seu usuário, **sem `sudo`** (este laboratório roda em um container sem a capacidade de alterar a prioridade de processos alheios, nem para o root).",
+  "verifica": [
+    "o processo `{nome}` continua com o mesmo PID e agora está com nice {n1}",
+    "o `lote-{job}.sh` está em execução em segundo plano",
+    "o `lote-{job}.sh` foi iniciado com nice {n2}"
+  ],
+  "dicas": [
+    "Para ver a prioridade (coluna NI) de um processo: `ps -o pid,ni,comm -p PID` ou `ps -eo pid,ni,comm`. Quanto **maior** o nice, **menor** a prioridade.",
+    "Mudar a prioridade de um processo que já está rodando é o `renice`; iniciar um programa já com outra prioridade é o `nice`.",
+    "`renice -n VALOR -p PID` define o nice do processo; `nice -n VALOR comando` inicia o comando já com aquele nice.",
+    "Para deixar rodando em segundo plano, termine a linha com `&`."
+  ],
+  "solucao": "```\nps -eo pid,ni,user,comm | grep {nome}       # acha o PID\nrenice -n {n1} -p PID                        # nice {n1}, mesmo processo\ncd ~/lab/f103-6-nice-renice\nnice -n {n2} ./lote-{job}.sh &               # inicia já com nice {n2}\nps -eo pid,ni,comm | grep -E '{nome}|lote'   # confere\n```\nO *nice* vai de -20 (mais prioridade) a 19 (menos); o padrão de um processo novo é 0 (herdado do pai). Usuário comum só pode **aumentar** o nice dos próprios processos (ser mais \"bonzinho\") e nunca baixá-lo de novo; diminuir o nice (dar mais prioridade) é privilégio do root. `renice -n` **define** o valor final (não soma) e age sobre um processo já existente; `nice -n` inicia um comando novo com o valor ajustado. Pegadinhas: `nice` sem `-n` aplica +10; `nice -n {n2}` e `nice --{n2}` são coisas diferentes (o segundo é nice **-{n2}**, que exige root); e o nice só é herdado por processos criados **depois** da mudança."
+}

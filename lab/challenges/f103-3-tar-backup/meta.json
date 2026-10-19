@@ -1,0 +1,45 @@
+{
+  "id": "f103-3-tar-backup",
+  "obj": "103.3",
+  "titulo": "Backup com tar e restauração parcial",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "proj": {
+      "escolha": [
+        "loja",
+        "blog",
+        "portal",
+        "intranet",
+        "agenda"
+      ]
+    },
+    "comp": {
+      "escolha": [
+        "bz2",
+        "xz"
+      ]
+    },
+    "arq": {
+      "escolha": [
+        "app.conf",
+        "banco.conf",
+        "rotas.conf",
+        "smtp.conf"
+      ]
+    }
+  },
+  "enunciado": "Trabalhe em `~/lab/f103-3-tar-backup/`.\n\n**1. Backup.** A pasta `{proj}/` guarda o projeto. Crie ali mesmo o pacote **`backup-{proj}.tar.gz`** (tar compactado com **gzip**) contendo a pasta `{proj}/` inteira — **inclusive o arquivo oculto** que ela tem —, mas **sem** os arquivos temporários (`*.tmp`, em qualquer subpasta) e **sem** a subpasta `{proj}/logs`. Os caminhos dentro do pacote devem ser relativos e começar em `{proj}/`.\n\n**2. Restauração parcial.** O pacote `legado.tar.{comp}` guarda uma árvore `site/`. Extraia **somente** o arquivo `site/conf/{arq}` para dentro da pasta `restaurado/` (que já existe e está vazia), mantendo o caminho: o resultado deve ser `restaurado/site/conf/{arq}`, e nada mais dentro de `restaurado/`.",
+  "verifica": [
+    "`backup-{proj}.tar.gz` é um tar compactado com gzip, legível, com caminhos relativos iniciados em `{proj}/`",
+    "o backup tem exatamente os arquivos esperados (incluindo o oculto; sem `*.tmp` e sem `logs/`) e o conteúdo original",
+    "`restaurado/site/conf/{arq}` existe com o conteúdo correto e é o **único** arquivo extraído"
+  ],
+  "dicas": [
+    "Para criar: `tar` com as opções de criar (`c`), compactar com gzip (`z`) e nomear o arquivo (`f`). Para excluir padrões existe `--exclude`.",
+    "Passe a **pasta** (`{proj}`) ao `tar`, não `{proj}/*`: o curinga do shell não casa arquivos ocultos.",
+    "Para extrair só um item, informe o nome dele (exatamente como aparece em `tar -tf pacote`) depois do nome do arquivo; `-C pasta` escolhe o destino.",
+    "O `tar` do GNU reconhece sozinho a compressão (bzip2, xz...) ao **ler** o pacote: não precisa de `j` ou `J` na extração."
+  ],
+  "solucao": "```\ncd ~/lab/f103-3-tar-backup\ntar -czf backup-{proj}.tar.gz --exclude='*.tmp' --exclude='{proj}/logs' {proj}\ntar -tf legado.tar.{comp}                       # confere o nome exato dentro do pacote\ntar -xf legado.tar.{comp} -C restaurado site/conf/{arq}\n```\n`c` cria, `z` filtra por gzip, `f` dá o nome do arquivo (e deve ser a última letra do grupo, seguida do nome). `--exclude` aceita curingas e deve vir **antes** do que será arquivado. Passando a pasta `{proj}` (em vez de `{proj}/*`) o `tar` guarda também os ocultos e grava caminhos relativos (o `tar` remove a `/` inicial de caminhos absolutos). Na extração, listar o membro (`site/conf/{arq}`) extrai só ele, recriando os diretórios; `-C` troca o diretório de destino. Pegadinhas: `tar -xf` só extrai **tudo** se você não citar nada; o nome do membro deve bater com `tar -tf`; e o `-C` vale para o que vem **depois** dele na linha, então ele precisa aparecer *antes* do nome do membro (`tar -xf pacote -C destino membro`)."
+}

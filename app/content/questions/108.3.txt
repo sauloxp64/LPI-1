@@ -1,0 +1,349 @@
+### 108.3-001 | unica | 1
+ref: 102:p.354
+tags: MTA, conceitos
+Qual é a função de um MTA (Mail Transfer Agent) em um sistema Linux?
+- Exibir e organizar as mensagens da caixa de entrada para o usuário
+= Receber mensagens e entregá-las às caixas locais ou repassá-las a outros MTAs
+- Buscar mensagens em um servidor remoto por meio de IMAP ou POP3
+- Analisar o conteúdo das mensagens para marcar spam e vírus
+> O MTA é o serviço que coleta as mensagens enviadas por contas locais ou vindas da rede, grava-as nas caixas de entrada dos usuários locais e, se o destinatário for remoto, as envia ao MTA do destino por SMTP.
+> Exibir e organizar mensagens é tarefa do MUA (cliente de e-mail, como `mail`, Thunderbird ou Evolution); buscar mensagens remotas por IMAP/POP3 é função de um cliente de e-mail; e filtros de spam são aplicativos de terceiros (como o SpamAssassin) que trabalham em conjunto com o MTA.
+
+### 108.3-002 | multipla | 1
+ref: 102:p.356
+tags: MTA, postfix, exim, qmail, sendmail
+Quais dos programas abaixo são MTAs (Mail Transfer Agents)?
+= Postfix
+- Thunderbird
+= Exim
+- mailx
+= qmail
+- KMail
+> Sendmail, Postfix, qmail e Exim são MTAs que se pretendem substitutos do Sendmail e, por isso, oferecem comandos compatíveis com ele.
+> Thunderbird e KMail são clientes gráficos de e-mail (MUAs) e `mailx` (o comando `mail`) é um MUA de console: servem para ler e redigir mensagens, não para transferi-las entre servidores.
+
+### 108.3-003 | lacuna | 1
+ref: 102:p.355
+tags: SMTP, porta
+Qual é o número da porta TCP padrão usada para a comunicação SMTP entre MTAs (responda apenas com o número)?
+= 25
+> A porta TCP 25 é a padrão do SMTP. Outras portas podem ser usadas conforme o esquema de autenticação e criptografia (por exemplo, 587 para submissão e 465 para SMTP sobre TLS).
+
+### 108.3-004 | unica | 2
+ref: 102:p.355-356
+tags: mbox, caixa de entrada
+Em qual formato o MTA costuma armazenar as mensagens recebidas por cada conta local?
+- Em um banco de dados binário único, compartilhado por todas as contas
+= Em mbox: um único arquivo de texto por usuário, com as mensagens em sequência
+- Em um arquivo compactado com gzip para cada mensagem recebida
+- Em uma tabela de texto em /etc/mail, com um registro por mensagem
+> O formato tradicional é o **mbox**: um único arquivo de texto por usuário, que contém as mensagens (cabeçalhos e corpo) uma após a outra. Por isso, é possível ler o arquivo com `cat`, embora seja mais prático usar um MUA.
+
+### 108.3-005 | unica | 2
+ref: 102:p.360
+tags: caixa de entrada, /var/mail, /var/spool/mail
+Onde o MTA guarda as mensagens recebidas pelo usuário local `dave` em um sistema típico?
+- Em /var/spool/mqueue/dave, o diretório da fila de saída de mensagens do Sendmail
+- Em /etc/mail/dave, junto com os arquivos de configuração e os mapas do MTA instalado
+= Em um arquivo dave em /var/mail/ (ou em /var/spool/mail/, geralmente um link)
+- Em /var/log/mail/dave, junto com os registros de atividade do servidor de e-mail
+> A caixa de entrada é um arquivo com o nome do usuário: o Sendmail usa `/var/spool/mail/dave`, e MTAs como o Postfix, `/var/mail/dave`. Em muitos sistemas um é link do outro (testado no laboratório Debian: `/var/spool/mail -> ../mail`; o arquivo `/var/mail/ana` pertence a `ana` e ao grupo `mail`, com modo 600).
+> `/var/spool/mqueue` é a fila de **saída** do Sendmail; `/etc/mail` guarda configuração; `/var/log/` guarda logs, não mensagens.
+
+### 108.3-006 | lacuna | 1
+ref: 102:p.356
+tags: DNS, MX
+Qual tipo de registro DNS o MTA remetente consulta para descobrir qual servidor recebe o e-mail de um domínio, como `lpi.org` (responda com a sigla do registro)?
+= MX
+> O registro **MX** (Mail eXchanger) informa os servidores de e-mail do domínio. Se o endereço não tiver domínio ou o domínio não tiver registro MX, a parte após o `@` é tratada como o nome do host do MTA de destino.
+
+### 108.3-007 | unica | 2
+ref: 102:p.357-358
+tags: SMTP, protocolo, nc
+Em uma sessão SMTP manual, aberta com `nc lab2.campus 25`, qual é a ordem correta dos comandos para enviar uma mensagem?
+- MAIL FROM, HELO, DATA, RCPT TO, linha com um ponto, QUIT
+= HELO, MAIL FROM, RCPT TO, DATA, linha com um ponto, QUIT
+- HELO, RCPT TO, MAIL FROM, DATA, linha com um ponto, QUIT
+- DATA, HELO, MAIL FROM, RCPT TO, QUIT, e depois a linha com um ponto
+> `HELO` identifica o cliente; `MAIL FROM:` informa o remetente; `RCPT TO:` informa o destinatário; `DATA` inicia a mensagem (cabeçalho `Subject:`, linha em branco e corpo), que termina com uma linha contendo apenas um ponto (`.`); `QUIT` encerra a conexão.
+
+### 108.3-008 | unica | 2
+ref: 102:p.358-359
+tags: SMTP, relay, open relay
+Durante uma sessão SMTP com o MTA `lab2.campus`, a usuária emma recebe a resposta abaixo ao informar o destinatário. O que ela significa?
+
+```
+RCPT TO: henry@lab3.campus
+550 5.7.1 henry@lab3.campus... Relaying denied
+```
+- O usuário henry não existe em lab3.campus
+- A mensagem foi aceita e ficará na fila de saída até uma nova tentativa
+= O MTA recusou retransmitir uma mensagem para um domínio que não é o dele
+- Houve uma falha temporária, e o remetente deve repetir o comando mais tarde
+> Por padrão, um MTA só aceita mensagens para destinatários **locais**. `lab2.campus` não é o destino de `henry@lab3.campus`, então recusa a retransmissão (relay). Respostas SMTP iniciadas por **5** indicam erro permanente; as iniciadas por 4 são falhas temporárias, e as por 2 indicam sucesso.
+> Um MTA configurado como servidor de retransmissão (relay) autorizado pode encaminhar mensagens entre MTAs.
+
+### 108.3-009 | unica | 1
+ref: 102:p.356
+tags: open relay, segurança
+O que é um "open relay"?
+= Um MTA que retransmite mensagens de qualquer origem para qualquer destino
+- Um MTA que aceita mensagens somente de usuários locais, com senha
+- Um MTA que mantém duas cópias de cada mensagem, em duas filas
+- Um MTA que só consulta o registro MX do domínio, sem entregar
+> Um open relay encaminha cegamente e-mails de qualquer um para qualquer lugar, podendo ser usado para ocultar o verdadeiro remetente e disseminar spam. Recomenda-se aceitar conexões somente de domínios autorizados e usar um esquema de autenticação seguro.
+
+### 108.3-010 | unica | 2
+ref: 102:p.360
+tags: sendmail, fila, -q
+Qual comando faz um MTA compatível com o Sendmail tentar entregar imediatamente as mensagens que estão na fila de saída?
+- sendmail -bp
+- sendmail -bi
+= sendmail -q
+- sendmail -bd
+> `sendmail -q` processa a fila: tenta entregar novamente todas as mensagens pendentes (testado no laboratório com o Postfix).
+> `sendmail -bp` apenas **lista** a fila (equivale a `mailq`); `sendmail -bi` reconstrói o banco de dados de aliases (equivale a `newaliases`); `sendmail -bd` coloca o MTA em modo daemon.
+
+### 108.3-011 | lacuna | 1
+ref: 102:p.359-360, 102:p.368
+tags: mailq, fila
+Qual comando, executado pelo root, lista as mensagens que se originaram no sistema local e ainda não foram entregues, mostrando a causa do atraso (responda com o nome do comando)?
+= mailq
+> `mailq` exibe a fila de saída com o ID de cada mensagem, o remetente, o destinatário e o motivo da pendência (por exemplo, "Connection refused" ou "Host or domain name not found"). Equivale a `sendmail -bp`.
+
+### 108.3-012 | unica | 3
+ref: 102:p.360
+tags: sendmail, mailq, postfix, exim, compatibilidade
+Por que os comandos `mailq`, `newaliases` e `sendmail` existem e funcionam igualmente em sistemas com Postfix ou Exim, e não apenas com o Sendmail?
+- Porque o comando mail instala automaticamente o Sendmail como MTA reserva
+- Porque o kernel traduz esses comandos para o MTA que estiver instalado
+= Porque os MTAs alternativos oferecem comandos compatíveis com o Sendmail
+- Porque o Sendmail precisa estar sempre instalado ao lado do outro MTA
+> Todos os MTAs pretendem ser substitutos diretos do Sendmail e trazem os comandos tradicionais. Testado no laboratório: com o Postfix, `/usr/bin/mailq` e `/usr/bin/newaliases` são links para `/usr/sbin/sendmail`; com o Exim, os três são links para `exim4`.
+> `mailq` equivale a `sendmail -bp` e `newaliases` a `sendmail -bi`. Não há tradução feita pelo kernel nem dependência do Sendmail real.
+
+### 108.3-013 | unica | 2
+ref: 102:p.362-363
+tags: /etc/aliases, formato
+Qual linha de `/etc/aliases` faz as mensagens enviadas a `postmaster` irem para a caixa de entrada local de `carol`?
+- postmaster = carol
+= postmaster: carol
+- carol: postmaster
+- postmaster -> carol
+> O formato de cada linha é `alias: destino`. Aqui, o alias virtual `postmaster` (sem domínio) entrega na caixa do usuário local `carol`.
+> `carol: postmaster` inverte o sentido; `=` e `->` não são separadores válidos.
+
+### 108.3-014 | lacuna | 1
+ref: 102:p.363
+tags: newaliases, /etc/aliases
+Depois de editar `/etc/aliases`, qual comando atualiza os bancos de dados de aliases do MTA para que as mudanças passem a valer (responda com o nome do comando)?
+= newaliases
+> `newaliases` reconstrói o banco indexado de aliases (por exemplo, `/etc/aliases.db`) a partir do arquivo de texto. Sem isso, o MTA continua usando a versão antiga.
+
+### 108.3-015 | unica | 2
+ref: 102:p.363, 102:p.369
+tags: sendmail, -bi, newaliases
+Além de `newaliases`, qual comando também atualiza o banco de dados de aliases do MTA após uma alteração em `/etc/aliases`?
+- sendmail -bp
+- sendmail -q
+= sendmail -bi
+- sendmail -bd -q30m
+> `sendmail -bi` (ou `sendmail -I`) inicializa o banco de dados de aliases, o mesmo que `newaliases` faz. Testado no laboratório com o Postfix: os dois comandos terminam com sucesso.
+> `-bp` lista a fila, `-q` processa a fila e `-bd` inicia o MTA como daemon.
+
+### 108.3-016 | unica | 3
+ref: 102:p.363
+tags: /etc/aliases, newaliases, diagnóstico
+O administrador acrescentou a linha `suporte: ana, bruno` a `/etc/aliases`, mas as mensagens para `suporte` são devolvidas com o erro `unknown user: "suporte"`. Qual é a causa mais provável?
+- A linha precisa usar o formato `suporte = ana, bruno`, e não dois-pontos
+- O alias só funciona se cada destino tiver um arquivo ~/.forward
+- Um alias não pode ter mais de um destino na mesma linha
+= O banco de dados de aliases não foi reconstruído com newaliases
+> O MTA consulta o banco de dados indexado, não o arquivo de texto. Testado no laboratório com o Postfix: antes do `newaliases`, a mensagem para `suporte` foi devolvida com `unknown user: "suporte"`; depois do `newaliases`, chegou às caixas de `ana` e `bruno`.
+> Os destinos de um alias são separados por vírgulas (vários destinos são permitidos) e não é necessário `~/.forward`.
+
+### 108.3-017 | unica | 2
+ref: 102:p.369
+tags: /etc/aliases, /dev/null
+Qual linha de `/etc/aliases` descarta todas as mensagens enviadas ao usuário `test`?
+= test: /dev/null
+- test: |/dev/null
+- test /dev/null
+- test: >/dev/null
+> Um destino que começa com `/` é um caminho de arquivo, ao qual as mensagens são anexadas; como `/dev/null` descarta o que recebe, as mensagens somem. Testado no laboratório: a mensagem foi aceita e nada foi entregue nem devolvido. Lembre-se de rodar `newaliases` depois.
+> O `|` indica um **comando** a executar (e `/dev/null` não é um programa); `test /dev/null` não tem os dois-pontos; `>` não faz parte da sintaxe dos aliases.
+
+### 108.3-018 | unica | 2
+ref: 102:p.363
+tags: /etc/aliases, pipe, comando
+O que faz a linha abaixo em `/etc/aliases`?
+
+```
+subscribe: |subscribe.sh
+```
+- Anexa todas as mensagens enviadas a subscribe ao final do arquivo subscribe.sh
+- Substitui o endereço subscribe pelo nome do usuário local chamado subscribe.sh
+- Executa subscribe.sh uma vez por dia com o resumo das mensagens da caixa
+= Entrega cada mensagem recebida em subscribe@... à entrada padrão do comando subscribe.sh
+> Um destino iniciado por `|` (pipe) é um comando que recebe a mensagem na entrada padrão. Se o comando tiver espaços ou caracteres especiais, deve ficar entre aspas duplas. Testado no laboratório: `cmd: "|/usr/local/bin/handler.sh"` recebeu a mensagem.
+> Anexar a um arquivo é o comportamento de um destino iniciado por `/`, sem o `|`. No modo restrito do Sendmail, o comando precisa estar (ou ter link) em `/etc/smrsh/`.
+
+### 108.3-019 | unica | 3
+ref: 102:p.363
+tags: /etc/aliases, include
+O alias `lista` deve entregar a mensagem a todos os endereços listados, um por linha, no arquivo `/etc/destinos.list`. Qual linha de `/etc/aliases` faz isso?
+- lista: /etc/destinos.list
+- lista: |/etc/destinos.list
+- lista: <include /etc/destinos.list>
+= lista: :include:/etc/destinos.list
+> A palavra-chave `:include:` seguida do caminho informa um arquivo com a lista de destinos. Testado no laboratório: a mensagem foi entregue a todos os usuários da lista.
+> `lista: /etc/destinos.list` trataria o caminho como um arquivo **onde anexar** as mensagens (e o conteúdo da lista seria corrompido); com `|`, o arquivo seria executado como comando; `<include ...>` não é sintaxe de alias.
+
+### 108.3-020 | unica | 1
+ref: 102:p.363, 102:p.368
+tags: .forward, redirecionamento
+Como um usuário sem privilégios pode usar o método padrão do MTA para encaminhar automaticamente todos os seus e-mails recebidos ao endereço `dave@lab2.campus`?
+- Executando `newaliases dave@lab2.campus` como root
+- Adicionando `forward: dave@lab2.campus` ao arquivo /etc/aliases
+- Configurando `dave@lab2.campus` no arquivo /etc/rc.mail
+= Gravando `dave@lab2.campus` no arquivo ~/.forward do seu diretório pessoal
+> O arquivo `~/.forward` contém apenas a parte "destino" (sem `alias:`), um por linha. Qualquer usuário pode criá-lo, sem precisar de root. Testado no laboratório: com `bruno` em `~ana/.forward`, as mensagens para `ana` passaram a chegar à caixa de `bruno`.
+> `/etc/aliases` exige privilégios de root e `/etc/rc.mail` não faz parte desse mecanismo.
+
+### 108.3-021 | multipla | 2
+ref: 102:p.363-364
+tags: .forward, aliases
+Quais afirmações sobre o arquivo `~/.forward` estão corretas?
+= Fica no diretório pessoal do usuário e só afeta as mensagens dele
+- Só o root pode criá-lo, pois altera a entrega de e-mail
+= Não exige a execução de newaliases depois de ser alterado
+- Deve ter permissão de escrita para todos os usuários (modo 666)
+= Pode ter várias regras de redirecionamento, uma por linha
+- Substitui o /etc/aliases para todos os usuários do sistema
+> `~/.forward` usa a mesma sintaxe do lado direito (destino) de `/etc/aliases`, com uma regra por linha, e vale apenas para a caixa do próprio dono. Não é preciso `newaliases`: o MTA lê o arquivo na hora da entrega (testado). Ele deve ser gravável apenas pelo dono.
+> Qualquer usuário pode criar o seu; deixá-lo gravável por todos é um risco de segurança (muitos MTAs ignoram arquivos nessa situação); e quem vale para todos é o `/etc/aliases`.
+
+### 108.3-022 | unica | 3
+ref: 102:p.364
+tags: .forward, diagnóstico
+As mensagens para `dave` não chegam mais à sua caixa de entrada local, embora não haja nenhuma entrada para `dave` em `/etc/aliases`. Qual arquivo, que não aparece em listagens comuns de diretório, deve ser verificado?
+- ~dave/.bashrc
+- ~dave/.mailrc
+- /var/mail/dave.lock
+= ~dave/.forward
+> Arquivos iniciados por ponto não aparecem em `ls` comum, então o usuário pode ter um `~/.forward` ativo sem se lembrar dele. Ao diagnosticar problemas de entrega, verifique se esse arquivo existe e o que contém (use `ls -a`).
+> `.bashrc` configura o shell; `.mailrc` configura o cliente `mail` (não a entrega); `dave.lock` é, no máximo, um arquivo de trava temporário da caixa.
+
+### 108.3-023 | unica | 2
+ref: 102:p.362
+tags: mail, -s, modo de envio
+Qual comando envia o texto "falha na rotina" ao endereço `henry@lab3.campus` com o assunto "Maintenance fail"?
+- printf "falha na rotina" | mail -c "Maintenance fail" henry@lab3.campus
+- echo "falha na rotina" | mail -b "Maintenance fail" henry@lab3.campus
+= echo "falha na rotina" | mail -s "Maintenance fail" henry@lab3.campus
+- echo "falha na rotina" | mail -r "Maintenance fail" henry@lab3.campus
+> No modo de envio (quando há um endereço como argumento), o corpo da mensagem é lido da entrada padrão e `-s` define o assunto (subject). Testado no laboratório: a mensagem chegou com `Subject: Assunto X`.
+> `-c` e `-b` indicam endereços de cópia (Cc) e cópia oculta (Bcc), e `-r` o endereço do remetente; portanto o texto "Maintenance fail" seria interpretado como um endereço, e não como assunto.
+
+### 108.3-024 | unica | 1
+ref: 102:p.362, 102:p.368
+tags: mail, Ctrl+D
+Ao executar `mail henry@lab3.campus` sem outras opções e sem redirecionamento, o programa aguarda a digitação da mensagem. Qual combinação de teclas termina o corpo e envia o e-mail?
+- Ctrl+C
+= Ctrl+D
+- Ctrl+Z
+- Ctrl+Enter
+> `Ctrl+D` (fim de arquivo) encerra a entrada e dispara o envio; o comando termina logo após a mensagem entrar na fila de saída.
+> `Ctrl+C` interrompe o programa (o `mail` descarta a mensagem em andamento), `Ctrl+Z` suspende o processo e `Ctrl+Enter` não tem esse efeito.
+
+### 108.3-025 | unica | 2
+ref: 102:p.362
+tags: mail, modo normal, modo de envio
+Como o comando `mail` decide entre o modo de leitura (normal) e o modo de envio?
+- Pelo horário: de dia lê as mensagens e à noite envia a fila
+= Com um endereço como argumento, envia; sem argumentos, lê a caixa (modo normal)
+- Pelo usuário: o root sempre envia e os demais usuários sempre leem
+- Pela opção -s: com ela lê a caixa; sem ela envia uma mensagem
+> Com um endereço como argumento (`mail henry@lab3.campus`), o programa compõe e envia. Sem argumentos, lista as mensagens da caixa de entrada, cada uma com um número, e abre um prompt interativo (testado: `mail` executado como `bruno` listou três mensagens).
+> `-s` apenas define o assunto no modo de envio.
+
+### 108.3-026 | lacuna | 2
+ref: 102:p.362
+tags: mail, comandos interativos
+No modo normal do `mail`, o comando `print` pode ser abreviado com uma letra. Complete: `____ 1` exibe o conteúdo da mensagem número 1. Responda com a letra.
+= p
+> No prompt do `mail`, `print` pode ser abreviado como `p` (`p 1`), `delete` como `d` e `reply` como `r`; `quit` ou `q` sai do programa. Se o número for omitido, vale a última mensagem recebida ou visualizada.
+
+### 108.3-027 | unica | 1
+ref: 102:p.361-362
+tags: mail, mailx, MUA
+O que costuma ser o comando `mail` na maioria das distribuições Linux?
+- Um link para o executável do MTA instalado, como o postfix ou o exim, que o inicia
+- O próprio daemon que entrega as mensagens às caixas de entrada dos usuários
+- Um comando interno (builtin) do shell bash, usado para enviar e-mail
+= Um link simbólico para o comando mailx, um cliente de e-mail (MUA) de console
+> `mail` é um MUA (Mail User Agent) de console, normalmente um link para o `mailx` (no laboratório Debian, `/usr/bin/mail` aponta, via alternatives, para `bsd-mailx`). Ele conversa com o MTA local para entregar as mensagens, mas não é o MTA. O pacote GNU Mailutils oferece uma implementação equivalente, com pequenas diferenças nas opções.
+
+### 108.3-028 | unica | 3
+ref: 102:p.360-361
+tags: cabeçalhos, Received, rota
+Observe os cabeçalhos `Received:` de uma mensagem entregue em `lab2.campus`:
+
+```
+Received: from lab1.campus (lab1.campus [10.0.3.134])
+        by lab2.campus with ESMTPS id xAIK7clC000432
+        for <dave@lab2.campus>; Mon, 18 Nov 2019 20:07:38 GMT
+Received: from lab1.campus (localhost [127.0.0.1])
+        by lab1.campus with ESMTPS id xAIK3D9S000453
+        for <dave@lab2.campus>; Mon, 18 Nov 2019 20:03:13 GMT
+Received: (from emma@localhost)
+        by lab1.campus id xAIK0doL000449
+        for dave@lab2.campus; Mon, 18 Nov 2019 20:00:39 GMT
+```
+
+Qual cabeçalho foi acrescentado primeiro, isto é, está no início da rota da mensagem?
+- O primeiro da lista: lab2.campus recebendo a mensagem enviada por lab1.campus
+- O do meio: lab1.campus recebendo a mensagem de si mesmo, por meio do localhost
+= O último da lista: emma entregando a mensagem localmente em lab1.campus
+- Nenhum: a ordem dos cabeçalhos Received não tem relação com a rota percorrida
+> Cada MTA que manipula a mensagem **acrescenta um cabeçalho Received no topo**. Por isso a rota se lê de baixo para cima: emma submeteu a mensagem em lab1.campus (20:00:39), o MTA de lab1 a processou (20:03:13) e lab2.campus a recebeu por ESMTPS (20:07:38). ESMTPS é o SMTP estendido com criptografia.
+
+### 108.3-029 | unica | 2
+ref: 102:p.359
+tags: sendmail, composição, ponto final
+Ao compor uma mensagem com `sendmail dave@lab2.campus`, digitando os cabeçalhos `From:`, `To:` e `Subject:`, uma linha em branco e o corpo, como se encerra a mensagem?
+- Digitando QUIT em uma linha sozinha, como na sessão SMTP
+- Digitando END em letras maiúsculas em uma linha sozinha
+= Digitando um ponto (.) em uma linha sozinha
+- Pressionando Esc e depois :wq
+> O ponto sozinho em uma linha marca o fim da mensagem, como no comando SMTP `DATA`. O `sendmail` exige que os cabeçalhos sejam digitados à mão (por isso é mais amigável que falar SMTP direto, mas menos que o `mail`). Testado no laboratório com o `sendmail` do Postfix; com `Ctrl+D` o resultado também é o envio.
+
+### 108.3-030 | multipla | 2
+ref: 102:p.359-360
+tags: Exim, mailq, sendmail, fila
+Em um sistema com Exim, quais comandos listam as mensagens na fila de saída?
+= exim -bp
+- exim -bi
+= mailq
+- newaliases
+= sendmail -bp
+- exim -bd
+> O Exim aceita as opções tradicionais do Sendmail: `-bp` lista a fila, e `mailq` e `sendmail` são links para o executável do Exim (testado no laboratório Debian: `exim4 -bp` lista a fila e `/usr/bin/mailq` e `/usr/sbin/sendmail` apontam para `exim4`).
+> `-bi` (e `newaliases`) tratam de aliases e `-bd` inicia o daemon, não listam a fila.
+
+### 108.3-031 | unica | 1
+ref: 102:p.356
+tags: sendmail, MTA, histórico
+Qual MTA é o tradicionalmente disponível nos sistemas Linux e Unix, flexível, mas conhecido por ser trabalhoso de configurar (com arquivos como `/etc/mail/sendmail.mc`)?
+= Sendmail
+- Postfix
+- Exim
+- OpenSMTPD
+> O Sendmail é o MTA tradicional dos sistemas Unix; Postfix, qmail e Exim surgiram como alternativas, em geral mais fáceis de configurar e com foco em segurança, desempenho ou compatibilidade (e todos oferecem os comandos compatíveis com o Sendmail). A LPI não cobra a configuração desses programas, apenas o conhecimento deles.
+
+### 108.3-032 | lacuna | 2
+ref: 102:p.356-357
+tags: postfix, comando
+Complete o comando que faz o Postfix reler seus arquivos de configuração sem interromper o serviço: `postfix ____`
+= reload
+> `postfix reload` reaplica a configuração (`main.cf`, `master.cf`) com o serviço em execução; `postfix start`, `stop`, `check` e `status` completam os comandos básicos. Testado no laboratório. Alterações no `/etc/aliases`, porém, exigem `newaliases`.

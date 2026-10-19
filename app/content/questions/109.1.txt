@@ -1,0 +1,533 @@
+### 109.1-001 | unica | 1
+ref: 102:p.398, 102:p.400
+tags: cidr, máscara
+Qual máscara de rede em notação decimal corresponde à notação CIDR `/26`?
+= 255.255.255.192
+- 255.255.255.224
+- 255.255.255.128
+- 255.255.255.240
+> `/26` significa 26 bits "1" na máscara: os 24 primeiros (255.255.255) mais 2 bits no último octeto, `11000000` = 192. Logo, `255.255.255.192`.
+> Para comparar: `/25` = 255.255.255.128, `/27` = 255.255.255.224 e `/28` = 255.255.255.240. Cada bit a mais na máscara divide a sub-rede ao meio.
+
+### 109.1-002 | lacuna | 2
+ref: 102:p.398, 102:p.400
+tags: cidr, máscara
+Converta a máscara `255.255.248.0` para a notação CIDR, no formato `/N`: ____
+= /21
+= 21
+> `255.255` são 16 bits "1"; `248` = `11111000` acrescenta mais 5 bits "1"; o último octeto é zero. Total: 16 + 5 = 21, ou seja, `/21`.
+
+### 109.1-003 | unica | 2
+ref: 102:p.401, 102:p.406
+tags: sub-rede, endereço de rede
+O host `172.16.30.100` usa a máscara `255.255.255.224`. Qual é o endereço da rede (sub-rede) à qual ele pertence?
+= 172.16.30.96
+- 172.16.30.64
+- 172.16.30.128
+- 172.16.30.97
+> A máscara `255.255.255.224` é `/27`: blocos de 32 endereços no último octeto (0, 32, 64, 96, 128, ...). Como 100 está entre 96 e 127, a rede é `172.16.30.96` (E lógico entre `01100100` e `11100000` resulta em `01100000` = 96), com broadcast `172.16.30.127`.
+> `172.16.30.64` é o início do bloco anterior (64-95); `172.16.30.128` é o início do bloco seguinte; `172.16.30.97` é o primeiro host utilizável da sub-rede, não o endereço da rede.
+
+### 109.1-004 | lacuna | 2
+ref: 102:p.401-402
+tags: sub-rede, broadcast
+Qual é o endereço de broadcast (transmissão) da sub-rede à qual pertence o host `192.168.8.12/26`? ____
+= 192.168.8.63
+> Com `/26` os blocos têm 64 endereços: 0-63, 64-127, 128-191, 192-255. O host `.12` está no primeiro bloco, cujo endereço de rede é `192.168.8.0` e cujo último endereço (todos os bits de host em 1) é `192.168.8.63`.
+
+### 109.1-005 | unica | 2
+ref: 102:p.399-400, 102:p.406
+tags: sub-rede, hosts
+Quantos endereços podem ser atribuídos a hosts em uma sub-rede `/27` do IPv4?
+= 30
+- 32
+- 62
+- 254
+> Uma `/27` deixa 5 bits para hosts: 2^5 = 32 endereços no total. Dois são reservados (o primeiro, endereço da rede, e o último, broadcast), restando 30 utilizáveis.
+> 32 esquece de descontar os dois endereços reservados; 62 é o resultado para `/26` (6 bits de host); 254 é o de uma `/24`.
+
+### 109.1-006 | unica | 2
+ref: 102:p.401-402
+tags: sub-rede, hosts, faixa
+Qual é a faixa de endereços que pode ser atribuída a hosts na sub-rede do endereço `10.1.5.130/25`?
+= 10.1.5.129 a 10.1.5.254
+- 10.1.5.128 a 10.1.5.255
+- 10.1.5.130 a 10.1.5.254
+- 10.1.5.1 a 10.1.5.126 (hosts da sub-rede 10.1.5.0/25)
+> `/25` divide o último octeto em dois blocos de 128: 0-127 e 128-255. O endereço `.130` está no segundo bloco: rede `10.1.5.128`, broadcast `10.1.5.255`; hosts de `.129` a `.254`.
+> `10.1.5.128 a 10.1.5.255` inclui os endereços reservados de rede e broadcast; `10.1.5.130 a 10.1.5.254` começa no endereço do próprio host, sem motivo; `10.1.5.1 a 10.1.5.126` é a faixa de hosts do primeiro bloco (rede `10.1.5.0/25`).
+
+### 109.1-007 | unica | 3
+ref: 102:p.399-402
+tags: sub-rede, roteamento
+Os hosts `10.1.5.100` e `10.1.5.130` usam a máscara `255.255.255.128`, sem nenhum roteador configurado entre eles. Qual é a situação?
+= Estão em sub-redes distintas, 10.1.5.0/25 e 10.1.5.128/25, e precisam de um roteador
+- Estão na mesma rede, pois os três primeiros octetos são iguais, e se comunicam diretamente
+- Estão na mesma rede 10.0.0.0/8, pois ambos começam com 10, e se comunicam diretamente
+- Estão em redes diferentes, mas a comunicação funciona diretamente por meio de broadcast
+> Com `255.255.255.128` (`/25`) a rede é definida pelos 25 primeiros bits. `10.1.5.100` pertence a `10.1.5.0/25` (hosts 1-126) e `10.1.5.130` a `10.1.5.128/25` (hosts 129-254). Hosts em redes lógicas diferentes só trocam pacotes IP por meio de um roteador (gateway) com rota para a outra rede.
+> Comparar apenas os três primeiros octetos só vale para `/24`. O broadcast não atravessa sub-redes diferentes.
+
+### 109.1-008 | multipla | 3
+ref: 102:p.398, 102:p.400
+tags: máscara, validade
+Quais das máscaras de rede abaixo são válidas para o IPv4?
+= 255.255.254.0
+= 255.252.0.0
+= 255.255.255.192
+- 255.0.255.0
+- 0.0.0.255
+- 255.255.255.250
+> Uma máscara válida tem todos os bits "1" contíguos à esquerda, seguidos apenas de bits "0". Assim, `255.255.254.0` (/23), `255.252.0.0` (/14) e `255.255.255.192` (/26) são válidas.
+> `255.0.255.0` mistura 1s e 0s alternados; `0.0.0.255` é uma máscara "invertida" (wildcard), usada em ACLs de alguns roteadores, mas não é máscara de sub-rede; `255.255.255.250` termina em `11111010`, com um 0 antes de bits 1.
+
+### 109.1-009 | unica | 2
+ref: 102:p.398, 102:p.400
+tags: máscara, binário, cidr
+Uma máscara de rede em binário é `11111111.11111111.11111000.00000000`. Qual a máscara em decimal e em CIDR?
+= 255.255.248.0 e /21
+- 255.255.240.0 e /20
+- 255.255.252.0 e /22
+- 255.255.255.248 e /29
+> Há 8 + 8 + 5 = 21 bits "1". O terceiro octeto `11111000` vale 128 + 64 + 32 + 16 + 8 = 248. Portanto `255.255.248.0` = `/21`.
+> `/20` e `/22` têm 4 e 6 bits "1" no terceiro octeto (240 e 252). `255.255.255.248` (/29) tem o valor 248 no octeto errado: a máscara dada tem zeros nos dois últimos octetos.
+
+### 109.1-010 | unica | 3
+ref: 102:p.400
+tags: sub-rede, divisão
+Deseja-se dividir a rede `192.168.8.0/24` em 4 sub-redes de tamanho igual. Qual é a máscara a usar e o intervalo (endereço de rede a broadcast) da segunda sub-rede?
+= 255.255.255.192 e 192.168.8.64 a 192.168.8.127
+- 255.255.255.192 e 192.168.8.65 a 192.168.8.126
+- 255.255.255.224 e 192.168.8.32 a 192.168.8.63
+- 255.255.255.128 e 192.168.8.128 a 192.168.8.255
+> Quatro sub-redes iguais exigem 2 bits a mais na máscara: `/24` + 2 = `/26` = `255.255.255.192`, com blocos de 64: 0-63, 64-127, 128-191 e 192-255. A segunda vai de `192.168.8.64` (rede) a `192.168.8.127` (broadcast).
+> `.65` a `.126` são só os hosts utilizáveis, não o intervalo completo; `/27` gera 8 sub-redes de 32; `/25` gera apenas 2 sub-redes e `.128-.255` seria a segunda delas.
+
+### 109.1-011 | lacuna | 1
+ref: 102:p.397
+tags: binário, conversão
+Qual é o valor decimal do octeto binário `10110000`? ____
+= 176
+> Soma-se o peso de cada bit "1" (da esquerda para a direita: 128, 64, 32, 16, 8, 4, 2, 1): 128 + 32 + 16 = 176.
+
+### 109.1-012 | lacuna | 2
+ref: 102:p.396-397
+tags: binário, conversão
+Escreva o número decimal 105 em binário, completando com zeros à esquerda até 8 bits: ____
+= 01101001
+> Divisões sucessivas por 2 (restos lidos de baixo para cima): 105 = 64 + 32 + 8 + 1, ou seja, `1101001`. Completando com um zero à esquerda: `01101001`.
+
+### 109.1-013 | unica | 2
+ref: 102:p.395, 102:p.398
+tags: classes, máscara padrão
+Segundo a divisão clássica por classes, qual é a classe e a máscara padrão do endereço `141.150.200.1`?
+= Classe B, 255.255.0.0
+- Classe A, 255.0.0.0
+- Classe C, 255.255.255.0
+- Classe B, 255.255.255.0
+> O primeiro octeto (141) está entre 128 e 191, portanto é classe B, cuja máscara padrão é `255.255.0.0` (/16). Classe A vai de 1 a 126 (máscara /8) e classe C de 192 a 223 (/24).
+> Lembre que a máscara padrão é só uma convenção: hoje, com CIDR, qualquer máscara pode ser usada com qualquer endereço.
+
+### 109.1-014 | multipla | 3
+ref: 102:p.395-396
+tags: ip privado, rfc1918
+Quais dos endereços abaixo pertencem aos blocos IPv4 reservados para redes privadas (não roteados na Internet pública)?
+= 10.200.1.1
+= 172.31.255.254
+= 192.168.77.3
+- 172.32.0.10
+- 192.169.0.1
+- 11.0.0.1
+> Os blocos privados são `10.0.0.0/8`, `172.16.0.0` a `172.31.255.255` (`172.16.0.0/12`) e `192.168.0.0/16`. Logo `10.200.1.1`, `172.31.255.254` e `192.168.77.3` são privados.
+> `172.32.0.10` fica logo fora do bloco 172.16-172.31; `192.169.0.1` fica fora de 192.168.x.x; `11.0.0.1` está fora de 10.x.x.x. Os três são endereços públicos.
+
+### 109.1-015 | unica | 2
+ref: 102:p.407
+tags: loopback, classes
+Por que a faixa de endereços IPv4 iniciada em 127 não faz parte das classes A, B ou C de hosts comuns?
+= Está reservada ao loopback (127.0.0.1), usado na comunicação interna do próprio host
+- Está reservada ao multicast, usado para entregar pacotes a grupos de hosts inscritos
+- Está reservada às redes privadas, que não são roteadas pela Internet pública
+- Está reservada ao broadcast global, usado para alcançar todos os hosts da Internet
+> A rede `127.0.0.0/8` é de loopback: o tráfego para `127.0.0.1` (localhost) nunca sai da máquina e serve para testes e comunicação entre processos locais.
+> Multicast fica em 224.0.0.0 e acima (classe D); redes privadas são 10/8, 172.16/12 e 192.168/16; o broadcast limitado é `255.255.255.255`.
+
+### 109.1-016 | unica | 3
+ref: 102:p.402
+tags: rota padrão, gateway
+O host `192.168.10.20/24` precisa acessar `192.168.200.100`, que está em outra rede. Um roteador tem os endereços `192.168.10.1` e `192.168.200.1`. O que precisa ser configurado no host para a comunicação funcionar?
+= Uma rota padrão (gateway) apontando para 192.168.10.1
+- Uma rota padrão (gateway) apontando para 192.168.200.1
+- Uma entrada em /etc/hosts associando um nome a 192.168.200.100
+- A máscara 255.255.0.0 no lugar de 255.255.255.0
+> Para alcançar redes diferentes, o host envia os pacotes ao gateway. O gateway precisa estar na mesma rede lógica do host, ou seja, `192.168.10.1`.
+> `192.168.200.1` não é alcançável diretamente a partir de `192.168.10.0/24`; `/etc/hosts` só associa nomes a IPs e não cria rota; mudar a máscara para /16 faria o host tentar alcançar `192.168.200.100` diretamente na rede local (sem roteador), o que não funciona.
+
+### 109.1-017 | unica | 2
+ref: 102:p.404, 102:p.407
+tags: ttl
+Qual é a função do campo TTL (Time To Live) do cabeçalho de um pacote IPv4?
+= Limitar os saltos: cada roteador o diminui e, ao chegar a 0, o pacote é descartado
+- Informar por quantos segundos o endereço de origem fica válido na tabela ARP do destino
+- Definir quantas vezes o TCP tentará retransmitir o pacote antes de desistir da conexão
+- Indicar o tamanho máximo, em bytes, que o pacote pode ter antes de ser fragmentado
+> O TTL é um contador que a origem define e cada roteador (salto) decrementa. Se chegar a zero, o pacote é descartado, o que evita que pacotes circulem para sempre em laços de roteamento (e é o princípio de funcionamento do `traceroute`).
+> As outras opções descrevem outros mecanismos: cache ARP, retransmissão do TCP e MTU/fragmentação.
+
+### 109.1-018 | unica | 2
+ref: 102:p.395, 102:p.407
+tags: nat, ip privado
+Para que serve o NAT (Network Address Translation) em um roteador de borda?
+= Permite que hosts com IPs privados acessem a Internet usando o IP público do roteador
+- Atribui automaticamente endereços IP aos hosts da rede interna por meio de leases
+- Converte nomes de domínio em endereços IP para os hosts da rede interna
+- Divide uma rede em sub-redes menores alterando a máscara dos hosts
+> O NAT traduz os endereços privados da rede interna para o endereço público do gateway e vice-versa, permitindo que os endereços privados (10/8, 172.16/12, 192.168/16) sejam reutilizados em qualquer rede e ainda assim acessem a Internet.
+> Atribuir IPs é função do DHCP, converter nomes é função do DNS e dividir redes é função do projeto de sub-redes/CIDR.
+
+### 109.1-019 | unica | 2
+ref: 102:p.408
+tags: portas
+O número da porta TCP/UDP é armazenado em um campo de 16 bits. Qual é o maior número de porta possível?
+= 65535
+- 65536
+- 32767
+- 1023
+> Com 16 bits há 65.536 valores possíveis (0 a 65535). A lição trata das portas 1 a 65535 como as utilizáveis; o maior número de porta é, portanto, 65535.
+> 65536 é a quantidade de valores, não o maior número; 32767 é o limite de um inteiro de 16 bits com sinal; 1023 é o fim da faixa de portas privilegiadas.
+
+### 109.1-020 | unica | 2
+ref: 102:p.408
+tags: portas, privilegiadas
+Em sistemas Linux, quais portas são consideradas privilegiadas, ou seja, só podem ser abertas por servidores executados com privilégios de root?
+= 1 a 1023
+- 1024 a 65535
+- 1 a 255
+- 49152 a 65535
+> Os serviços padronizados escutam nas portas de 1 a 1023, as privilegiadas, que exigem root para serem abertas por um processo servidor. As portas de 1024 em diante são usadas, por exemplo, como portas de origem (efêmeras) dos clientes.
+> 1024-65535 é justamente a faixa não privilegiada; 49152-65535 é a faixa dinâmica/privada da IANA, usada em muitas pilhas como portas efêmeras; 1-255 corresponde apenas aos serviços "bem conhecidos" mais antigos.
+
+### 109.1-021 | lacuna | 1
+ref: 102:p.409
+tags: portas, smtp
+Qual é a porta padrão do SMTP, serviço usado para o envio de e-mails entre servidores? ____
+= 25
+> O SMTP usa a porta TCP 25. Na lista oficial: 110 é POP3, 143 é IMAP e 465 é o SMTP seguro (SMTPS).
+
+### 109.1-022 | multipla | 3
+ref: 102:p.409
+tags: portas, serviços
+Quais dos pares porta e serviço abaixo estão corretos?
+= 22 - SSH
+= 123 - NTP
+= 636 - LDAPS
+- 110 - IMAP
+- 143 - POP3
+- 161 - SNMPTRAP
+> Corretos: 22 = SSH, 123 = NTP (sincronização de horário) e 636 = LDAPS (LDAP sobre TLS).
+> Estão trocados: 110 é POP3 e 143 é IMAP (os seguros são 995 e 993). A porta 161 é do SNMP; o serviço de notificações SNMPTRAP usa a 162.
+
+### 109.1-023 | lacuna | 2
+ref: 102:p.409
+tags: portas, imap
+Qual é a porta padrão do IMAPS (IMAP sobre conexão segura)? ____
+= 993
+> IMAP sem criptografia usa a porta 143; sua versão segura, IMAPS, usa a 993. Os equivalentes seguros: POP3S = 995, SMTPS = 465, LDAPS = 636 e HTTPS = 443.
+
+### 109.1-024 | unica | 1
+ref: 102:p.409
+tags: portas, telnet
+Qual dos serviços abaixo envia os dados, inclusive senhas, sem criptografia?
+= Telnet (porta 23)
+- SSH (porta 22)
+- HTTPS (porta 443)
+- IMAPS (porta 993)
+> O Telnet transmite tudo em texto puro e foi substituído pelo SSH. SSH, HTTPS e IMAPS protegem a comunicação com criptografia.
+
+### 109.1-025 | unica | 2
+ref: 102:p.409
+tags: portas, ftp
+Quais portas o FTP utiliza por padrão para controle e para dados, respectivamente?
+= 21 para controle e 20 para dados
+- 20 para controle e 21 para dados
+- 22 para controle e 20 para dados
+- 21 para controle e 25 para dados
+> O FTP usa a porta 21 para a conexão de controle (comandos) e a 20 para a transferência de dados. A porta 22 é do SSH e a 25 é do SMTP.
+
+### 109.1-026 | lacuna | 1
+ref: 102:p.409
+tags: /etc/services
+Em um sistema Linux, qual arquivo (caminho completo) lista os nomes dos serviços de rede e as portas padrão associadas? ____
+= /etc/services
+> `/etc/services` mapeia nomes de serviços a `porta/protocolo`. Em distribuições Debian ele vem no pacote `netbase`.
+
+### 109.1-027 | unica | 2
+ref: 102:p.409
+tags: /etc/services
+Uma linha de `/etc/services` tem o seguinte conteúdo:
+
+```
+snmp-trap       162/udp         snmptrap        # Traps for SNMP
+```
+
+O que ela informa?
+= Nome snmp-trap, porta 162 pelo protocolo UDP, com o alias snmptrap
+- Nome snmp-trap, porta 162 pelo protocolo TCP, com o alias snmptrap
+- Nome snmp-trap, porta 161 pelo protocolo UDP, com o alias snmptrap
+- Nome snmptrap, porta 162 pelo protocolo UDP, com o alias snmp-trap
+> O formato é `nome-oficial  porta/protocolo  [aliases]  # comentário`. O nome oficial é o primeiro campo (`snmp-trap`), `snmptrap` é um alias e o texto após `#` é comentário.
+> O arquivo traz linhas separadas para `162/tcp` e `162/udp`, de modo que o protocolo faz parte da identificação. A porta 161 é do serviço `snmp`, não do trap.
+
+### 109.1-028 | unica | 1
+ref: 102:p.410
+tags: tcp
+Qual protocolo de transporte garante que os pacotes cheguem corretamente, verificando a integridade e a ordem e retransmitindo os que se perderam?
+= TCP
+- UDP
+- ICMP
+- ARP
+> O TCP é orientado a conexão e implementa controle de erros, ordem e retransmissão, de modo que a aplicação não precisa tratar isso. O UDP não oferece essas garantias, o ICMP é um protocolo de controle da camada de rede e o ARP resolve endereços da rede local.
+
+### 109.1-029 | multipla | 2
+ref: 102:p.410
+tags: udp, tcp
+Quais das características abaixo descrevem o UDP?
+= Não garante entrega nem ordem dos datagramas
+= Tem menos sobrecarga do que o TCP
+= É o transporte padrão do NTP, na porta 123
+- Estabelece a conexão com handshake de três vias
+- Retransmite automaticamente os pacotes perdidos
+- Controla o fluxo por meio de uma janela de transmissão
+> O UDP não verifica perdas nem ordem, deixando esse controle para a aplicação. Por ter menos controle, tem melhor desempenho, o que é importante para serviços como NTP (123/udp), DNS e SNMP.
+> Handshake de três vias, retransmissão automática e controle de janela são mecanismos do TCP.
+
+### 109.1-030 | unica | 2
+ref: 102:p.410
+tags: icmp
+Qual afirmação sobre o ICMP está correta?
+= É um protocolo da camada de rede para mensagens de controle, como o eco do ping
+- É um protocolo de transporte confiável que usa o handshake de três vias e portas
+- É um protocolo de aplicação que traduz nomes de host em endereços IP na rede
+- É um protocolo de enlace que associa endereços IP a endereços MAC da rede local
+> O ICMP (Internet Control Message Protocol) fica na camada de rede, junto com o IP, e serve para diagnóstico e controle: eco (`ping`), destino inacessível, redirecionamento de rota, controle de tráfego. Não usa portas TCP/UDP.
+> A tradução de nomes é do DNS; a associação IP-MAC é feita pelo ARP (no IPv6, pelo NDP).
+
+### 109.1-031 | lacuna | 1
+ref: 102:p.410
+tags: icmp, ping
+O comando `ping` envia mensagens de eco de qual protocolo? Responda com a sigla: ____
+= ICMP
+= icmp
+> O `ping` usa as mensagens ICMP Echo Request e Echo Reply (no IPv6, ICMPv6).
+
+### 109.1-032 | unica | 1
+ref: 102:p.411
+tags: ipv6
+Qual é o tamanho de um endereço IPv6 e como ele é representado?
+= 128 bits, em 8 grupos de 16 bits escritos em hexadecimal
+- 64 bits, em 4 grupos de 16 bits escritos em hexadecimal
+- 128 bits, em 4 grupos de 32 bits escritos em decimal
+- 96 bits, em 6 grupos de 16 bits escritos em hexadecimal
+> O endereço IPv6 tem 128 bits, divididos em 8 grupos de 16 bits (4 dígitos hexadecimais cada) separados por `:`, como `2001:0db8:85a3:08d3:1319:8a2e:0370:7344`. O IPv4 tem 32 bits em 4 octetos decimais.
+
+### 109.1-033 | lacuna | 2
+ref: 102:p.411
+tags: ipv6, abreviação
+Escreva a forma abreviada do endereço `2001:0db8:0000:0000:0000:0000:0000:0001`, removendo zeros à esquerda e usando `::`: ____
+= 2001:db8::1
+= 2001:DB8::1
+> Primeiro removem-se os zeros à esquerda de cada grupo (`0db8` vira `db8`). Depois a sequência de grupos zero consecutivos é substituída por `::`, o que resulta em `2001:db8::1`.
+
+### 109.1-034 | unica | 3
+ref: 102:p.411-412
+tags: ipv6, abreviação
+Qual é a representação mais curta do endereço `2001:0db8:0000:0000:0001:0000:0000:0000`?
+= 2001:db8:0:0:1::
+- 2001:db8::1::
+- 2001:db8::1
+- 2001:db8::1:0:0:0
+> O `::` só pode aparecer uma vez no endereço, senão seria impossível saber quantos grupos zero cada um representa. Existem duas sequências de zeros (2 grupos e 3 grupos); comprime-se a mais longa (a final) e os demais zeros viram `0`: `2001:db8:0:0:1::`.
+> `2001:db8::1::` é inválido (dois `::`); `2001:db8::1` é outro endereço (`2001:db8:0:0:0:0:0:1`, com o `1` no último grupo); `2001:db8::1:0:0:0` representa o mesmo endereço, mas é mais longo que a forma pedida.
+
+### 109.1-035 | unica | 2
+ref: 102:p.411
+tags: ipv6, abreviação
+Qual é a forma completa (sem abreviações) do endereço IPv6 `fe80::1`?
+= fe80:0000:0000:0000:0000:0000:0000:0001
+- fe80:0000:0000:0000:0000:0000:0001:0000
+- fe80:0000:0000:0000:0000:0000:0000:1000
+- fe80:1000:0000:0000:0000:0000:0000:0000
+> O `::` representa os grupos zero omitidos; como há dois grupos explícitos (`fe80` e `1`), restam 6 grupos zero. Cada grupo tem 4 dígitos, e os zeros omitidos ficam à esquerda do valor: `0001` (e não `1000`).
+> As demais opções deslocam o valor `1` para outros grupos ou colocam os zeros à direita do dígito.
+
+### 109.1-036 | multipla | 3
+ref: 102:p.411-412
+tags: ipv6, validade
+Quais dos endereços abaixo são endereços IPv6 sintaticamente válidos?
+= ::1
+= 2001:db8:85a3::8a2e:370:7334
+= fe80::a00:27ff:fe54:5359
+- 2001:db8::a::1
+- 2001:db8:0:0:0:0:0:0:1
+- 2001:db8:g::1
+> São válidos o loopback `::1`, `2001:db8:85a3::8a2e:370:7334` e o link-local `fe80::a00:27ff:fe54:5359`.
+> `2001:db8::a::1` usa `::` duas vezes; `2001:db8:0:0:0:0:0:0:1` tem 9 grupos (o máximo é 8); `2001:db8:g::1` tem o caractere `g`, que não é dígito hexadecimal.
+
+### 109.1-037 | unica | 1
+ref: 102:p.412
+tags: ipv6, multicast
+Qual tipo de endereço IPv6 é usado para enviar um pacote a todas as interfaces que pertencem a um grupo?
+= Multicast
+- Anycast
+- Unicast
+- Broadcast (envio a todos os hosts)
+> No IPv6 existem os tipos unicast (uma interface), multicast (todas as interfaces de um grupo) e anycast (uma, dentre as de um grupo). Não existe o tipo broadcast no IPv6.
+
+### 109.1-038 | unica | 2
+ref: 102:p.412
+tags: ipv6, anycast
+Qual descrição corresponde a um endereço IPv6 do tipo anycast?
+= Identifica um conjunto de interfaces, mas o pacote é entregue a apenas uma delas
+- Identifica um conjunto de interfaces e o pacote é entregue a todas ao mesmo tempo
+- Identifica uma única interface de rede e o pacote é entregue somente a essa interface
+- Identifica todas as interfaces da rede local e substitui o broadcast do IPv4
+> No anycast vários nós compartilham o mesmo endereço, mas o pacote é entregue a apenas um deles. Entregar a todas as interfaces do conjunto é o multicast; entregar a uma única interface é o unicast; e a função de "todos os nós do enlace" é atendida pelo multicast `ff02::1`.
+
+### 109.1-039 | unica | 3
+ref: 102:p.412
+tags: ipv6, multicast, broadcast
+O IPv6 não tem broadcast. Qual endereço é usado para alcançar todos os hosts do enlace local, de modo semelhante ao broadcast do IPv4?
+= ff02::1
+- fe80::1
+- ff00::/8
+- ff02::2
+> `ff02::1` é o multicast "todos os nós" do enlace local (equivalente prático a `224.0.0.1` no IPv4).
+> `fe80::1` é um endereço unicast link-local de uma interface; `ff00::/8` é o prefixo que contém todos os endereços multicast, não um endereço de grupo; `ff02::2` é o multicast "todos os roteadores".
+
+### 109.1-040 | lacuna | 1
+ref: 102:p.413
+tags: ipv6, link-local
+Todas as interfaces IPv6 têm um endereço de link local. Qual o prefixo (com o tamanho) que identifica esses endereços? ____
+= fe80::/10
+= FE80::/10
+> Os endereços link-local do IPv6 pertencem a `fe80::/10` (na prática, `fe80::/64`). Só são válidos no enlace local e não são roteados.
+
+### 109.1-041 | unica | 2
+ref: 102:p.412
+tags: ipv6, porta
+Como se indica a porta 443 ao acessar o host IPv6 `2001:db8::10` em uma notação de endereço e porta?
+= [2001:db8::10]:443
+- 2001:db8::10:443
+- [2001:db8::10:443]
+- [2001:db8::10]:[443]
+> No IPv6, o endereço deve ser colocado entre colchetes para distinguir os `:` do endereço do `:` que separa a porta. No IPv4 basta `200.216.10.15:443`.
+> Sem colchetes, `2001:db8::10:443` seria lido como um único endereço IPv6 (o último grupo seria `443`); com a porta dentro dos colchetes ela viraria parte do endereço; colchetes em volta da porta não fazem parte da notação.
+
+### 109.1-042 | unica | 2
+ref: 102:p.413
+tags: ipv6, hop limit
+Qual campo do cabeçalho IPv6 substitui o TTL do IPv4?
+= Hop Limit
+- Flow Label
+- Next Header
+- Payload Length
+> O Hop Limit (limite de saltos) tem a mesma função do TTL: é decrementado a cada roteador e o pacote é descartado ao chegar a zero. Flow Label, Next Header e Payload Length são outros campos do cabeçalho IPv6, com funções distintas.
+
+### 109.1-043 | unica | 2
+ref: 102:p.413
+tags: ipv6, ndp, arp
+Qual protocolo do IPv6 exerce papel semelhante ao do ARP no IPv4 e descobre também vizinhos, roteadores e prefixos?
+= NDP (Neighbor Discovery Protocol)
+- SLAAC (Stateless Address Autoconfiguration)
+- DHCPv6 (Dynamic Host Configuration Protocol)
+- IGMP (Internet Group Management Protocol)
+> O NDP substitui o ARP no IPv6 e oferece mais recursos (descoberta de vizinhos, de roteadores, de endereços duplicados, etc.).
+> O SLAAC é o mecanismo de autoconfiguração de endereços (que se apoia no NDP); DHCPv6 é um protocolo de atribuição de configuração por servidor; IGMP gerencia grupos multicast no IPv4.
+
+### 109.1-044 | multipla | 3
+ref: 102:p.412-413
+tags: ipv6, ipv4, diferenças
+Quais afirmações sobre as diferenças entre IPv4 e IPv6 estão corretas?
+= O IPv6 não tem broadcast; para alcançar todos os hosts do enlace usa-se multicast
+= Os hosts IPv6 podem se autoconfigurar por SLAAC, sem servidor DHCP
+= O TTL do IPv4 foi substituído pelo Hop Limit no cabeçalho do IPv6
+- A resolução de endereços do enlace continua sendo feita pelo ARP
+- As portas TCP e UDP passaram a ter 32 bits no IPv6
+- Toda interface IPv6 depende de um servidor DHCPv6 para receber endereço
+> Corretas: sem broadcast (usa-se, por exemplo, `ff02::1`), autoconfiguração por SLAAC e Hop Limit no lugar do TTL.
+> Erradas: o ARP é substituído pelo NDP; as portas de transporte continuam sendo de 16 bits e seguem os mesmos padrões (TCP/UDP); e toda interface IPv6 já possui automaticamente um endereço link-local `fe80::/10`, sem DHCPv6.
+
+### 109.1-045 | lacuna | 2
+ref: 102:p.412-413
+tags: ipv6, loopback
+Qual é o endereço de loopback do IPv6, na forma abreviada? ____
+= ::1
+= 0:0:0:0:0:0:0:1
+> O loopback IPv6 é `::1` (equivalente a `127.0.0.1` no IPv4). Na forma completa é `0000:0000:0000:0000:0000:0000:0000:0001`.
+
+### 109.1-046 | lacuna | 1
+ref: 102:p.409
+tags: portas, ntp
+Qual é a sigla do serviço de sincronização de horário que usa a porta 123? ____
+= NTP
+= ntp
+> NTP (Network Time Protocol) usa a porta 123, normalmente em UDP.
+
+### 109.1-047 | unica | 3
+ref: 102:p.409
+tags: /etc/services, getent
+Qual comando consulta o banco de dados de serviços (em geral alimentado por `/etc/services`) para exibir a porta padrão do serviço `imaps`?
+= getent services imaps
+- getent hosts imaps
+- host -t SRV imaps
+- ss -ln imaps
+> `getent services <nome>` consulta o banco de dados `services`, que por padrão lê `/etc/services`, e mostra `porta/protocolo` (ex.: `getent services ssh` mostra `ssh 22/tcp`). Também se pode usar `grep imaps /etc/services`.
+> `getent hosts` consulta nomes de host; `host -t SRV` faz consulta DNS de registros SRV; `ss -ln` lista sockets em escuta e não aceita um nome de serviço como esse argumento.
+
+### 109.1-048 | multipla | 2
+ref: 102:p.409
+tags: portas, serviços
+Quais dos pares porta e serviço abaixo estão corretos?
+= 53 - DNS
+= 139 - NetBIOS
+= 389 - LDAP
+- 80 - HTTPS
+- 465 - IMAPS
+- 995 - POP3
+> Corretos: 53 = DNS, 139 = NetBIOS (sessão) e 389 = LDAP (sem TLS).
+> Errados: 80 é o HTTP (o HTTPS usa a 443); 465 é o SMTPS (o IMAPS usa a 993); 995 é o POP3S, a versão segura (o POP3 sem criptografia usa a 110).
+
+### 109.1-049 | lacuna | 2
+ref: 102:p.409
+tags: portas, rsh
+Qual é a sigla do serviço de shell remoto sem criptografia, predecessor do SSH, associado na lista de portas do LPI à porta 514? ____
+= RSH
+= rsh
+> A porta 514/tcp é do RSH (Remote Shell), que transmite tudo em texto puro e foi substituído pelo SSH (porta 22). Em `/etc/services` a porta 514/udp aparece associada ao `syslog`, mas na lista do exame a 514 é o RSH.
+
+### 109.1-050 | unica | 1
+ref: 102:p.409
+tags: portas, http
+Qual é a porta padrão do HTTP, usado em sites sem criptografia?
+= 80
+- 8080
+- 443
+- 81
+> O HTTP usa a porta TCP 80. A porta 443 é a do HTTPS (HTTP sobre TLS). Portas como 8080 são alternativas comuns para proxies e servidores de teste, mas não são o padrão.
+
+### 109.1-051 | lacuna | 2
+ref: 102:p.409
+tags: portas, pop3s
+Qual é a porta padrão do POP3S (POP3 sobre conexão segura)? ____
+= 995
+> O POP3 sem criptografia usa a porta 110; sua versão segura, POP3S, usa a 995.
+
+### 109.1-052 | unica | 2
+ref: 102:p.409
+tags: portas, smtps
+Na lista de portas do LPI, a porta 465 está associada a qual serviço?
+= SMTPS
+- IMAPS
+- POP3S
+- LDAPS
+> A porta 465 é o SMTPS (SMTP seguro). Os demais "S" da lista usam outras portas: IMAPS = 993, POP3S = 995 e LDAPS = 636. O SMTP puro usa a 25.

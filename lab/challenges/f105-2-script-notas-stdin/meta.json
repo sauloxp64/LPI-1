@@ -1,0 +1,30 @@
+{
+  "id": "f105-2-script-notas-stdin",
+  "obj": "105.2",
+  "titulo": "Script de boletim: arquivo ou entrada padrão",
+  "nivel": 3,
+  "minutos": 12,
+  "params": {
+    "script": { "escolha": ["boletim.sh", "notas.sh", "resultado.sh", "medias.sh"] },
+    "ok_txt": { "escolha": ["APROVADO", "OK", "PASSOU"] },
+    "bad_txt": { "escolha": ["REPROVADO", "FALHOU", "ABAIXO"] },
+    "min": { "faixa": [50, 70] },
+    "err": { "escolha": [2, 3, 4] }
+  },
+  "enunciado": "Escreva o script **`~/lab/scripts-notas/{script}`** (veja o `exemplo.csv` na mesma pasta). Uso: **`{script} ARQUIVO [MINIMO]`**.\n\n* `ARQUIVO` é um CSV com registros `nome;n1;n2;n3` (inteiros de 0 a 100). **Linhas em branco** e linhas que **começam com `#`** devem ser ignoradas. Se `ARQUIVO` for um único hífen (`-`), os dados são lidos da **entrada padrão**.\n* `MINIMO` (opcional) é a média mínima para aprovação; se omitido, vale **{min}**.\n* Para cada registro, imprima `nome: media=M situacao=S`, em que `M` é a **média inteira** `(n1+n2+n3)/3` (divisão inteira) e `S` é **`{ok_txt}`** se `M` for maior ou igual ao mínimo, ou **`{bad_txt}`** caso contrário.\n* Depois do último registro, imprima uma linha `total=T aprovados=A reprovados=R`.\n* **Código de saída**: `0` se ninguém foi reprovado; `1` se houve ao menos um reprovado; **`{err}`** se o `ARQUIVO` não existir/não puder ser lido **ou** se o script for chamado sem argumentos — nesses dois casos a mensagem de erro (ou o texto `uso: {script} ARQUIVO [MINIMO]`) vai **somente para a saída de erro**.\n\nO arquivo deve ser executável e ter o shebang. O verificador roda o script como `aluno` com arquivos e valores sorteados a cada verificação, tanto com arquivo quanto por `|`/`<` na entrada padrão.",
+  "verifica": [
+    "script executável com shebang válido",
+    "lê o arquivo, ignora comentários e linhas em branco, calcula a média inteira e imprime `situacao` conforme o mínimo padrão ({min})",
+    "aceita o segundo argumento como mínimo",
+    "com `-` lê da entrada padrão (por redirecionamento e por pipe)",
+    "linha final `total= aprovados= reprovados=` e código de saída 0 (todos aprovados) ou 1",
+    "arquivo inexistente e ausência de argumentos: mensagem só no stderr e código {err}"
+  ],
+  "dicas": [
+    "O esqueleto: testar `$#`, definir `min=${2:-padrao}`, validar o arquivo, e um laço `while IFS=';' read -r nome n1 n2 n3; do ... done` alimentado por arquivo.",
+    "Para ler de `-` e de arquivo com o mesmo laço, aponte a entrada do `while` para `/dev/stdin` quando o argumento for `-` (ou use `done < \"$arq\"`). Cuidado: um `cat arquivo | while ...` roda o laço num subshell e as variáveis contadoras se perdem no fim.",
+    "Pular comentários e linhas em branco: `case \"$nome\" in ''|'#'*) continue ;; esac`. A média inteira com aritmética do shell: `media=$(( (n1 + n2 + n3) / 3 ))`.",
+    "O status final pode ser a própria última condição: `[ \"$reprovados\" -eq 0 ]` como última linha (retorna 0 ou 1). Erros para o stderr com `>&2` e `exit`."
+  ],
+  "solucao": "```\n#!/bin/bash\nif [ $# -lt 1 ]; then\n  echo \"uso: {script} ARQUIVO [MINIMO]\" >&2\n  exit {err}\nfi\narq=$1\nmin=${2:-{min}}\nif [ \"$arq\" != \"-\" ] && [ ! -r \"$arq\" ]; then\n  echo \"erro: não consigo ler '$arq'\" >&2\n  exit {err}\nfi\n[ \"$arq\" = \"-\" ] && arq=/dev/stdin\ntotal=0; ap=0; rp=0\nwhile IFS=';' read -r nome n1 n2 n3; do\n  case \"$nome\" in ''|'#'*) continue ;; esac\n  media=$(( (n1 + n2 + n3) / 3 ))\n  if [ \"$media\" -ge \"$min\" ]; then sit={ok_txt}; ap=$((ap + 1)); else sit={bad_txt}; rp=$((rp + 1)); fi\n  total=$((total + 1))\n  echo \"$nome: media=$media situacao=$sit\"\ndone < \"$arq\"\necho \"total=$total aprovados=$ap reprovados=$rp\"\n[ \"$rp\" -eq 0 ]\n```\n`IFS=';' read -r` separa os campos do registro; `case` descarta comentários e linhas vazias; `$(( ))` faz a conta inteira; o `done < \"$arq\"` mantém o laço no shell principal (com `cat x | while`, o `while` roda num subshell e `total`, `ap` e `rp` voltariam a zero); `/dev/stdin` permite tratar o `-` como arquivo. O código de saída de um script é o do **último comando** executado — por isso terminar com o teste `[ \"$rp\" -eq 0 ]` devolve 0 ou 1 — e mensagens de erro devem ir para o stderr (`>&2`) para não se misturarem com a saída de dados."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "f104-2-tune2fs-ajustes",
+  "obj": "104.2",
+  "titulo": "Ajustes finos em um ext2 com tune2fs",
+  "nivel": 2,
+  "minutos": 7,
+  "params": {
+    "img": { "escolha": ["financeiro", "rh", "compras", "contratos"] },
+    "label": { "escolha": ["contab", "rh-dados", "compras-fs", "contr-lab"] },
+    "reserva": { "faixa": [1, 4] },
+    "montagens": { "faixa": [20, 60] },
+    "dias": { "escolha": [15, 30, 45, 60, 90] }
+  },
+  "enunciado": "A imagem `~/lab/manutencao/{img}.img` contém um sistema de arquivos **ext2** antigo, sem journal e com o rótulo `antigo`. **Sem recriá-lo** (os dados e o UUID precisam ser preservados), faça estes ajustes:\n\n1. transforme-o em **ext3**, adicionando o journal;\n2. mude o rótulo para `{label}`;\n3. reserve **{reserva}%** dos blocos para o root;\n4. force uma verificação após **{montagens} montagens** (contagem máxima de montagens);\n5. force também uma verificação a cada **{dias} dias** (intervalo entre verificações).\n\nPor fim, grave em `~/lab/manutencao/info.txt` duas linhas com dados do sistema de arquivos: `bloco=<tamanho do bloco em bytes>` e `inodes=<número total de inodes>`.",
+  "verifica": [
+    "o UUID original e os arquivos da imagem foram preservados",
+    "o sistema de arquivos tem journal e o `blkid` o reconhece como ext3",
+    "rótulo = `{label}`",
+    "blocos reservados = {reserva}%",
+    "contagem máxima de montagens = {montagens}",
+    "intervalo entre verificações = {dias} dias",
+    "`info.txt` com `bloco=` e `inodes=` corretos, e `e2fsck -fn` sem erros"
+  ],
+  "dicas": [
+    "Todos os ajustes de parâmetros de um ext2/3/4 são feitos com um só utilitário, e `dumpe2fs -h` mostra o cabeçalho (superbloco) para você conferir antes e depois.",
+    "`tune2fs` aceita várias opções na mesma chamada: `-j` (journal), `-L` (rótulo), `-m` (percentual reservado), `-c` (máximo de montagens) e `-i` (intervalo, ex.: `45d`).",
+    "Os campos de interesse em `dumpe2fs -h`: *Block size*, *Inode count*, *Reserved block count*, *Maximum mount count*, *Check interval*."
+  ],
+  "solucao": "```\ncd ~/lab/manutencao\ndumpe2fs -h {img}.img                  # estado inicial\ntune2fs -j {img}.img                   # ext2 -> ext3 (cria o journal)\ntune2fs -L {label} -m {reserva} -c {montagens} -i {dias}d {img}.img\ndumpe2fs -h {img}.img | grep -E 'Block size|Inode count'\nprintf 'bloco=%s\\ninodes=%s\\n' 4096 12345 > info.txt   # use os valores reais lidos acima\ne2fsck -fn {img}.img\n```\n`tune2fs` altera parâmetros do superbloco **sem recriar** o sistema: `-j` adiciona o journal (ext2 vira ext3), `-L` muda o rótulo, `-m` o percentual reservado ao root (padrão 5%), `-c` o número máximo de montagens antes de forçar um fsck e `-i` o intervalo de tempo (`d`, `w`, `m`). O tamanho do bloco e o total de inodes são definidos na criação e não mudam com o tune2fs. Pegadinha: `mke2fs` de novo apagaria os dados — o enunciado exige preservar o UUID."
+}

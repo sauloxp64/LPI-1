@@ -1,0 +1,438 @@
+### 103.4-001 | lacuna | 1
+ref: 101:p.282
+tags: descritores, stdin, stdout, stderr
+Qual é o número do descritor de arquivo associado ao erro padrão (stderr) de todo processo?
+= 2
+> Todo processo Linux nasce com três canais abertos: stdin (descritor 0), stdout (1) e stderr (2). Por isso `>` equivale a `1>`, `<` equivale a `0<` e `2>` redireciona apenas as mensagens de erro.
+
+### 103.4-002 | lacuna | 1
+ref: 101:p.283
+tags: redirecionamento, stderr
+Complete o comando para gravar somente as mensagens de erro (stderr) de `ls /inexistente` no arquivo `erros.txt`, sobrescrevendo o arquivo:
+
+`ls /inexistente ____ erros.txt`
+= 2>
+> O operador `2>` redireciona o descritor 2 (stderr). Com `>` sozinho (equivalente a `1>`) apenas a saída padrão seria redirecionada e a mensagem de erro continuaria aparecendo no terminal.
+
+### 103.4-003 | unica | 2
+ref: 101:p.283
+tags: redirecionamento, stdout, stderr
+O que acontece ao executar o comando abaixo, sabendo que `/etc/hostname` existe e `/nao_existe` não existe?
+
+```
+$ ls /etc/hostname /nao_existe > saida.txt
+```
+= O erro vai ao terminal e `saida.txt` recebe `/etc/hostname`
+- Erro e `/etc/hostname` são gravados em `saida.txt`
+- `saida.txt` recebe só o erro e o terminal mostra `/etc/hostname`
+- `saida.txt` fica vazio, pois o comando terminou com falha
+> `>` redireciona apenas o descritor 1 (stdout). A mensagem de erro é escrita no descritor 2, que continua apontando para o terminal. O arquivo é criado e recebe a listagem de `/etc/hostname`, mesmo que o código de saída do `ls` seja diferente de zero (2, neste caso).
+
+### 103.4-004 | unica | 3
+ref: 101:p.284
+tags: redirecionamento, ordem, 2>&1
+Considere o comando abaixo, em que `/etc/hostname` existe e `/nao_existe` não existe:
+
+```
+$ ls /etc/hostname /nao_existe 2>&1 > saida.txt
+```
+
+Qual é o resultado?
+= Erro no terminal; `saida.txt` recebe só `/etc/hostname`
+- Erro e `/etc/hostname` são gravados em `saida.txt`
+- `saida.txt` recebe só o erro e `/etc/hostname` aparece no terminal
+- O shell recusa o comando com erro de sintaxe
+> Os redirecionamentos são processados da esquerda para a direita. `2>&1` faz o descritor 2 apontar para o destino atual do descritor 1, que ainda é o terminal. Só depois `> saida.txt` move o descritor 1 para o arquivo; o descritor 2 continua no terminal. Para enviar os dois ao arquivo, a ordem correta é `> saida.txt 2>&1` (ou `&> saida.txt` no Bash).
+
+### 103.4-005 | multipla | 2
+ref: 101:p.283-284
+tags: redirecionamento, stdout, stderr, bash
+Quais comandos do Bash gravam, no mesmo arquivo `todos.log`, tanto a saída padrão quanto o erro padrão de `comando`?
+= `comando &> todos.log`
+= `comando > todos.log 2>&1`
+= `comando >& todos.log`
+- `comando 2>&1 > todos.log`
+- `comando 2> todos.log`
+- `comando > todos.log 1>&2`
+> As três formas corretas são equivalentes no Bash: `&>` e `>&` são atalhos e `> arquivo 2>&1` é a forma tradicional (primeiro o arquivo, depois a duplicação do descritor). `2>&1 > arquivo` deixa o stderr no terminal; `2> arquivo` não captura o stdout; e `> arquivo 1>&2` manda o stdout de volta para onde o stderr aponta, o terminal, deixando o arquivo vazio.
+
+### 103.4-006 | lacuna | 2
+ref: 101:p.284
+tags: redirecionamento, stdout, stderr
+Complete o comando para que a mensagem seja escrita no erro padrão (stderr), e não na saída padrão. Use a forma que redireciona o descritor 1 para o descritor 2:
+
+`echo "falha na conexao" ____`
+= 1>&2
+= >&2
+> `1>&2` (ou simplesmente `>&2`) faz o stdout apontar para o mesmo destino do stderr. A forma inversa, `2>&1`, envia o stderr para o stdout. Em `>&2` não pode haver espaço entre `&` e o número, senão o `&` seria interpretado como execução em segundo plano.
+
+### 103.4-007 | lacuna | 2
+ref: 101:p.283
+tags: redirecionamento, bash
+Em Bash, qual operador de dois caracteres redireciona ao mesmo tempo a saída padrão e o erro padrão para um arquivo?
+
+`apt-get update ____ update.log`
+= &>
+= >&
+> No Bash, `&>` e `>&` são atalhos para `> arquivo 2>&1`. Não pode haver espaço entre os dois caracteres: `& >` seria lido como o operador de segundo plano `&` seguido de um redirecionamento comum.
+
+### 103.4-008 | unica | 2
+ref: 101:p.292
+tags: redirecionamento, stderr, pegadinha
+Um aluno queria enviar o erro de `cat /proc/cpu_info` para a saída padrão, mas digitou o comando abaixo. Para onde a mensagem de erro foi enviada?
+
+```
+$ cat /proc/cpu_info 2>1
+```
+= Para um arquivo chamado `1` no diretório atual
+- Para a saída padrão, que é o descritor 1
+- Para o terminal, sem nenhuma mudança
+- Para o dispositivo `/dev/null`
+> Sem o `&`, o `1` depois de `2>` é interpretado como um nome de arquivo, não como um descritor. O erro é gravado no arquivo `1` do diretório corrente. A forma correta para enviar o stderr ao stdout é `2>&1`.
+
+### 103.4-009 | unica | 2
+ref: 101:p.285
+tags: redirecionamento, entrada, wc
+O arquivo `letras.txt` tem 3 linhas. Qual é a saída do comando abaixo?
+
+```
+$ wc -l < letras.txt
+```
+= `3`
+- `3 letras.txt`
+- `letras.txt`
+- Erro: o nome do arquivo não foi informado
+> Com `<`, o shell abre o arquivo e o entrega ao `wc` pela entrada padrão. O `wc` não sabe o nome do arquivo e por isso imprime apenas o número. Já `wc -l letras.txt` mostraria `3 letras.txt`.
+
+### 103.4-010 | unica | 2
+ref: 101:p.286
+tags: here document, wc
+Qual é a saída do comando abaixo, digitado em um terminal interativo?
+
+```
+$ wc -c <<FIM
+abc
+de
+FIM
+```
+= `7`
+- `5`
+- `11`
+- `2`
+> O here document envia ao `wc -c` as linhas `abc` e `de`, cada uma com seu caractere de nova linha: 4 + 3 = 7 caracteres. A linha com o terminador (`FIM`) não faz parte do texto. `5` ignoraria as quebras de linha e `2` seria a contagem de linhas (`wc -l`).
+
+### 103.4-011 | lacuna | 3
+ref: 101:p.287
+tags: here string, wc
+Qual número o comando abaixo imprime?
+
+```
+$ wc -c <<< "abcde"
+```
+= 6
+> O here string envia o texto ao stdin e o Bash acrescenta um caractere de nova linha ao final: 5 letras + 1 quebra de linha = 6. As aspas pertencem à sintaxe do shell e não são enviadas ao `wc`, portanto não entram na conta. `5` esqueceria a nova linha; contar as aspas também daria 8.
+
+### 103.4-012 | lacuna | 1
+ref: 101:p.287
+tags: here string
+Qual operador envia uma única string, escrita na própria linha de comando, para a entrada padrão do comando?
+
+`bc ____ "scale=3; 10/3"`
+= <<<
+> `<<<` é o here string: a palavra à direita vira o conteúdo do stdin. O resultado do comando acima é `3.333`. Com `<<` (dois sinais) seria um here document, que lê várias linhas até um terminador.
+
+### 103.4-013 | unica | 2
+ref: 101:p.284
+tags: noclobber, redirecionamento
+Com a opção `noclobber` ativa, o redirecionamento `>` sobre um arquivo existente falha com a mensagem `cannot overwrite existing file`. Qual comando desativa essa proteção na sessão atual do Bash?
+= `set +C`
+- `set -C`
+- `unset noclobber`
+- `set +o clobber`
+> `set -C` (ou `set -o noclobber`) ativa a proteção, e `set +C` (ou `set +o noclobber`) a desativa. `noclobber` é uma opção do shell, não uma variável, então `unset noclobber` não surte efeito. `clobber` não é um nome de opção válido: `set +o clobber` resulta em `invalid option name`.
+
+### 103.4-014 | multipla | 2
+ref: 101:p.284-285
+tags: noclobber, redirecionamento
+A opção `noclobber` está ativa e o arquivo `dados.txt` já existe. Quais comandos são executados sem erro?
+= `echo x >> dados.txt`
+= `echo x > /dev/null`
+= `echo x > novo.txt`
+- `echo x > dados.txt`
+- `echo x 2> dados.txt`
+- `echo x &> dados.txt`
+> Com `noclobber`, qualquer redirecionamento que tente truncar um arquivo regular existente (`>`, `2>`, `&>`) é recusado. Continuam permitidos: o acréscimo com `>>`, a criação de um arquivo novo e o uso de `/dev/null`, que é um arquivo especial não afetado pela opção. Note que `2> dados.txt` falha mesmo que `echo` não escreva nada no erro, pois o arquivo é aberto para truncamento antes da execução.
+
+### 103.4-015 | unica | 2
+ref: 101:p.284
+tags: /dev/null, stderr, find
+Um usuário comum executa `find / -name passwd` e vê várias mensagens `Permission denied` misturadas aos resultados. Qual comando exibe somente os caminhos encontrados?
+= `find / -name passwd 2>/dev/null`
+- `find / -name passwd >/dev/null`
+- `find / -name passwd &>/dev/null`
+- `find / -name passwd 1>&2`
+> As mensagens `Permission denied` saem pelo stderr, então `2>/dev/null` as descarta e preserva os resultados. `>/dev/null` faz o contrário: descarta os caminhos e mantém os erros. `&>/dev/null` descarta tudo, e `1>&2` apenas envia os resultados ao stderr, sem filtrar nada.
+
+### 103.4-016 | unica | 3
+ref: 101:p.285-286
+tags: descritores, redirecionamento
+O que faz o redirecionamento `3<>/tmp/dados.txt`, colocado ao final de um comando no Bash?
+= Abre o arquivo no descritor 3, para leitura e escrita
+- Abre o arquivo no descritor 3, somente para leitura
+- Redireciona stdin e stdout para o arquivo ao mesmo tempo
+- Acrescenta a saída do descritor 3 ao final do arquivo
+> O operador `<>` abre o arquivo para leitura e escrita no descritor indicado antes dele (aqui, o 3). O descritor 3 só é útil se o programa executado souber usá-lo. Não afeta stdin nem stdout, e o acréscimo seria feito com `3>>`.
+
+### 103.4-017 | unica | 2
+ref: 101:p.292
+tags: /proc, descritores, diagnostico
+Qual comando mostra para onde apontam os arquivos (por exemplo, os logs) abertos pelo processo de PID 1234?
+= `ls -l /proc/1234/fd`
+- `cat /proc/1234/fd`
+- `ls -l /proc/1234/exe`
+- `ls -l /proc/fd/1234`
+> Em `/proc/PID/fd` o kernel mantém um link simbólico para cada arquivo aberto pelo processo, e `ls -l` mostra os destinos. `fd` é um diretório, então `cat` falha com `Is a directory`. `/proc/PID/exe` aponta apenas para o executável, e `/proc/fd/1234` não existe.
+
+### 103.4-018 | unica | 1
+ref: 101:p.293
+tags: pipe
+Em `cmd1 | cmd2`, o que o caractere `|` faz?
+= Conecta a saída padrão de `cmd1` à entrada padrão de `cmd2`
+- Grava a saída de `cmd1` em um arquivo chamado `cmd2`
+- Executa `cmd2` somente se `cmd1` terminar sem erro
+- Envia o erro padrão de `cmd1` para a entrada de `cmd2`
+> O pipe liga processos: o stdout do primeiro vira o stdin do segundo. Gravar em arquivo é função de `>`. Executar um comando só se o anterior tiver sucesso é o operador `&&`. O stderr não passa pelo pipe, a menos que seja redirecionado antes (`2>&1`).
+
+### 103.4-019 | multipla | 2
+ref: 101:p.293-295
+tags: pipe, stdout, stderr
+Quais afirmações sobre pipes (`|`) no Bash estão corretas?
+= Apenas a saída padrão do comando à esquerda segue pelo pipe
+= O shell inicia todos os comandos do pipeline ao mesmo tempo
+- O erro padrão do comando à esquerda também segue pelo pipe
+- O destino de um pipe pode ser um arquivo, como em `ls | lista.txt`
+- Os dados fluem da direita para a esquerda, como em `<`
+> Num pipeline, todos os comandos são iniciados simultaneamente e conectados da esquerda para a direita; só o stdout é canalizado (o stderr continua no terminal, salvo redirecionamento). O destino de um pipe é sempre outro processo, não um arquivo. O fluxo da direita para a esquerda é característica do redirecionamento de entrada `<`, não do pipe.
+
+### 103.4-020 | unica | 2
+ref: 101:p.295
+tags: tee, pipe, stderr
+Em um diretório que não contém o arquivo `/nao_existe`, o que acontece ao executar o comando abaixo?
+
+```
+$ ls /nao_existe | tee log.txt
+```
+= A mensagem de erro aparece no terminal e `log.txt` é criado vazio
+- A mensagem de erro aparece no terminal e também é gravada em `log.txt`
+- Nada aparece no terminal e `log.txt` recebe a mensagem de erro
+- O `tee` falha e `log.txt` não chega a ser criado
+> Só o stdout atravessa o pipe. Como `ls` escreve a mensagem no stderr, o `tee` não recebe nada: ele cria (ou trunca) o `log.txt` e o deixa vazio, enquanto o erro vai direto ao terminal. Para capturar o erro também seria preciso `ls /nao_existe 2>&1 | tee log.txt`.
+
+### 103.4-021 | unica | 3
+ref: 101:p.295
+tags: tee, pipe, stderr, 2>&1
+Qual comando exibe no terminal e grava em `build.log` tanto o stdout quanto o stderr de `./compilar.sh`?
+= `./compilar.sh 2>&1 | tee build.log`
+- `./compilar.sh | tee build.log 2>&1`
+- `./compilar.sh 1>&2 | tee build.log`
+- `./compilar.sh | tee -a build.log`
+> O `2>&1` precisa vir antes do pipe, para que o stderr de `./compilar.sh` seja enviado ao mesmo canal do stdout e chegue ao `tee`. Em `| tee build.log 2>&1` o redirecionamento se aplica ao `tee`, não ao script. `1>&2` faz o oposto, deixando o pipe sem dados. A opção `-a` só controla o acréscimo ao arquivo e não captura o stderr.
+
+### 103.4-022 | lacuna | 1
+ref: 101:p.295
+tags: tee, append
+Qual opção do `tee` acrescenta os dados ao final do arquivo, em vez de sobrescrevê-lo?
+
+`echo "nova linha" | tee ____ historico.txt`
+= -a
+= --append
+> `tee -a` (ou `--append`) preserva o conteúdo existente e adiciona os novos dados ao final. Sem a opção, o `tee` sobrescreve o arquivo, como acontece com `>`.
+
+### 103.4-023 | unica | 3
+ref: 101:p.303
+tags: tee, pipe, sha1sum
+Qual é o efeito do pipeline abaixo?
+
+```
+# dd if=/dev/sda1 | tee sda1.img | sha1sum > sda1.sha1
+```
+= `sda1.img` guarda a imagem e `sda1.sha1` guarda o hash dos mesmos dados
+- `sda1.img` guarda o hash e `sda1.sha1` guarda a imagem
+- `sda1.img` guarda a imagem e `sda1.sha1` fica vazio
+- `sda1.img` guarda a imagem e o hash é mostrado no terminal
+> O `tee` grava uma cópia do fluxo em `sda1.img` e repassa o mesmo fluxo adiante, pelo pipe, ao `sha1sum`, cujo resultado é redirecionado para `sda1.sha1`. A leitura da partição é feita uma única vez. O `tee` não altera o fluxo, e como o stdout do `sha1sum` foi redirecionado, o hash não aparece no terminal (só as estatísticas `records in/out` do `dd`, que saem pelo stderr).
+
+### 103.4-024 | unica | 1
+ref: 101:p.295
+tags: substituição de comando
+Qual construção do Bash substitui um comando pela sua saída padrão e é equivalente a escrever o comando entre crases?
+= `$(comando)`
+- `${comando}`
+- `$((comando))`
+- `<(comando)`
+> `$(...)` é a forma moderna da substituição de comando e equivale às crases. `${...}` é expansão de parâmetros (variáveis), `$((...))` é expansão aritmética e `<(...)` é a substituição de processos, que cria um arquivo temporário (FIFO), não uma substituição por texto.
+
+### 103.4-025 | unica | 2
+ref: 101:p.295-296
+tags: substituição de comando, aspas
+Qual é a saída de `echo 'Usuario: $(whoami)'` executado pelo usuário root?
+= `Usuario: $(whoami)`
+- `Usuario: root`
+- `Usuario:`
+- `bash: whoami: command not found`
+> Aspas simples desativam toda expansão, inclusive a substituição de comando: o texto é impresso literalmente. Com aspas duplas (`"Usuario: $(whoami)"`) o resultado seria `Usuario: root`.
+
+### 103.4-026 | unica | 2
+ref: 101:p.301
+tags: here string, substituição de comando, sed
+Qual comando usa a saída de `date +%F` como here string para o `sed s/-/./g`, produzindo algo como `2026.10.19`?
+= `sed s/-/./g <<< $(date +%F)`
+- `sed s/-/./g < $(date +%F)`
+- `sed s/-/./g << $(date +%F)`
+- `sed s/-/./g <<< date +%F`
+> `<<<` entrega a string resultante ao stdin do `sed`. Com `<` o shell tentaria abrir um arquivo cujo nome é a data (`No such file or directory`). `<<` espera um delimitador de here document, não uma expansão. Em `<<< date +%F` o texto enviado é a palavra `date` e `+%F` é passado ao `sed` como nome de arquivo, causando erro.
+
+### 103.4-027 | unica | 3
+ref: 101:p.292
+tags: echo, here string, sha1sum
+Qual comando calcula o SHA1 da string exata `root`, sem o caractere de nova linha?
+= `echo -n root | sha1sum`
+- `echo root | sha1sum`
+- `sha1sum <<< root`
+- `echo -e root | sha1sum`
+> `echo -n` suprime a nova linha final. `echo root` e o here string `<<< root` sempre acrescentam `\n`, o que muda o hash. A opção `-e` apenas habilita sequências de escape e não impede a nova linha. Para a mesma finalidade também serve `printf root | sha1sum`.
+
+### 103.4-028 | unica | 2
+ref: 101:p.296-297
+tags: xargs, -n
+Qual é a saída do comando abaixo?
+
+```
+$ echo "1 2 3 4 5" | xargs -n 2 echo
+```
+= Três linhas: `1 2`, `3 4` e `5`
+- Cinco linhas, uma para cada número
+- Duas linhas: `1 2` e `3 4`
+- Uma linha: `1 2 3 4 5`
+> `-n 2` limita cada execução do comando a, no máximo, dois argumentos: o `xargs` roda `echo 1 2`, `echo 3 4` e `echo 5`. Sem `-n`, todos os argumentos iriam em uma única execução (`1 2 3 4 5`); com `-n 1` seriam cinco linhas.
+
+### 103.4-029 | unica | 2
+ref: 101:p.297
+tags: xargs, find, print0
+O arquivo `meu arquivo.log` existe. O comando `find . -name '*.log' | xargs rm` exibe erros como `rm: cannot remove './meu': No such file or directory`. Qual é a causa e a correção?
+= O `xargs` separa nos espaços; use `find -print0 | xargs -0 rm`
+- O `xargs` lê um argumento por vez; use `xargs -n 1 rm`
+- O `rm` pede confirmação nesses casos; use `xargs rm -f`
+- O `find` imprime caminhos relativos; use `find $PWD -name '*.log'`
+> Por padrão o `xargs` divide a entrada em palavras separadas por espaço ou nova linha, então `meu arquivo.log` vira dois argumentos. A solução é separar os itens com o caractere nulo: `find -print0` no produtor e `xargs -0` no consumidor. `-n 1` ainda divide pelo espaço; `-f` não muda a divisão; e caminhos absolutos continuam contendo o espaço.
+
+### 103.4-030 | lacuna | 2
+ref: 101:p.297
+tags: find, print0, xargs
+Complete a ação do `find` que separa os resultados por um caractere nulo (e não por nova linha), de modo que nomes com espaços sejam tratados corretamente pelo `xargs -0`:
+
+`find . -name '*.tmp' ____ | xargs -0 rm`
+= -print0
+> `-print0` termina cada nome com o caractere nulo, que não pode aparecer em nomes de arquivo. Ele é usado em par com `xargs -0`. O `-print`, que separa por nova linha, quebraria nomes com espaços.
+
+### 103.4-031 | lacuna | 2
+ref: 101:p.297
+tags: xargs, null
+Qual opção do `xargs` indica que os itens da entrada são separados pelo caractere nulo, como os gerados por `find -print0`?
+
+`find . -name '*.tmp' -print0 | xargs ____ rm`
+= -0
+= --null
+> `xargs -0` (ou `--null`) usa o caractere nulo como separador e interpreta literalmente espaços, aspas e barras invertidas dos nomes. Só funciona corretamente quando o produtor também separa por nulo, como `find -print0`.
+
+### 103.4-032 | unica | 2
+ref: 101:p.297
+tags: xargs, -I
+O arquivo `lista.txt` contém um nome de arquivo por linha (por exemplo, `f1` e `f2`). Qual comando cria uma cópia `.bak` de cada arquivo (`f1.bak`, `f2.bak`)?
+= `xargs -I F cp F F.bak < lista.txt`
+- `xargs cp {} {}.bak < lista.txt`
+- `xargs -n 2 cp < lista.txt`
+- `cp $(cat lista.txt) $(cat lista.txt).bak`
+> A opção `-I` define uma string de substituição que é trocada pelo item lido, permitindo usá-lo em qualquer posição (e mais de uma vez). Sem `-I`, `{}` é texto literal e os argumentos vão para o final do comando, gerando erro. Com `-n 2`, o `xargs` executaria `cp f1 f2`, copiando um arquivo sobre o outro. A última opção expande para `cp f1 f2 f1 f2.bak`, que falha.
+
+### 103.4-033 | lacuna | 2
+ref: 101:p.297
+tags: xargs, -I
+Qual opção do `xargs` permite definir uma string de substituição que será trocada pelo item lido, para que ele seja colocado em qualquer posição do comando (e não apenas no final)?
+
+`xargs ____ ARQ mv ARQ ./ < lista.txt`
+= -I
+> Por padrão o `xargs` coloca os argumentos no final do comando. Com `-I ARQ`, cada ocorrência de `ARQ` no comando é trocada pelo item lido (um item por execução). Assim é possível, por exemplo, usar `mv ARQ ./`, em que a origem precisa vir antes do destino.
+
+### 103.4-034 | unica | 3
+ref: 101:p.296-297
+tags: xargs, -L, -n
+O arquivo `nomes.txt` tem 3 linhas, cada uma com duas palavras (`a b`, `c d` e `e f`). Quantas vezes o `echo` é executado por `xargs -L 1 echo < nomes.txt` e por `xargs -n 1 echo < nomes.txt`, respectivamente?
+= 3 execuções com `-L 1` e 6 com `-n 1`
+- 6 execuções com `-L 1` e 3 com `-n 1`
+- 3 execuções com cada uma, pois as duas contam linhas
+- 1 execução com cada uma, pois o `xargs` sempre agrupa tudo
+> `-L 1` limita cada execução a uma linha de entrada (duas palavras): são 3 execuções. `-n 1` limita cada execução a um argumento (uma palavra): são 6 execuções. Sem nenhuma das duas opções, haveria uma única execução com as seis palavras.
+
+### 103.4-035 | lacuna | 3
+ref: 101:p.303
+tags: tar, find, print0
+A lista de arquivos é gerada por `find /etc -type f -print0` e enviada por pipe ao `tar`. Qual opção longa do `tar` deve acompanhar `-T -` para ler uma lista separada por caracteres nulos?
+
+`... | tar -cJf etc.tar.xz ____ -T -`
+= --null
+> `--null` informa ao `tar` que os nomes lidos com `-T` estão separados por nulos, combinando com `find -print0`. Sem ela, o `tar` avisa `file name read contains nul character`. O argumento `-` depois de `-T` indica que a lista vem da entrada padrão.
+
+### 103.4-036 | unica | 1
+ref: 101:p.297
+tags: find, exec, xargs
+Qual recurso do `find` executa diretamente um comando para cada item encontrado, dispensando o `xargs` em muitos casos?
+= `-exec`
+- `-print0`
+- `-prune`
+- `-fprint`
+> `-exec comando {} \;` roda o comando para cada resultado. `-print0` só muda o separador da listagem, `-prune` impede a descida em diretórios e `-fprint` grava a lista em um arquivo.
+
+### 103.4-037 | unica | 3
+ref: 101:p.303
+tags: ssh, pipe, redirecionamento
+Qual comando grava, no servidor `storage`, uma cópia do arquivo local `etc.tar.gz` em `/srv/backup/etc.tar.gz`, de modo que o redirecionamento `>` seja executado no servidor?
+= `cat etc.tar.gz | ssh user@storage "cat > /srv/backup/etc.tar.gz"`
+- `cat etc.tar.gz | ssh user@storage cat > /srv/backup/etc.tar.gz`
+- `ssh user@storage "cat etc.tar.gz" > /srv/backup/etc.tar.gz`
+- `ssh user@storage "cat < /srv/backup/etc.tar.gz" > etc.tar.gz`
+> O `>` entre aspas é entregue ao shell remoto, que grava a entrada recebida pelo ssh no arquivo do servidor. Sem as aspas, o shell local interpreta o `>` e cria o arquivo na máquina local. As duas últimas opções leem `etc.tar.gz` do lugar errado ou transferem dados no sentido inverso (servidor para a máquina local).
+
+### 103.4-038 | multipla | 2
+ref: 101:p.296-297
+tags: xargs
+Quais afirmações sobre o `xargs` estão corretas?
+= Por padrão, os itens lidos da entrada são colocados no final do comando executado
+= A opção `-n 1` faz o comando ser executado uma vez para cada item lido
+= A opção `-0` espera itens separados por caractere nulo, como os gerados por `find -print0`
+- O `xargs` sempre executa o comando uma vez para cada linha lida
+- A opção `-L 1` limita cada execução a uma palavra da entrada
+- A opção `-I` serve para ignorar erros do comando executado
+> O `xargs` agrupa o máximo de itens possível em cada execução, a menos que `-n` ou `-L` limitem o número: `-n` conta argumentos (palavras) e `-L` conta linhas. A opção `-I` define a string de substituição, e não tem relação com a ignorância de erros. O uso de `-0` com `find -print0` é a forma segura de lidar com nomes que contêm espaços.
+
+### 103.4-039 | multipla | 1
+ref: 101:p.285-287
+tags: operadores, here document, here string
+Quais associações entre operador e função estão corretas?
+= `<<` : here document, várias linhas até um terminador
+= `<<<` : here string, uma única string como entrada
+= `>>` : acrescenta a saída ao final do arquivo
+- `<` : grava a saída do comando em um arquivo
+- `2>` : redireciona a saída padrão para o arquivo
+- `&>` : executa o comando em segundo plano
+> `<<` lê um here document (terminado por uma linha com o delimitador), `<<<` envia uma string ao stdin e `>>` acrescenta em vez de sobrescrever. `<` redireciona a entrada (arquivo para o comando), `2>` trata o stderr (descritor 2) e `&>` redireciona stdout e stderr; o segundo plano é o `&` no final do comando.
+
+### 103.4-040 | unica | 1
+ref: 101:p.282
+tags: /dev/stdout, descritores
+Qual arquivo especial permite referenciar a saída padrão do processo atual como se fosse um arquivo (por exemplo, `echo teste > ____`)?
+= `/dev/stdout`
+- `/dev/null`
+- `/dev/tty0`
+- `/proc/stdout`
+> Os canais padrão também são acessíveis pelos dispositivos `/dev/stdin`, `/dev/stdout` e `/dev/stderr`. `/dev/null` descarta tudo o que recebe e `/dev/tty0` é um console virtual específico. O diretório `/proc` não possui um arquivo `stdout`; os descritores de cada processo aparecem em `/proc/PID/fd`.

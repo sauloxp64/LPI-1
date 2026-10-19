@@ -1,0 +1,23 @@
+{
+  "id": "f104-7-find-whereis",
+  "obj": "104.7",
+  "titulo": "Achar arquivos e comandos no sistema",
+  "nivel": 1,
+  "minutos": 6,
+  "params": {
+    "ext": { "escolha": ["log", "csv", "conf", "tmp"] },
+    "kb": { "faixa": [20, 60] },
+    "cmd": { "escolha": ["fdisk", "ldconfig", "mkfs.ext4", "e2fsck", "tune2fs", "sfdisk", "parted", "logrotate", "cron", "useradd", "groupadd", "chpasswd"] }
+  },
+  "enunciado": "Duas buscas no sistema. As respostas vão para a pasta `~/lab/respostas-achados/` (já existe; ela fica fora da árvore pesquisada).\n\n1. Na árvore `~/lab/achados/` (várias subpastas, inclusive ocultas) procure os **arquivos comuns** cujo nome termina em **`.{ext}`** e que tenham **mais de {kb} KiB**. Grave os caminhos **absolutos**, um por linha, em `~/lab/respostas-achados/grandes.txt`. Atenção: existem uma pasta e um link com nome terminando em `.{ext}` — eles não são arquivos comuns.\n2. O comando administrativo **`{cmd}`** existe neste sistema Debian, mas o usuário `aluno` não o encontra com `which`. Descubra onde o **executável** realmente está e grave o caminho absoluto em `~/lab/respostas-achados/onde.txt`.",
+  "verifica": [
+    "`grandes.txt` lista exatamente os arquivos comuns `*.{ext}` com mais de {kb} KiB sob `~/lab/achados/`",
+    "`onde.txt` contém o caminho absoluto do executável `{cmd}`"
+  ],
+  "dicas": [
+    "O `find` combina filtros: `-type`, `-name` e `-size` (a unidade `k` mede em KiB, e `+N` significa \"maior que N\").",
+    "Aspas protegem o padrão do shell: `-name '*.{ext}'`. Sem `-type f`, pastas e links também casariam.",
+    "Para o item 2: `which` só procura nos diretórios do PATH do usuário, e `/usr/sbin` normalmente não está no PATH de usuários comuns. `whereis` e `type` têm outras regras; `ls /usr/sbin /sbin` também ajuda."
+  ],
+  "solucao": "```\nfind ~/lab/achados -type f -name '*.{ext}' -size +{kb}k > ~/lab/respostas-achados/grandes.txt\nwhich {cmd}                      # nada: /usr/sbin não está no PATH do aluno\nwhereis -b {cmd}                 # mostra /usr/sbin/{cmd} (e /sbin/{cmd})\nwhereis -b {cmd} > ~/lab/respostas-achados/onde.txt\n```\n`find` percorre a árvore aplicando testes: `-type f` (só arquivos comuns), `-name` (padrão, entre aspas) e `-size +{kb}k` (mais de {kb} KiB; o `find` arredonda para cima em unidades de 1 KiB). Pastas e links com o nome parecido são descartados pelo `-type f`. Já `which` só consulta o `PATH`; `whereis` procura binários, manuais e fontes em locais padrão. Segundo o FHS, comandos de administração do sistema ficam em `/sbin` e `/usr/sbin` (no Debian atual `/sbin` é um link para `/usr/sbin`). O `locate` (que usa o banco do `updatedb`) não está instalado neste laboratório."
+}

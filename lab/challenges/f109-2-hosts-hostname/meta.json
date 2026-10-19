@@ -1,0 +1,29 @@
+{
+  "id": "f109-2-hosts-hostname",
+  "obj": "109.2",
+  "titulo": "Ajustar hostname, hosts e nsswitch de uma máquina",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "host": { "escolha": ["estacao-12", "notebook-07", "caixa-03", "ponto-05"] },
+    "dominio": { "escolha": ["empresa.example.com", "filial.example.org", "lab.example.net"] },
+    "srv": { "escolha": ["arquivos", "impressao", "relatorios"] },
+    "apelido": { "escolha": ["fs", "print", "rel"] },
+    "o3": { "faixa": [1, 254] },
+    "o4": { "faixa": [2, 250] }
+  },
+  "enunciado": "Uma estação foi clonada de outra e precisa ser reconfigurada. Para não mexer no sistema, trabalhe nas **cópias** dos arquivos de rede que estão em `~/lab/rede/` (`hostname`, `hosts` e `nsswitch.conf`) e deixe-as assim:\n\n1. **`hostname`**: o nome da máquina deve ser **`{host}`** (só o nome curto, sem domínio, em uma única linha).\n2. **`hosts`**:\n   * a máquina deve resolver a si mesma como `127.0.1.1` com o nome completo **`{host}.{dominio}`** (canônico, primeiro) e o apelido curto `{host}`; existe **uma única** linha `127.0.1.1`, ajuste a que já existe;\n   * o servidor de arquivos **`{srv}.{dominio}`** está em **`192.168.{o3}.{o4}`**; esse nome deve ter também os apelidos `{srv}` e `{apelido}`. A cópia já tem uma entrada antiga de `{srv}` com outro endereço: **ela não pode continuar valendo**;\n   * mantenha `localhost` e as linhas IPv6 que já existem.\n3. **`nsswitch.conf`**: a resolução de nomes (`hosts:`) deve consultar **primeiro os arquivos locais** (`/etc/hosts`) e **depois o DNS**, nessa ordem e só essas duas fontes; não altere as demais linhas.",
+  "verifica": [
+    "`hostname` contém só `{host}`",
+    "`hosts`: uma única linha `127.0.1.1` com `{host}.{dominio}` e `{host}`; `localhost` e IPv6 preservados",
+    "`hosts`: `192.168.{o3}.{o4}` com `{srv}.{dominio}`, `{srv}` e `{apelido}`, sem nenhuma outra linha que associe esses nomes a outro IP",
+    "`nsswitch.conf`: linha `hosts:` com `files` seguido de `dns`; demais linhas inalteradas"
+  ],
+  "dicas": [
+    "O arquivo `hosts` tem o formato `IP  nome-canônico  apelido1 apelido2 ...`. A primeira entrada que casar com o nome vence, então uma entrada antiga acima da nova continuaria valendo: edite a antiga em vez de acrescentar outra.",
+    "Em `nsswitch.conf`, cada linha é `banco: fonte1 fonte2 ...` e as fontes são consultadas da esquerda para a direita.",
+    "O `/etc/hostname` guarda apenas o nome curto; o nome completo (FQDN) fica no `/etc/hosts`, na entrada `127.0.1.1` (convenção do Debian).",
+    "Dá para conferir uma cópia do `hosts` com `grep -n SERVIDOR ~/lab/rede/hosts` e comparar com o original em `/etc/hosts` usando `diff`."
+  ],
+  "solucao": "```\ncd ~/lab/rede\necho {host} > hostname\n\n# hosts: edite com vim/sed\n127.0.0.1       localhost\n127.0.1.1       {host}.{dominio} {host}\n192.168.{o3}.{o4}  {srv}.{dominio} {srv} {apelido}\n::1  localhost ip6-localhost ip6-loopback\n...\n\n# nsswitch.conf\nhosts:          files dns\n```\nO `/etc/hostname` tem só o nome curto; o FQDN é resolvido via `/etc/hosts` (por convenção, a entrada `127.0.1.1` no Debian). O primeiro nome após o IP é o nome canônico e os seguintes são apelidos. Se o mesmo nome aparecer em duas linhas com IPs diferentes, a resolução usa a **primeira** — por isso a entrada antiga tinha de ser corrigida em vez de duplicada. No `nsswitch.conf`, a ordem de `hosts: files dns` faz o `/etc/hosts` ter prioridade sobre o DNS (o contrário, `dns files`, só olharia o arquivo se o DNS falhasse). Na máquina real você usaria `hostnamectl set-hostname` (systemd) e testaria com `getent hosts NOME`."
+}

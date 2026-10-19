@@ -1,0 +1,30 @@
+{
+  "id": "f104-5-sgid-projeto",
+  "obj": "104.5",
+  "titulo": "Pasta de projeto compartilhada (SGID e umask)",
+  "nivel": 3,
+  "minutos": 10,
+  "params": {
+    "proj": { "escolha": ["orcamento", "portal", "relatorio", "campanha"] },
+    "grupo": { "escolha": ["equipe-alfa", "equipe-beta", "equipe-gama", "equipe-delta"] },
+    "u1": { "escolha": ["heitor", "iara", "jonas", "kaua", "lara", "mateus", "nara"] },
+    "u2": { "escolha": ["heitor", "iara", "jonas", "kaua", "lara", "mateus", "nara"] },
+    "u3": { "escolha": ["heitor", "iara", "jonas", "kaua", "lara", "mateus", "nara"] }
+  },
+  "distintos": [["u1", "u2", "u3"]],
+  "enunciado": "A pasta `~/lab/projetos/{proj}/` (com subpastas e arquivos) hoje pertence ao `aluno` e está aberta para todo mundo (`755`/`644`). Ela será o espaço de trabalho do grupo **`{grupo}`**, do qual fazem parte `{u1}` e `{u2}`; já o usuário `{u3}` **não** é da equipe. Configure:\n\n1. **Todo o conteúdo** atual de `{proj}` (a pasta, as subpastas e os arquivos) deve pertencer ao grupo `{grupo}`.\n2. **Pastas** (todas, em qualquer nível): dono e grupo podem listar, entrar e criar/remover; **outros não têm nenhum acesso**. Além disso, **tudo o que for criado dentro delas deve nascer automaticamente com o grupo `{grupo}`** (sem ninguém precisar rodar `chgrp`).\n3. **Arquivos existentes**: dono e grupo podem ler e escrever; **outros não têm nenhum acesso**. Não são programas: nada de bits de execução ou especiais nos arquivos.\n4. Grave em `~/lab/projetos/umask.txt` a **máscara de criação (umask) em octal** que os membros devem usar para que arquivos novos nasçam com leitura/escrita para dono e grupo e **nada** para os outros (o mesmo valor gera pastas novas `770`).\n\nUse `sudo` quando precisar. Depois do ajuste, o verificador vai testar na prática com os usuários `{u1}`, `{u2}` e `{u3}`.",
+  "verifica": [
+    "todo o conteúdo de `{proj}` pertence ao grupo `{grupo}`",
+    "todas as pastas: dono e grupo com acesso total, outros nenhum, e SGID ligado (itens novos herdam o grupo)",
+    "arquivos existentes: exatamente rw para dono e grupo, outros sem acesso, sem execução nem SUID/SGID",
+    "`umask.txt` com a umask que gera arquivos novos só para dono e grupo",
+    "teste real: `{u1}` cria arquivo e pasta (herdam o grupo `{grupo}`; pasta nova também com SGID), `{u2}` edita o que `{u1}` criou e `{u3}` não acessa nada"
+  ],
+  "dicas": [
+    "Três coisas diferentes: o grupo (chgrp), as permissões (chmod) e a herança do grupo em itens novos (um bit especial do diretório). Arquivos e pastas precisam de modos diferentes — pense em `find -type d` e `find -type f`.",
+    "O bit **SGID** em um diretório faz os itens novos herdarem o grupo do diretório. Em octal ele é o `2` na frente: `2770`. Em arquivos comuns ele não deve ser usado.",
+    "Atenção: se você rodar `chmod` **sem sudo** em uma pasta cujo grupo não é seu, o kernel descarta o SGID em silêncio. Faça `sudo chgrp` e `sudo chmod`, e confira com `ls -ld`.",
+    "A umask é subtraída do modo padrão (666 para arquivos): para ficar `660` a umask precisa zerar tudo para os outros e nada para o grupo — `007`."
+  ],
+  "solucao": "```\ncd ~/lab/projetos\nsudo chgrp -R {grupo} {proj}\nsudo find {proj} -type d -exec chmod 2770 {} +\nsudo find {proj} -type f -exec chmod 660 {} +\numask 007; umask > umask.txt      # grava 0007\nls -lR {proj}\n```\nO `chgrp -R` ajusta o grupo de tudo; `chmod 2770` em **diretórios** dá rwx a dono e grupo, nada aos outros, e liga o **SGID** (`s` no lugar do `x` do grupo), de modo que arquivos e subpastas criados ali herdam o grupo `{grupo}` (e novas subpastas também ganham o SGID). Em arquivos comuns usamos `660` — `chmod -R 2770` seria um erro, pois marcaria também os arquivos. O arquivo novo nasce com `666 & ~umask`; com `umask 007` fica `660` (e pastas `777 & ~007 = 770`). Pegadinhas da prova: o SGID só vale em diretório; `chmod` sem sudo em pasta de outro grupo descarta o `s`; e a umask é do *processo* do usuário (para valer sempre, vai no `~/.profile`/`/etc/profile`)."
+}

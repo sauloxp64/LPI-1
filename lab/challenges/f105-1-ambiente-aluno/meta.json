@@ -1,0 +1,70 @@
+{
+  "id": "f105-1-ambiente-aluno",
+  "obj": "105.1",
+  "titulo": "Personalize o shell do aluno",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "apelido": {
+      "escolha": [
+        "lt",
+        "lla",
+        "lsx",
+        "ll2"
+      ]
+    },
+    "opcao": {
+      "escolha": [
+        "-lA",
+        "-lAh",
+        "-ltr",
+        "-lS"
+      ]
+    },
+    "funcao": {
+      "escolha": [
+        "mkcd",
+        "novodir",
+        "criaentra",
+        "cdnovo"
+      ]
+    },
+    "ferramenta": {
+      "escolha": [
+        "relatorio-lab",
+        "resumo-sistema",
+        "checa-disco",
+        "limpa-log"
+      ]
+    },
+    "variavel": {
+      "escolha": [
+        "AMBIENTE_LAB",
+        "PROJETO_ATUAL",
+        "REGIAO_FILIAL"
+      ]
+    },
+    "valor": {
+      "escolha": [
+        "homologacao",
+        "producao",
+        "matriz",
+        "filial-sul"
+      ]
+    }
+  },
+  "enunciado": "Personalize o ambiente do **seu próprio usuário** (`aluno`), editando os arquivos de configuração do shell em `/home/aluno` (não precisa de `sudo`). O resultado precisa valer para **novos shells**, não só para o terminal atual.\n\n**Em todo novo shell interativo** (por exemplo, abrir outro `bash`):\n\n1. um **alias** chamado `{apelido}` que execute `ls {opcao}`;\n2. uma **função** chamada `{funcao}` que receba **um caminho**, crie essa pasta (incluindo as pastas-pai que faltarem, e funcionando mesmo se o caminho tiver espaços) e **entre** nela.\n\n**Em todo shell de login** (como o de `su -l aluno`):\n\n3. o diretório `~/lab/ambiente/bin` deve entrar no **`PATH`** — **sem perder** os diretórios que já estavam nele — para que o script `{ferramenta}`, que está lá, possa ser chamado de qualquer lugar pelo nome;\n4. a variável de ambiente **`{variavel}`** deve existir, **exportada**, com o valor `{valor}`.\n\nO verificador abre shells novos (interativo e de login) para testar; o que você digitou só no terminal atual não conta.",
+  "verifica": [
+    "novo bash interativo (não de login): o alias `{apelido}` produz a saída de `ls {opcao}`",
+    "novo bash interativo: `{funcao} \"caminho com espaços/e/subpastas\"` cria a pasta e muda para ela",
+    "shell de login (`su -l aluno`): `{ferramenta}` é achada pelo `PATH` e os comandos de sempre (como `ls`) continuam sendo achados",
+    "shell de login: `{variavel}` está no ambiente com o valor `{valor}`"
+  ],
+  "dicas": [
+    "Cada tipo de shell lê arquivos diferentes: um shell de **login** lê `/etc/profile` e depois `~/.profile` (ou `~/.bash_profile`); um shell interativo **que não é de login** lê `~/.bashrc`. Aliases e funções ficam bem no `~/.bashrc`; `PATH` e variáveis de ambiente no `~/.profile`.",
+    "Para estender o PATH sem perder o original: `PATH=\"$PATH:/novo/dir\"` (e `export PATH`). Uma linha `PATH=/novo/dir` apagaria todo o resto.",
+    "Função em bash: `nome() { comando1 && comando2; }`. Dentro dela, `$1` é o primeiro argumento — coloque-o entre aspas duplas. Variável para os filhos do shell: `export NOME=valor`.",
+    "Teste sem fechar o terminal: `source ~/.bashrc` vale só para o shell atual. Para ver o que um shell novo enxerga, use `bash -ic 'type ALIAS'` (interativo, sem login) e `sudo su -l aluno -c 'echo $PATH'` (login; o sudo evita a senha)."
+  ],
+  "solucao": "```\n# ~/.bashrc  (shells interativos que não são de login)\nalias {apelido}='ls {opcao}'\n{funcao}() { mkdir -p \"$1\" && cd \"$1\"; }\n\n# ~/.profile  (shells de login)\nPATH=\"$PATH:$HOME/lab/ambiente/bin\"\nexport PATH\nexport {variavel}={valor}\n```\nDepois: `source ~/.bashrc` e `source ~/.profile` para valer no terminal atual e `bash -ic '{apelido}'`/`sudo su -l aluno -c '{ferramenta}'` para testar em shells novos. Pegadinhas: (1) aspas em `\"$1\"` para nomes com espaços e `mkdir -p` para criar os pais; (2) estender o `PATH` com `$PATH:` — atribuir só o novo diretório quebraria todos os comandos; (3) sem `export`, a variável existe só no próprio shell e não chega aos programas filhos; (4) `~/.profile` **não é lido** se existir `~/.bash_profile` ou `~/.bash_login`; (5) o Debian já faz o `~/.profile` carregar o `~/.bashrc` em logins interativos, mas não em `su -l -c`, que é um login não interativo (e o `.bashrc` retorna cedo quando o shell não é interativo)."
+}

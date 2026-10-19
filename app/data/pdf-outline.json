@@ -1,0 +1,2850 @@
+{
+ "101.1": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 12,
+  "end": 28,
+  "sections": [
+   {
+    "title": "101.1 Lição 1",
+    "page": 13
+   },
+   {
+    "title": "Introdução",
+    "page": 13
+   },
+   {
+    "title": "Ativação do dispositivo",
+    "page": 14
+   },
+   {
+    "title": "Inspeção de dispositivos no Linux",
+    "page": 14
+   },
+   {
+    "title": "Arquivos de informação e de dispositivo",
+    "page": 21
+   },
+   {
+    "title": "Dispositivos de armazenamento",
+    "page": 23
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 24
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 25
+   },
+   {
+    "title": "Resumo",
+    "page": 26
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 27
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 28
+   }
+  ]
+ },
+ "101.2": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 29,
+  "end": 44,
+  "sections": [
+   {
+    "title": "Introdução",
+    "page": 31
+   },
+   {
+    "title": "BIOS ou UEFI",
+    "page": 32
+   },
+   {
+    "title": "O bootloader",
+    "page": 33
+   },
+   {
+    "title": "Inicialização do sistema",
+    "page": 35
+   },
+   {
+    "title": "Inspeção da inicialização",
+    "page": 36
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 40
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 41
+   },
+   {
+    "title": "Resumo",
+    "page": 42
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 43
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 44
+   }
+  ]
+ },
+ "101.3": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 45,
+  "end": 62,
+  "sections": [
+   {
+    "title": "101.3 Lição 1",
+    "page": 47
+   },
+   {
+    "title": "Introdução",
+    "page": 47
+   },
+   {
+    "title": "SysVinit",
+    "page": 48
+   },
+   {
+    "title": "systemd",
+    "page": 51
+   },
+   {
+    "title": "Upstart",
+    "page": 54
+   },
+   {
+    "title": "Desligar e reiniciar",
+    "page": 56
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 58
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 59
+   },
+   {
+    "title": "Resumo",
+    "page": 60
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 61
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 62
+   }
+  ]
+ },
+ "102.1": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 64,
+  "end": 76,
+  "sections": [
+   {
+    "title": "102.1 Lição 1",
+    "page": 65
+   },
+   {
+    "title": "Introdução",
+    "page": 65
+   },
+   {
+    "title": "Pontos de montagem",
+    "page": 66
+   },
+   {
+    "title": "Mantendo as coisas separadas",
+    "page": 67
+   },
+   {
+    "title": "Swap",
+    "page": 69
+   },
+   {
+    "title": "LVM",
+    "page": 70
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 72
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 73
+   },
+   {
+    "title": "Resumo",
+    "page": 74
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 75
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 76
+   }
+  ]
+ },
+ "102.2": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 77,
+  "end": 97,
+  "sections": [
+   {
+    "title": "102.2 Lição 1",
+    "page": 78
+   },
+   {
+    "title": "Introdução",
+    "page": 78
+   },
+   {
+    "title": "GRUB Legacy e GRUB 2",
+    "page": 79
+   },
+   {
+    "title": "Onde fica o gerenciador de inicialização?",
+    "page": 79
+   },
+   {
+    "title": "A partição /boot",
+    "page": 80
+   },
+   {
+    "title": "GRUB 2",
+    "page": 82
+   },
+   {
+    "title": "GRUB Legacy",
+    "page": 88
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 92
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 93
+   },
+   {
+    "title": "Resumo",
+    "page": 94
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 95
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 96
+   }
+  ]
+ },
+ "102.3": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 98,
+  "end": 111,
+  "sections": [
+   {
+    "title": "102.3 Lição 1",
+    "page": 99
+   },
+   {
+    "title": "Introdução",
+    "page": 99
+   },
+   {
+    "title": "O que são bibliotecas compartilhadas",
+    "page": 99
+   },
+   {
+    "title": "Convenções de nomenclatura para arquivos-objeto compartilhados",
+    "page": 100
+   },
+   {
+    "title": "Configuração dos caminhos da biblioteca compartilhada",
+    "page": 101
+   },
+   {
+    "title": "Buscando pelas dependências de um executável específico",
+    "page": 104
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 106
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 107
+   },
+   {
+    "title": "Resumo",
+    "page": 108
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 110
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 111
+   }
+  ]
+ },
+ "102.4": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 112,
+  "end": 134,
+  "sections": [
+   {
+    "title": "102.4 Lição 1",
+    "page": 113
+   },
+   {
+    "title": "Introdução",
+    "page": 113
+   },
+   {
+    "title": "A ferramenta de pacotes do Debian (dpkg)",
+    "page": 114
+   },
+   {
+    "title": "Ferramenta de pacotes avançada (apt)",
+    "page": 118
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 128
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 129
+   },
+   {
+    "title": "Resumo",
+    "page": 130
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 132
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 133
+   }
+  ]
+ },
+ "102.5": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 135,
+  "end": 160,
+  "sections": [
+   {
+    "title": "102.5 Lição 1",
+    "page": 136
+   },
+   {
+    "title": "Introdução",
+    "page": 136
+   },
+   {
+    "title": "O RPM Package Manager (rpm)",
+    "page": 137
+   },
+   {
+    "title": "YellowDog Updater Modified (YUM)",
+    "page": 142
+   },
+   {
+    "title": "DNF",
+    "page": 147
+   },
+   {
+    "title": "Zypper",
+    "page": 149
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 156
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 157
+   },
+   {
+    "title": "Resumo",
+    "page": 158
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 159
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 160
+   }
+  ]
+ },
+ "102.6": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 161,
+  "end": 181,
+  "sections": [
+   {
+    "title": "102.6 Lição 1",
+    "page": 162
+   },
+   {
+    "title": "Introdução",
+    "page": 162
+   },
+   {
+    "title": "O que é virtualização?",
+    "page": 162
+   },
+   {
+    "title": "Tipos de máquina virtual",
+    "page": 163
+   },
+   {
+    "title": "Trabalhando com modelos de máquina virtual",
+    "page": 171
+   },
+   {
+    "title": "Implementação de máquinas virtuais na nuvem",
+    "page": 172
+   },
+   {
+    "title": "Contêiners",
+    "page": 175
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 176
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 177
+   },
+   {
+    "title": "Resumo",
+    "page": 178
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 179
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 180
+   }
+  ]
+ },
+ "103.1": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 183,
+  "end": 205,
+  "sections": [
+   {
+    "title": "103.1 Lição 1",
+    "page": 185
+   },
+   {
+    "title": "Introdução",
+    "page": 185
+   },
+   {
+    "title": "Obtendo informações sobre o sistema",
+    "page": 185
+   },
+   {
+    "title": "Obtendo informações sobre comandos",
+    "page": 186
+   },
+   {
+    "title": "Usando o histórico de comandos",
+    "page": 189
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 191
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 192
+   },
+   {
+    "title": "Resumo",
+    "page": 193
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 194
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 195
+   },
+   {
+    "title": "103.1 Lição 2",
+    "page": 196
+   },
+   {
+    "title": "Introdução",
+    "page": 196
+   },
+   {
+    "title": "Encontrando suas variáveis de ambiente",
+    "page": 196
+   },
+   {
+    "title": "Criando novas variáveis de ambiente",
+    "page": 197
+   },
+   {
+    "title": "Removendo as variáveis de ambiente",
+    "page": 198
+   },
+   {
+    "title": "Usando aspas para escapar dos caracteres especiais",
+    "page": 199
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 201
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 202
+   },
+   {
+    "title": "Resumo",
+    "page": 203
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 204
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 205
+   }
+  ]
+ },
+ "103.2": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 206,
+  "end": 239,
+  "sections": [
+   {
+    "title": "103.2 Lição 1",
+    "page": 208
+   },
+   {
+    "title": "Introdução",
+    "page": 208
+   },
+   {
+    "title": "Uma revisão rápida sobre redirecionamentos e pipes",
+    "page": 208
+   },
+   {
+    "title": "Processando fluxos de texto",
+    "page": 211
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 223
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 225
+   },
+   {
+    "title": "Resumo",
+    "page": 227
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 229
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 234
+   }
+  ]
+ },
+ "103.3": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 240,
+  "end": 280,
+  "sections": [
+   {
+    "title": "103.3 Lição 1",
+    "page": 242
+   },
+   {
+    "title": "Introdução",
+    "page": 242
+   },
+   {
+    "title": "Manipulação de arquivos",
+    "page": 243
+   },
+   {
+    "title": "Criando e removendo diretórios",
+    "page": 248
+   },
+   {
+    "title": "Manipulação recursiva de arquivos e diretórios",
+    "page": 250
+   },
+   {
+    "title": "Globbing de arquivos e caracteres curinga",
+    "page": 252
+   },
+   {
+    "title": "Tipos de caracteres curinga",
+    "page": 253
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 257
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 259
+   },
+   {
+    "title": "Resumo",
+    "page": 260
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 261
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 263
+   },
+   {
+    "title": "103.3 Lição 2",
+    "page": 265
+   },
+   {
+    "title": "Introdução",
+    "page": 265
+   },
+   {
+    "title": "Como encontrar arquivos",
+    "page": 265
+   },
+   {
+    "title": "Arquivos de pacote",
+    "page": 269
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 275
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 276
+   },
+   {
+    "title": "Resumo",
+    "page": 277
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 278
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 279
+   }
+  ]
+ },
+ "103.4": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 281,
+  "end": 303,
+  "sections": [
+   {
+    "title": "103.4 Lição 1",
+    "page": 282
+   },
+   {
+    "title": "Introdução",
+    "page": 282
+   },
+   {
+    "title": "Redirecionamentos",
+    "page": 283
+   },
+   {
+    "title": "Here Document e Here String",
+    "page": 286
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 288
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 289
+   },
+   {
+    "title": "Resumo",
+    "page": 290
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 291
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 292
+   },
+   {
+    "title": "103.4 Lição 2",
+    "page": 293
+   },
+   {
+    "title": "Introdução",
+    "page": 293
+   },
+   {
+    "title": "Pipes",
+    "page": 293
+   },
+   {
+    "title": "Substituição de comando",
+    "page": 295
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 298
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 299
+   },
+   {
+    "title": "Resumo",
+    "page": 300
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 301
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 303
+   }
+  ]
+ },
+ "103.5": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 304,
+  "end": 363,
+  "sections": [
+   {
+    "title": "103.5 Lição 1",
+    "page": 306
+   },
+   {
+    "title": "Introdução",
+    "page": 306
+   },
+   {
+    "title": "Controle de jobs",
+    "page": 306
+   },
+   {
+    "title": "Monitoramento de processos",
+    "page": 311
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 323
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 325
+   },
+   {
+    "title": "Resumo",
+    "page": 327
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 329
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 332
+   },
+   {
+    "title": "103.5 Lição 2",
+    "page": 335
+   },
+   {
+    "title": "Introdução",
+    "page": 335
+   },
+   {
+    "title": "Recursos dos multiplexadores de terminal",
+    "page": 335
+   },
+   {
+    "title": "GNU Screen",
+    "page": 336
+   },
+   {
+    "title": "tmux",
+    "page": 343
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 352
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 355
+   },
+   {
+    "title": "Resumo",
+    "page": 357
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 358
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 362
+   }
+  ]
+ },
+ "103.6": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 364,
+  "end": 376,
+  "sections": [
+   {
+    "title": "103.6 Lição 1",
+    "page": 365
+   },
+   {
+    "title": "Introdução",
+    "page": 365
+   },
+   {
+    "title": "O Agendador do Linux",
+    "page": 366
+   },
+   {
+    "title": "Como ler as prioridades",
+    "page": 367
+   },
+   {
+    "title": "Valor nice",
+    "page": 368
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 370
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 372
+   },
+   {
+    "title": "Resumo",
+    "page": 373
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 374
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 376
+   }
+  ]
+ },
+ "103.7": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 377,
+  "end": 407,
+  "sections": [
+   {
+    "title": "103.7 Lição 1",
+    "page": 378
+   },
+   {
+    "title": "Introdução",
+    "page": 378
+   },
+   {
+    "title": "Expressão de colchetes",
+    "page": 379
+   },
+   {
+    "title": "Quantificadores",
+    "page": 381
+   },
+   {
+    "title": "Chaves",
+    "page": 381
+   },
+   {
+    "title": "Alternâncias e agrupamentos",
+    "page": 382
+   },
+   {
+    "title": "Pesquisas com expressões regulares",
+    "page": 382
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 384
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 385
+   },
+   {
+    "title": "Resumo",
+    "page": 386
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 387
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 388
+   },
+   {
+    "title": "103.7 Lição 2",
+    "page": 389
+   },
+   {
+    "title": "Introdução",
+    "page": 389
+   },
+   {
+    "title": "O localizador de padrões: grep",
+    "page": 389
+   },
+   {
+    "title": "O editor de fluxo: sed",
+    "page": 393
+   },
+   {
+    "title": "Combinando grep e sed",
+    "page": 397
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 401
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 402
+   },
+   {
+    "title": "Resumo",
+    "page": 404
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 405
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 406
+   }
+  ]
+ },
+ "103.8": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 408,
+  "end": 420,
+  "sections": [
+   {
+    "title": "103.8 Lição 1",
+    "page": 409
+   },
+   {
+    "title": "Introdução",
+    "page": 409
+   },
+   {
+    "title": "Modo de inserção",
+    "page": 410
+   },
+   {
+    "title": "Modo normal",
+    "page": 410
+   },
+   {
+    "title": "Comandos de dois pontos",
+    "page": 413
+   },
+   {
+    "title": "Editores alternativos",
+    "page": 414
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 416
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 417
+   },
+   {
+    "title": "Resumo",
+    "page": 418
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 419
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 420
+   }
+  ]
+ },
+ "104.1": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 422,
+  "end": 457,
+  "sections": [
+   {
+    "title": "104.1 Lição 1",
+    "page": 423
+   },
+   {
+    "title": "Introdução",
+    "page": 423
+   },
+   {
+    "title": "Entendendo MBR e GPT",
+    "page": 424
+   },
+   {
+    "title": "Criando sistemas de arquivos",
+    "page": 431
+   },
+   {
+    "title": "Gerenciando Partições com o GNU Parted",
+    "page": 442
+   },
+   {
+    "title": "Criando partições de troca",
+    "page": 449
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 451
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 452
+   },
+   {
+    "title": "Resumo",
+    "page": 454
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 455
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 456
+   }
+  ]
+ },
+ "104.2": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 458,
+  "end": 480,
+  "sections": [
+   {
+    "title": "104.2 Lição 1",
+    "page": 459
+   },
+   {
+    "title": "Introdução",
+    "page": 459
+   },
+   {
+    "title": "Verificando o uso de disco",
+    "page": 460
+   },
+   {
+    "title": "Em busca de espaço livre",
+    "page": 462
+   },
+   {
+    "title": "Manutenção de sistemas de arquivos ext2, ext3 e ext4",
+    "page": 466
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 474
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 475
+   },
+   {
+    "title": "Resumo",
+    "page": 476
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 477
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 479
+   }
+  ]
+ },
+ "104.3": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 481,
+  "end": 500,
+  "sections": [
+   {
+    "title": "104.3 Lição 1",
+    "page": 482
+   },
+   {
+    "title": "Introdução",
+    "page": 482
+   },
+   {
+    "title": "Montando e desmontando sistemas de arquivos",
+    "page": 482
+   },
+   {
+    "title": "Montagem de sistemas de arquivos na inicialização",
+    "page": 486
+   },
+   {
+    "title": "Usando UUIDs e rótulos",
+    "page": 488
+   },
+   {
+    "title": "Montando discos com Systemd",
+    "page": 490
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 494
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 495
+   },
+   {
+    "title": "Resumo",
+    "page": 496
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 497
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 499
+   }
+  ]
+ },
+ "104.5": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 501,
+  "end": 527,
+  "sections": [
+   {
+    "title": "104.5 Lição 1",
+    "page": 502
+   },
+   {
+    "title": "Introdução",
+    "page": 502
+   },
+   {
+    "title": "Consulta de informações sobre arquivos e diretórios",
+    "page": 502
+   },
+   {
+    "title": "E quanto aos diretórios?",
+    "page": 504
+   },
+   {
+    "title": "Exibindo arquivos ocultos",
+    "page": 504
+   },
+   {
+    "title": "Entendendo os tipos de arquivos",
+    "page": 505
+   },
+   {
+    "title": "Entendendo as permissões",
+    "page": 506
+   },
+   {
+    "title": "Modificando as permissões de arquivos",
+    "page": 508
+   },
+   {
+    "title": "Modificando o proprietário de um arquivo",
+    "page": 511
+   },
+   {
+    "title": "Consultando os grupos",
+    "page": 512
+   },
+   {
+    "title": "Permissões padrão",
+    "page": 512
+   },
+   {
+    "title": "Permissões especiais",
+    "page": 515
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 518
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 520
+   },
+   {
+    "title": "Resumo",
+    "page": 521
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 522
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 525
+   }
+  ]
+ },
+ "104.6": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 528,
+  "end": 543,
+  "sections": [
+   {
+    "title": "104.6 Lição 1",
+    "page": 529
+   },
+   {
+    "title": "Introdução",
+    "page": 529
+   },
+   {
+    "title": "Compreendendo os links",
+    "page": 529
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 534
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 535
+   },
+   {
+    "title": "Resumo",
+    "page": 538
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 539
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 540
+   }
+  ]
+ },
+ "104.7": {
+  "file": "LPI-Learning-Material-101-500-pt.pdf",
+  "exam": "101",
+  "start": 544,
+  "end": 564,
+  "sections": [
+   {
+    "title": "104.7 Lição 1",
+    "page": 545
+   },
+   {
+    "title": "Introdução",
+    "page": 545
+   },
+   {
+    "title": "O Filesystem Hierarchy Standard",
+    "page": 545
+   },
+   {
+    "title": "Busca de arquivos",
+    "page": 548
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 557
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 558
+   },
+   {
+    "title": "Resumo",
+    "page": 559
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 560
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 562
+   }
+  ]
+ },
+ "_files": {
+  "101": {
+   "file": "LPI-Learning-Material-101-500-pt.pdf",
+   "pages": 564,
+   "title": "Learning Materials: LPIC-1 (101)"
+  },
+  "102": {
+   "file": "LPI-Learning-Material-102-500-pt.pdf",
+   "pages": 594,
+   "title": "Learning Materials: LPIC-1 (102)"
+  }
+ },
+ "105.1": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 12,
+  "end": 94,
+  "sections": [
+   {
+    "title": "105.1 Lição 1",
+    "page": 14
+   },
+   {
+    "title": "Introdução",
+    "page": 14
+   },
+   {
+    "title": "Tipos de shell: Interativo x Não-interativo e Login vs sem login",
+    "page": 15
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 28
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 30
+   },
+   {
+    "title": "Resumo",
+    "page": 32
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 34
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 36
+   },
+   {
+    "title": "105.1 Lição 2",
+    "page": 38
+   },
+   {
+    "title": "Introdução",
+    "page": 38
+   },
+   {
+    "title": "Variáveis: atribuição e referência",
+    "page": 38
+   },
+   {
+    "title": "Variáveis locais ou do Shell",
+    "page": 42
+   },
+   {
+    "title": "Variáveis globais ou de ambiente",
+    "page": 45
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 55
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 58
+   },
+   {
+    "title": "Resumo",
+    "page": 60
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 62
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 66
+   },
+   {
+    "title": "105.1 Lição 3",
+    "page": 68
+   },
+   {
+    "title": "Introdução",
+    "page": 68
+   },
+   {
+    "title": "Criando aliases",
+    "page": 68
+   },
+   {
+    "title": "Criando funções",
+    "page": 72
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 83
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 86
+   },
+   {
+    "title": "Resumo",
+    "page": 87
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 89
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 94
+   }
+  ]
+ },
+ "105.2": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 95,
+  "end": 131,
+  "sections": [
+   {
+    "title": "105.2 Lição 1",
+    "page": 97
+   },
+   {
+    "title": "Introdução",
+    "page": 97
+   },
+   {
+    "title": "Estrutura e execução de scripts",
+    "page": 98
+   },
+   {
+    "title": "Variáveis",
+    "page": 100
+   },
+   {
+    "title": "Expressões aritméticas",
+    "page": 103
+   },
+   {
+    "title": "Execução condicional",
+    "page": 104
+   },
+   {
+    "title": "Saída do script",
+    "page": 105
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 108
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 109
+   },
+   {
+    "title": "Resumo",
+    "page": 110
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 111
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 112
+   },
+   {
+    "title": "105.2 Lição 2",
+    "page": 113
+   },
+   {
+    "title": "Introdução",
+    "page": 113
+   },
+   {
+    "title": "Testes ampliados",
+    "page": 113
+   },
+   {
+    "title": "Construções de loop",
+    "page": 119
+   },
+   {
+    "title": "Um exemplo mais elaborado",
+    "page": 121
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 125
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 127
+   },
+   {
+    "title": "Resumo",
+    "page": 128
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 129
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 131
+   }
+  ]
+ },
+ "106.1": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 133,
+  "end": 149,
+  "sections": [
+   {
+    "title": "106.1 Lição 1",
+    "page": 134
+   },
+   {
+    "title": "Introdução",
+    "page": 134
+   },
+   {
+    "title": "A arquitetura do X Window System",
+    "page": 135
+   },
+   {
+    "title": "Configuração do servidor X",
+    "page": 138
+   },
+   {
+    "title": "Wayland",
+    "page": 143
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 145
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 146
+   },
+   {
+    "title": "Resumo",
+    "page": 147
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 148
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 149
+   }
+  ]
+ },
+ "106.2": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 150,
+  "end": 164,
+  "sections": [
+   {
+    "title": "106.2 Lição 1",
+    "page": 151
+   },
+   {
+    "title": "Introdução",
+    "page": 151
+   },
+   {
+    "title": "X Window System",
+    "page": 152
+   },
+   {
+    "title": "Ambiente de trabalho",
+    "page": 152
+   },
+   {
+    "title": "Ambientes de trabalho populares",
+    "page": 154
+   },
+   {
+    "title": "Interoperabilidade da área de trabalho",
+    "page": 156
+   },
+   {
+    "title": "Acesso não-local",
+    "page": 157
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 160
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 161
+   },
+   {
+    "title": "Resumo",
+    "page": 162
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 163
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 164
+   }
+  ]
+ },
+ "106.3": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 165,
+  "end": 175,
+  "sections": [
+   {
+    "title": "106.3 Lição 1",
+    "page": 166
+   },
+   {
+    "title": "Introdução",
+    "page": 166
+   },
+   {
+    "title": "Configurações de acessibilidade",
+    "page": 166
+   },
+   {
+    "title": "Assistente de teclado e mouse",
+    "page": 167
+   },
+   {
+    "title": "Deficiências visuais",
+    "page": 169
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 171
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 172
+   },
+   {
+    "title": "Resumo",
+    "page": 173
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 174
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 175
+   }
+  ]
+ },
+ "107.1": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 177,
+  "end": 208,
+  "sections": [
+   {
+    "title": "107.1 Lição 1",
+    "page": 179
+   },
+   {
+    "title": "Introdução",
+    "page": 179
+   },
+   {
+    "title": "Adicionando contas de usuário",
+    "page": 179
+   },
+   {
+    "title": "Modificando contas de usuário",
+    "page": 181
+   },
+   {
+    "title": "Excluindo contas de usuário",
+    "page": 183
+   },
+   {
+    "title": "Adicionando, modificando e excluindo grupos",
+    "page": 183
+   },
+   {
+    "title": "O diretório de esqueleto",
+    "page": 184
+   },
+   {
+    "title": "IO arquivo /etc/login.defs",
+    "page": 184
+   },
+   {
+    "title": "O comando passwd",
+    "page": 185
+   },
+   {
+    "title": "O comando chage",
+    "page": 187
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 188
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 189
+   },
+   {
+    "title": "Resumo",
+    "page": 190
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 192
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 194
+   },
+   {
+    "title": "107.1 Lição 2",
+    "page": 196
+   },
+   {
+    "title": "Introdução",
+    "page": 196
+   },
+   {
+    "title": "/etc/passwd",
+    "page": 197
+   },
+   {
+    "title": "/etc/group",
+    "page": 197
+   },
+   {
+    "title": "/etc/shadow",
+    "page": 198
+   },
+   {
+    "title": "/etc/gshadow",
+    "page": 199
+   },
+   {
+    "title": "Como filtrar os bancos de dados de senha e grupo",
+    "page": 199
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 201
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 203
+   },
+   {
+    "title": "Resumo",
+    "page": 204
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 205
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 207
+   }
+  ]
+ },
+ "107.2": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 209,
+  "end": 238,
+  "sections": [
+   {
+    "title": "107.2 Lição 1",
+    "page": 211
+   },
+   {
+    "title": "Introdução",
+    "page": 211
+   },
+   {
+    "title": "Como agendar jobs com o cron",
+    "page": 211
+   },
+   {
+    "title": "Crontabs de usuário",
+    "page": 212
+   },
+   {
+    "title": "Crontabs de sistema",
+    "page": 213
+   },
+   {
+    "title": "Especificações de tempo particulares",
+    "page": 214
+   },
+   {
+    "title": "Variáveis no crontab",
+    "page": 214
+   },
+   {
+    "title": "Criando cron jobs de usuário",
+    "page": 215
+   },
+   {
+    "title": "Criando cron jobs do sistema",
+    "page": 216
+   },
+   {
+    "title": "Configurando o acesso ao agendamento de trabalhos",
+    "page": 217
+   },
+   {
+    "title": "Uma alternativa ao cron",
+    "page": 217
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 220
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 222
+   },
+   {
+    "title": "Resumo",
+    "page": 223
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 224
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 226
+   },
+   {
+    "title": "107.2 Lição 2",
+    "page": 228
+   },
+   {
+    "title": "Introdução",
+    "page": 228
+   },
+   {
+    "title": "Agendamento de trabalhos com at",
+    "page": 228
+   },
+   {
+    "title": "Listar jobs programados com atq",
+    "page": 229
+   },
+   {
+    "title": "Excluir jobs com atrm",
+    "page": 230
+   },
+   {
+    "title": "Configurando o acesso ao agendamento de trabalhos",
+    "page": 231
+   },
+   {
+    "title": "Especificações de tempo",
+    "page": 231
+   },
+   {
+    "title": "Uma alternativa ao at",
+    "page": 231
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 233
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 234
+   },
+   {
+    "title": "Resumo",
+    "page": 235
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 236
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 237
+   }
+  ]
+ },
+ "107.3": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 239,
+  "end": 255,
+  "sections": [
+   {
+    "title": "107.3 Lição 1",
+    "page": 241
+   },
+   {
+    "title": "Introdução",
+    "page": 241
+   },
+   {
+    "title": "Fusos horários",
+    "page": 242
+   },
+   {
+    "title": "Horário de verão",
+    "page": 246
+   },
+   {
+    "title": "Idioma e codificação de caracteres",
+    "page": 247
+   },
+   {
+    "title": "Conversão de codificação",
+    "page": 250
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 251
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 252
+   },
+   {
+    "title": "Resumo",
+    "page": 253
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 254
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 255
+   }
+  ]
+ },
+ "108.1": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 257,
+  "end": 293,
+  "sections": [
+   {
+    "title": "108.1 Lição 1",
+    "page": 259
+   },
+   {
+    "title": "Introdução",
+    "page": 259
+   },
+   {
+    "title": "Hora local e hora universal",
+    "page": 260
+   },
+   {
+    "title": "Date",
+    "page": 260
+   },
+   {
+    "title": "Relógio do hardware",
+    "page": 262
+   },
+   {
+    "title": "timedatectl",
+    "page": 262
+   },
+   {
+    "title": "Definindo o fuso horário sem timedatectl",
+    "page": 264
+   },
+   {
+    "title": "Configurando data e hora sem timedatectl",
+    "page": 265
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 268
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 270
+   },
+   {
+    "title": "Resumo",
+    "page": 271
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 273
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 275
+   },
+   {
+    "title": "108.1 Lição 2",
+    "page": 276
+   },
+   {
+    "title": "Introdução",
+    "page": 276
+   },
+   {
+    "title": "timedatectl",
+    "page": 278
+   },
+   {
+    "title": "Daemon NTP",
+    "page": 279
+   },
+   {
+    "title": "Configuração do NTP",
+    "page": 280
+   },
+   {
+    "title": "pool.ntp.org",
+    "page": 281
+   },
+   {
+    "title": "ntpdate",
+    "page": 281
+   },
+   {
+    "title": "ntpq",
+    "page": 281
+   },
+   {
+    "title": "chrony",
+    "page": 282
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 287
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 289
+   },
+   {
+    "title": "Resumo",
+    "page": 290
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 291
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 293
+   }
+  ]
+ },
+ "108.2": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 294,
+  "end": 352,
+  "sections": [
+   {
+    "title": "108.2 Lição 1",
+    "page": 296
+   },
+   {
+    "title": "Introdução",
+    "page": 296
+   },
+   {
+    "title": "Logs do sistema",
+    "page": 297
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 317
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 319
+   },
+   {
+    "title": "Resumo",
+    "page": 320
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 321
+   },
+   {
+    "title": "108.2 Lição 2",
+    "page": 324
+   },
+   {
+    "title": "Introdução",
+    "page": 324
+   },
+   {
+    "title": "Fundamentos do systemd",
+    "page": 324
+   },
+   {
+    "title": "O diário do sistema: systemd-journald",
+    "page": 325
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 344
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 347
+   },
+   {
+    "title": "Summary",
+    "page": 348
+   },
+   {
+    "title": "Answers to Guided Exercises",
+    "page": 349
+   },
+   {
+    "title": "Answers to Explorational Exercises",
+    "page": 352
+   }
+  ]
+ },
+ "108.3": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 353,
+  "end": 369,
+  "sections": [
+   {
+    "title": "108.3 Lição 1",
+    "page": 354
+   },
+   {
+    "title": "Introdução",
+    "page": 354
+   },
+   {
+    "title": "MTA local e remoto",
+    "page": 355
+   },
+   {
+    "title": "MTAs do Linux",
+    "page": 356
+   },
+   {
+    "title": "O comando mail e Mail User Agents (MUA)",
+    "page": 361
+   },
+   {
+    "title": "Entrega personalizada",
+    "page": 362
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 365
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 366
+   },
+   {
+    "title": "Resumo",
+    "page": 367
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 368
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 369
+   }
+  ]
+ },
+ "108.4": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 370,
+  "end": 391,
+  "sections": [
+   {
+    "title": "108.4 Lição 1",
+    "page": 371
+   },
+   {
+    "title": "Introdução",
+    "page": 371
+   },
+   {
+    "title": "O serviço CUPS",
+    "page": 372
+   },
+   {
+    "title": "Instalando uma impressora",
+    "page": 376
+   },
+   {
+    "title": "Gerenciando impressoras",
+    "page": 378
+   },
+   {
+    "title": "Enviando trabalhos de impressão",
+    "page": 380
+   },
+   {
+    "title": "Gerenciando trabalhos de impressão",
+    "page": 382
+   },
+   {
+    "title": "Removendo impressoras",
+    "page": 384
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 385
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 386
+   },
+   {
+    "title": "Resumo",
+    "page": 387
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 389
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 390
+   }
+  ]
+ },
+ "109.1": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 393,
+  "end": 418,
+  "sections": [
+   {
+    "title": "109.1 Lição 1",
+    "page": 394
+   },
+   {
+    "title": "Introdução",
+    "page": 394
+   },
+   {
+    "title": "IP (Internet Protocol)",
+    "page": 394
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 403
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 404
+   },
+   {
+    "title": "Resumo",
+    "page": 405
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 406
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórioss",
+    "page": 407
+   },
+   {
+    "title": "109.1 Lição 2",
+    "page": 408
+   },
+   {
+    "title": "Introdução",
+    "page": 408
+   },
+   {
+    "title": "Transmission Control Protocol (TCP)",
+    "page": 410
+   },
+   {
+    "title": "User Datagram Protocol (UDP)",
+    "page": 410
+   },
+   {
+    "title": "Internet Control Message Protocol (ICMP)",
+    "page": 410
+   },
+   {
+    "title": "IPv6",
+    "page": 411
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 414
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 415
+   },
+   {
+    "title": "Resumo",
+    "page": 416
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 417
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 418
+   }
+  ]
+ },
+ "109.2": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 419,
+  "end": 447,
+  "sections": [
+   {
+    "title": "109.2 Lição 1",
+    "page": 420
+   },
+   {
+    "title": "Introdução",
+    "page": 420
+   },
+   {
+    "title": "A Interface de Rede",
+    "page": 420
+   },
+   {
+    "title": "Nomes de interface",
+    "page": 422
+   },
+   {
+    "title": "Gerenciamento da interface",
+    "page": 423
+   },
+   {
+    "title": "Nomes locais e remotos",
+    "page": 425
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 430
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 431
+   },
+   {
+    "title": "Resumo",
+    "page": 432
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 433
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 434
+   },
+   {
+    "title": "109.2 Lição 2",
+    "page": 435
+   },
+   {
+    "title": "Introdução",
+    "page": 435
+   },
+   {
+    "title": "NetworkManager",
+    "page": 435
+   },
+   {
+    "title": "systemd-networkd",
+    "page": 440
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 443
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 444
+   },
+   {
+    "title": "Resumo",
+    "page": 445
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 446
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórioss",
+    "page": 447
+   }
+  ]
+ },
+ "109.3": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 448,
+  "end": 481,
+  "sections": [
+   {
+    "title": "109.3 Lição 1",
+    "page": 450
+   },
+   {
+    "title": "Introdução",
+    "page": 450
+   },
+   {
+    "title": "Sobre o comando ip",
+    "page": 451
+   },
+   {
+    "title": "Máscara de rede e revisão de roteamento",
+    "page": 452
+   },
+   {
+    "title": "Configurando uma interface",
+    "page": 453
+   },
+   {
+    "title": "A tabela de roteamento",
+    "page": 455
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 459
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 460
+   },
+   {
+    "title": "Resumo",
+    "page": 461
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 462
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 464
+   },
+   {
+    "title": "109.3 Lição 2",
+    "page": 466
+   },
+   {
+    "title": "Introdução",
+    "page": 466
+   },
+   {
+    "title": "Testando conexões com ping",
+    "page": 466
+   },
+   {
+    "title": "Traçando Rotas",
+    "page": 467
+   },
+   {
+    "title": "Encontrando MTUs com tracepath",
+    "page": 470
+   },
+   {
+    "title": "Criando Conexões Arbitrárias",
+    "page": 470
+   },
+   {
+    "title": "Visualizando conexões atuais e listeners",
+    "page": 472
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 474
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 475
+   },
+   {
+    "title": "Resumo",
+    "page": 476
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 478
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 480
+   }
+  ]
+ },
+ "109.4": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 482,
+  "end": 497,
+  "sections": [
+   {
+    "title": "109.4 Lição 1",
+    "page": 483
+   },
+   {
+    "title": "Introdução",
+    "page": 483
+   },
+   {
+    "title": "O processo de resolução de nome",
+    "page": 483
+   },
+   {
+    "title": "Classes DNS",
+    "page": 484
+   },
+   {
+    "title": "Ferramentas de resolução de nomes",
+    "page": 487
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 493
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 494
+   },
+   {
+    "title": "Resumo",
+    "page": 495
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 496
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 497
+   }
+  ]
+ },
+ "110.1": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 499,
+  "end": 535,
+  "sections": [
+   {
+    "title": "110.1 Lição 1",
+    "page": 501
+   },
+   {
+    "title": "Introdução",
+    "page": 501
+   },
+   {
+    "title": "Verificando Arquivos com SUID e SGID",
+    "page": 501
+   },
+   {
+    "title": "Gerenciamento e validade das senhas",
+    "page": 504
+   },
+   {
+    "title": "Descobrindo portas abertas",
+    "page": 507
+   },
+   {
+    "title": "Limites em logins de usuário, processos e uso de memória",
+    "page": 514
+   },
+   {
+    "title": "Lidando com usuários conectados",
+    "page": 517
+   },
+   {
+    "title": "Configuração e uso básicos do sudo",
+    "page": 520
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 525
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 528
+   },
+   {
+    "title": "Resumo",
+    "page": 529
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 531
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 535
+   }
+  ]
+ },
+ "110.2": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 536,
+  "end": 552,
+  "sections": [
+   {
+    "title": "110.2 Lição 1",
+    "page": 537
+   },
+   {
+    "title": "Introdução",
+    "page": 537
+   },
+   {
+    "title": "Melhorar a segurança da autenticação com senhas ocultas",
+    "page": 537
+   },
+   {
+    "title": "Como usar um superdaemon para ouvir conexões de rede de entrada",
+    "page": 539
+   },
+   {
+    "title": "Em busca de daemons desnecessários nos serviços",
+    "page": 544
+   },
+   {
+    "title": "Usando TCP wrappers como uma espécie de firewall simples",
+    "page": 546
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 547
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 548
+   },
+   {
+    "title": "Resumo",
+    "page": 549
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 551
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 552
+   }
+  ]
+ },
+ "110.3": {
+  "file": "LPI-Learning-Material-102-500-pt.pdf",
+  "exam": "102",
+  "start": 553,
+  "end": 594,
+  "sections": [
+   {
+    "title": "110.3 Lição 1",
+    "page": 555
+   },
+   {
+    "title": "Introdução",
+    "page": 555
+   },
+   {
+    "title": "Configuração e uso básico do cliente OpenSSH",
+    "page": 556
+   },
+   {
+    "title": "O papel das chaves de host do servidor OpenSSH",
+    "page": 561
+   },
+   {
+    "title": "Túneis de porta SSH",
+    "page": 563
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 568
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 570
+   },
+   {
+    "title": "Resumo",
+    "page": 571
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 572
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 574
+   },
+   {
+    "title": "110.3 Lição 2",
+    "page": 575
+   },
+   {
+    "title": "Introdução",
+    "page": 575
+   },
+   {
+    "title": "Como executar a configuração, uso e revogação básicos do GnuPG",
+    "page": 575
+   },
+   {
+    "title": "Como usar o GPG para criptografar, descriptografar, assinar e verificar arquivos",
+    "page": 581
+   },
+   {
+    "title": "Exercícios Guiados",
+    "page": 587
+   },
+   {
+    "title": "Exercícios Exploratórios",
+    "page": 589
+   },
+   {
+    "title": "Resumo",
+    "page": 590
+   },
+   {
+    "title": "Respostas aos Exercícios Guiados",
+    "page": 591
+   },
+   {
+    "title": "Respostas aos Exercícios Exploratórios",
+    "page": 593
+   }
+  ]
+ }
+}

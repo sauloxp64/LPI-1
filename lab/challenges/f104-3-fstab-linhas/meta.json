@@ -1,0 +1,33 @@
+{
+  "id": "f104-3-fstab-linhas",
+  "obj": "104.3",
+  "titulo": "Escreva as linhas do /etc/fstab",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "dados": { "escolha": ["financas", "producao", "clientes", "vendas"] },
+    "usb": { "escolha": ["pendrive", "cartao", "midia", "camera"] },
+    "swp": { "escolha": ["swap-extra", "troca-ssd", "paginacao"] },
+    "lbl_dados": { "escolha": ["dados-fin", "prod-app", "base-cli", "vendas-db"] },
+    "lbl_usb": { "escolha": ["PENDRIVE", "CARTAO", "CAMERA", "BACKUP"] },
+    "lbl_swap": { "escolha": ["swap-x", "troca-b", "swap-ssd"] },
+    "pt_dados": { "escolha": ["/srv/dados", "/dados", "/mnt/projetos", "/var/dados-app"] },
+    "pt_usb": { "escolha": ["usb", "pendrive", "cartao", "camera"] },
+    "opt1": { "escolha": ["noatime", "nodev", "nosuid"] },
+    "opt2": { "escolha": ["ro", "sync", "noexec"] }
+  },
+  "enunciado": "Em `~/lab/fstab/` há três imagens de disco: `{dados}.img` (ext4), `{usb}.img` (um pendrive FAT) e `{swp}.img` (área de troca). Elas fazem o papel de partições que o servidor deve montar no boot. Como você não pode (nem deve) editar o `/etc/fstab` de verdade aqui, escreva as linhas no arquivo de rascunho **`~/lab/fstab/fstab.novo`**, no formato exato do `/etc/fstab` (6 campos por linha; comentários com `#` são permitidos):\n\n1. o ext4 `{dados}.img`, identificado pelo seu **UUID**, montado em **`{pt_dados}`**, com as opções `defaults` e `{opt1}`, sem backup pelo `dump` e **verificado pelo fsck em segundo lugar** (fora da raiz);\n2. o pendrive `{usb}.img`, identificado pelo seu **LABEL**, montado em **`/media/{pt_usb}`**, tipo `vfat`, que **não** deve ser montado automaticamente no boot, **pode ser montado por um usuário comum** e usa também a opção `{opt2}`; sem dump e sem fsck;\n3. a área de troca `{swp}.img`, identificada pelo **UUID**, sem ponto de montagem, tipo `swap`, sem dump e sem fsck.\n\nDescubra UUIDs, rótulos e tipos com as ferramentas de identificação de dispositivos.",
+  "verifica": [
+    "linha do ext4: UUID correto, ponto `{pt_dados}`, tipo `ext4`, opções `defaults,{opt1}`, dump 0, pass 2",
+    "linha do vfat: `LABEL={lbl_usb}`, ponto `/media/{pt_usb}`, tipo `vfat`, opções `noauto`, `user` e `{opt2}`, dump 0, pass 0",
+    "linha da swap: UUID correto, ponto `none`, tipo `swap`, opção `sw`, dump 0, pass 0",
+    "todas as linhas com exatamente 6 campos"
+  ],
+  "dicas": [
+    "Cada linha do fstab tem 6 campos: dispositivo, ponto de montagem, tipo, opções, dump, pass.",
+    "`blkid ~/lab/fstab/*.img` mostra UUID, LABEL e TYPE de cada imagem. O dispositivo pode ser escrito como `UUID=...` ou `LABEL=...`.",
+    "`user` permite que um usuário comum monte (e desmonte) o dispositivo; `noauto` impede a montagem no boot. Para swap o ponto de montagem é `none` e a opção é `sw`.",
+    "O último campo (pass) é 1 para a raiz, 2 para os demais sistemas verificados no boot e 0 para não verificar."
+  ],
+  "solucao": "```\nblkid ~/lab/fstab/*.img\n# anote o UUID do ext4, o LABEL do vfat e o UUID da swap, e grave:\ncat > ~/lab/fstab/fstab.novo <<'EOF'\nUUID=<uuid-do-ext4>   {pt_dados}   ext4   defaults,{opt1}   0  2\nLABEL={lbl_usb}   /media/{pt_usb}   vfat   noauto,user,{opt2}   0  0\nUUID=<uuid-da-swap>   none   swap   sw   0  0\nEOF\n```\nOs 6 campos: *dispositivo, ponto de montagem, tipo, opções, dump, pass*. Usar UUID/LABEL em vez de `/dev/sdX` evita que a ordem dos discos mude a montagem. `noauto,user` é a combinação clássica de mídia removível (o `user` ainda impõe `noexec,nosuid,nodev` a menos que se diga o contrário; `users` permitiria a qualquer um desmontar). Na swap, o ponto é `none` e a opção `sw`. Pegadinha: UUID de FAT tem o formato `XXXX-XXXX`, e o `pass` 2 é para sistemas que não são a raiz (a raiz usaria 1)."
+}

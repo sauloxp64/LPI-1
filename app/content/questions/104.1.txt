@@ -1,0 +1,359 @@
+### 104.1-001 | unica | 1
+ref: 101:p.424
+tags: MBR, GPT, limites
+Um servidor receberá um disco de 4 TB que será dividido em três partições. Qual esquema de tabela de partições deve ser usado?
+= GPT, pois o MBR não endereça discos com mais de 2 TB
+- MBR, criando as três partições como primárias
+- MBR, criando uma estendida com duas partições lógicas
+- Qualquer um, pois o tamanho do disco não importa
+> O MBR usa endereços de 32 bits de setor e por isso só enxerga até cerca de 2 TB, além de limitar o disco a quatro partições primárias. A GPT não tem limite prático de tamanho e é a escolha natural em discos grandes e em sistemas UEFI. Usar partições estendidas ou lógicas não contorna o limite de 2 TB.
+
+### 104.1-002 | unica | 1
+ref: 101:p.426
+tags: MBR, estendida, lógica
+Como é possível ter mais de quatro partições em um disco com tabela MBR?
+= Criando uma estendida e, dentro dela, partições lógicas
+- Marcando todas as partições com o sinalizador de inicialização
+- Usando o tipo de partição 83 em todas as partições primárias
+- Aumentando o tamanho do setor do disco para 4096 bytes
+> O MBR comporta quatro entradas primárias; uma delas pode ser do tipo estendida, que funciona como contêiner de partições lógicas (numeradas a partir de 5). Para o Linux, primárias e lógicas são tratadas da mesma forma. Excluir a estendida remove também todas as lógicas que ela contém.
+
+### 104.1-003 | multipla | 2
+ref: 101:p.429-430
+tags: GPT, GUID, gdisk
+Quais afirmações sobre discos particionados com GPT estão corretas?
+= Cada disco recebe um identificador GUID aleatório de 128 bits
+= A tabela comporta até 128 partições por padrão
+= Não há distinção entre partições primárias, estendidas e lógicas
+- O disco comporta no máximo quatro partições, e uma delas deve ser estendida
+- Só funciona em sistemas com BIOS tradicional e jamais com UEFI
+> A saída do comando `p` do `gdisk` mostra "Disk identifier (GUID)" e "Partition table holds up to 128 entries"; por isso a GPT dispensa partições estendidas e lógicas. O limite de quatro entradas é do MBR. A GPT é a tabela típica dos sistemas UEFI, embora também possa ser usada em discos de boot BIOS com o auxílio de uma partição extra.
+
+### 104.1-004 | lacuna | 1
+ref: 101:p.425
+tags: fdisk, gravar, w
+Dentro do menu interativo do `fdisk`, qual comando grava a tabela de partições no disco e encerra o programa?
+= w
+> Até o comando `w` (write) ser dado, todas as mudanças ficam apenas na memória. Para sair descartando-as, usa-se `q`.
+
+### 104.1-005 | unica | 2
+ref: 101:p.425
+tags: fdisk, q, w
+Dentro do `fdisk /dev/sdb`, um administrador cria três partições com `n`, confere o resultado com `p` e depois digita `q`. Qual é o estado do disco?
+= A tabela original continua intacta, pois nada foi gravado
+- As três partições foram criadas e gravadas no disco
+- As partições foram gravadas, mas ainda sem sistema de arquivos
+- Somente a primeira partição foi gravada
+> No `fdisk`, as alterações ficam na memória até o comando `w`. Já `q` sai do programa sem salvar, e por isso o disco permanece como estava. Isso permite "ensaiar" alterações com segurança, o que não vale para o `parted`, que aplica cada comando imediatamente.
+
+### 104.1-006 | lacuna | 1
+ref: 101:p.429
+tags: fdisk, tipo de partição, t
+Qual comando do `fdisk` altera o tipo (código hexadecimal, como 82 ou 83) de uma partição já criada?
+= t
+> `t` (type) muda o código de tipo da partição; `l` lista os códigos disponíveis. O tipo identifica o uso pretendido (por exemplo, `83` Linux e `82` swap), mas não cria o sistema de arquivos.
+
+### 104.1-007 | unica | 2
+ref: 101:p.425-426
+tags: fdisk, saída, estendida, lógica
+Observe a tabela de partições exibida por `fdisk -l /dev/sdb`:
+
+```
+Device     Boot  Start     End Sectors  Size Id Type
+/dev/sdb1         2048  206847  204800  100M 83 Linux
+/dev/sdb2       206848  309247  102400   50M 82 Linux swap / Solaris
+/dev/sdb3       309248 1023999  714752  349M  5 Extended
+/dev/sdb5       311296  516095  204800  100M 83 Linux
+/dev/sdb6       518144  722943  204800  100M 83 Linux
+```
+
+Qual afirmação está correta?
+= `/dev/sdb2` é swap, e `/dev/sdb5` e `/dev/sdb6` são lógicas dentro de `/dev/sdb3`
+- `/dev/sdb3` é a partição de troca, e `/dev/sdb1` é a partição estendida do disco
+- `/dev/sdb5` e `/dev/sdb6` são primárias, e o disco tem então cinco partições primárias
+- `/dev/sdb2` é lógica, e `/dev/sdb3` é a partição de inicialização do sistema
+> O campo `Id` mostra o tipo: `82` é Linux swap, `83` é Linux e `5` é Extended (o contêiner). As partições com número a partir de 5 são lógicas e ficam dentro da estendida `/dev/sdb3`. O MBR só admite quatro entradas primárias/estendidas (aqui, `sdb1` a `sdb3`).
+
+### 104.1-008 | unica | 3
+ref: 101:p.428-429
+tags: fdisk, espaço livre, contíguo
+Em um disco MBR, as partições 1 e 3 existem e a 2 foi apagada. O comando `F` do `fdisk` mostra o espaço não particionado:
+
+```
+Unpartitioned space /dev/sdc: 299 MiB, 313524224 bytes, 612352 sectors
+
+ Start     End Sectors  Size
+309248  616447  307200  150M
+923648 1228799  305152  149M
+```
+
+Ao tentar criar uma nova partição de 200 MiB com `n` e `+200M`, o `fdisk` responde "Value out of range". Qual é a causa?
+= O espaço livre está em duas faixas, e nenhuma comporta 200 MiB contíguos
+- O MBR não aceita partições maiores que 150 MiB, pois cada faixa livre tem esse limite
+- Falta executar `w` para liberar o espaço da partição 2 que foi apagada do disco
+- A partição 2 precisa ser recriada antes de qualquer outra partição nova
+> Uma partição precisa de espaço **contíguo**. Os 299 MiB livres se dividem em um buraco de 150 MiB (onde ficava a partição 2) e um trecho final de 149 MiB, e a nova partição não pode "pular" a partição 3. Os valores aceitáveis para o último setor são mostrados no próprio prompt (aqui, até 616447).
+
+### 104.1-009 | lacuna | 2
+ref: 101:p.430-431
+tags: gdisk, ordenar, s
+Em um disco GPT com as partições 1, 2 e 3, a partição 2 foi apagada, e a tabela ficou com os números 1 e 3. Qual comando do `gdisk` renumera as partições para eliminar essa lacuna?
+= s
+> No `gdisk`, `s` (sort) reordena e renumera as entradas, e a antiga partição 3 passa a ser a 2. Esse comando não existe no fdisk de discos MBR.
+
+### 104.1-010 | unica | 2
+ref: 101:p.449
+tags: swap, tipos de partição, fdisk, gdisk
+Quais são os códigos de tipo de partição para Linux swap no `fdisk` (MBR) e no `gdisk` (GPT), respectivamente?
+= `82` e `8200`
+- `83` e `8300`, os de Linux filesystem
+- `82` e `8300`, misturando os dois códigos
+- `8e` e `8e00`, os de Linux LVM
+> `82`/`8200` identificam "Linux swap"; `83`/`8300` são "Linux" / "Linux filesystem"; `8e`/`8e00` são Linux LVM. O código de tipo não prepara a partição: ainda é preciso executar `mkswap` e `swapon`.
+
+### 104.1-011 | unica | 2
+ref: 101:p.449, 101:p.457
+tags: swap, mkswap, swapon, diagnóstico
+Um administrador criou a partição `/dev/sdb1` com `mkpart primary linux-swap 1MiB 1GiB` no `parted` e depois executou `swapon /dev/sdb1`, que respondeu "read swap header failed". Qual é o motivo?
+= Falta executar `mkswap /dev/sdb1` para gravar a assinatura de swap
+- Falta executar `mkfs.ext4 /dev/sdb1` antes de ativar a troca
+- A tabela de partições precisa ser MBR, e não GPT
+- É preciso reiniciar o sistema para que o kernel reconheça a partição
+> O `mkpart` define apenas o tipo da partição; não grava nenhum cabeçalho de swap. Sem `mkswap`, o `swapon` não encontra a assinatura e falha com "read swap header failed". A ordem correta é criar a partição, `mkswap` e `swapon`.
+
+### 104.1-012 | unica | 2
+ref: 101:p.432
+tags: mke2fs, mkfs.ext4
+Qual comando é equivalente a `mkfs.ext4 /dev/sdb1`?
+= `mke2fs -t ext4 /dev/sdb1`
+- `mke2fs -j -L ext4 /dev/sdb1`
+- `mkfs.ext /dev/sdb1`
+- `mke4fs /dev/sdb1`
+> `mkfs.ext2`, `mkfs.ext3` e `mkfs.ext4` são links para `mke2fs`, que muda seus padrões conforme o nome com que é chamado; com `-t ext4` obtém-se o mesmo efeito. O `-j` cria um diário, mas o resultado é um ext3 (`-L ext4` só dá esse nome ao rótulo). Os outros dois comandos não existem.
+
+### 104.1-013 | lacuna | 1
+ref: 101:p.433
+tags: mke2fs, simulação, -n
+Qual opção do `mke2fs` / `mkfs.ext4` simula a criação do sistema de arquivos, exibindo o que seria feito sem gravar nada no dispositivo? `mkfs.ext4 ____ /dev/sdb1`
+= -n
+> `-n` é o modo de simulação ("dry run"): o comando descreve o que faria e termina sem gravar. Verificar antes evita gravar por engano no dispositivo errado.
+
+### 104.1-014 | lacuna | 2
+ref: 101:p.435
+tags: mkfs.xfs, simulação, -N
+Qual opção do `mkfs.xfs` mostra os parâmetros que seriam usados, sem de fato criar o sistema de arquivos? `mkfs.xfs ____ /dev/sdb1`
+= -N
+> `-N` (maiúsculo) é o equivalente do `-n` do `mke2fs`. Em `mkfs.xfs`, o `-n` minúsculo é uma opção de nomeação (por exemplo, `-n size=...`), não de simulação.
+
+### 104.1-015 | unica | 2
+ref: 101:p.433-436
+tags: rótulos, ext4, XFS, FAT
+Qual alternativa apresenta os tamanhos máximos corretos de rótulo (label) para ext2/3/4, XFS e FAT/VFAT, nessa ordem?
+= 16, 12 e 11 caracteres
+- 12, 16 e 11 caracteres
+- 11, 12 e 16 caracteres
+- 16 caracteres, igualmente, nos três sistemas de arquivos
+> O rótulo de um ext2/3/4 tem no máximo 16 caracteres (rótulos maiores são truncados com um aviso), o do XFS aceita até 12 (valores maiores são rejeitados) e o do FAT/VFAT, até 11. Em `mkfs.ext4 -L`, o rótulo pode ter **no máximo** 16 caracteres, e não "ao menos 16".
+
+### 104.1-016 | unica | 3
+ref: 101:p.434
+tags: mkfs.xfs, -f, sobrescrever
+Ao rodar `mkfs.xfs /dev/sdb1`, aparece: "appears to contain an existing filesystem (ext4). Use the -f option to force overwrite." Como prosseguir, aceitando perder os dados existentes?
+= `mkfs.xfs -f /dev/sdb1`
+- `mkfs.xfs -F -F /dev/sdb1`
+- `mkfs.xfs --yes /dev/sdb1`
+- `mkfs.xfs -q /dev/sdb1`
+> No `mkfs.xfs`, `-f` (minúsculo) força a criação por cima de um sistema de arquivos detectado. A letra maiúscula `-F` (repetida, para dispositivos em uso) é a forma do `mke2fs`, e não vale aqui. `-q` apenas silencia a saída, e `--yes` não é uma opção do `mkfs.xfs`.
+
+### 104.1-017 | unica | 2
+ref: 101:p.435-436
+tags: mkfs.vfat, FAT32, rótulo
+Qual comando cria um sistema de arquivos FAT32 com o rótulo `DADOS` em `/dev/sdc1`?
+= `mkfs.vfat -F 32 -n DADOS /dev/sdc1`
+- `mkfs.vfat -F 32 -L DADOS /dev/sdc1`
+- `mkfs.vfat -f 32 -n DADOS /dev/sdc1`
+- `mkfs.vfat -t fat32 -l DADOS /dev/sdc1`
+> No `mkfs.fat`/`mkfs.vfat`, `-F` (maiúsculo) escolhe o tamanho da FAT (12, 16 ou 32) e `-n` define o rótulo. A opção `-L` não existe nele (gera "invalid option"), `-f` minúsculo não escolhe o tamanho e `-t`/`-l` não pertencem ao comando.
+
+### 104.1-018 | unica | 3
+ref: 101:p.438, 101:p.455
+tags: Btrfs, RAID1, múltiplos dispositivos
+Um administrador executa `mkfs.btrfs -m raid1 /dev/sdb1 /dev/sdc1` (duas partições de 300 MiB) e a saída mostra "Data: single" e "Metadata: RAID1". O que isso significa?
+= Só os metadados são espelhados; os dados usam os dois discos sem redundância
+- Dados e metadados estão espelhados, e o espaço útil total é de apenas 300 MiB
+- O espaço dos dois dispositivos foi reunido, e nada está espelhado (nem os metadados)
+- O comando falhou, porque o perfil RAID1 exige também a opção `-d raid1`
+> A opção `-m` define o perfil dos **metadados** e `-d` o dos **dados**. Com múltiplos dispositivos, o padrão para dados é `single` (sem espelhamento). Para espelhar tudo é preciso `mkfs.btrfs -d raid1 -m raid1 /dev/sdb1 /dev/sdc1`, caso em que o espaço útil é o de um dispositivo.
+
+### 104.1-019 | multipla | 2
+ref: 101:p.439
+tags: Btrfs, subvolumes
+Quais afirmações sobre subvolumes do Btrfs estão corretas?
+= Compartilham o espaço livre do sistema de arquivos em que foram criados
+= Também podem ser acessados como diretórios comuns
+= Podem ser montados separadamente, com regras de cota ou snapshot próprias
+- Reservam espaço fixo no disco, como uma partição
+- Exigem uma nova entrada na tabela de partições
+> Um subvolume é como um sistema de arquivos dentro de outro: pode ser montado de forma independente (`-o subvol=NOME`) e ter cotas ou regras de snapshot próprias, mas **não** é uma partição. Ele cresce conforme a necessidade, usando o espaço livre do Btrfs, e continua visível como um diretório (por exemplo, `/mnt/disk/BKP`).
+
+### 104.1-020 | unica | 2
+ref: 101:p.440-442
+tags: Btrfs, snapshot
+Qual comando cria um instantâneo **somente leitura** de `/mnt/disk` em `/mnt/disk/snap`?
+= `btrfs subvolume snapshot -r /mnt/disk /mnt/disk/snap`
+- `btrfs subvolume create -r /mnt/disk/snap`
+- `btrfs subvolume snapshot /mnt/disk /mnt/disk/snap`, sem opções
+- `btrfs snapshot -r /mnt/disk /mnt/disk/snap`
+> O instantâneo é criado com `btrfs subvolume snapshot ORIGEM DESTINO`, e o `-r` o torna somente leitura. Sem `-r`, ele é gravável. O `subvolume create` não aceita `-r` (e não copia conteúdo), e `btrfs snapshot` não é um subcomando válido.
+
+### 104.1-021 | lacuna | 2
+ref: 101:p.442
+tags: Btrfs, compressão, mount
+Complete a opção de montagem que habilita a compressão transparente no Btrfs: `mount -t btrfs -o ____=zstd /dev/sdb1 /mnt`
+= compress
+= compress-force
+> A compressão é ativada na montagem com `-o compress` (padrão ZLIB) ou `-o compress=ALGORITMO`, com os algoritmos `zlib`, `lzo` e `zstd`. É feita arquivo a arquivo, e arquivos incompressíveis são detectados e ignorados.
+
+### 104.1-022 | unica | 2
+ref: 101:p.440
+tags: Btrfs, subvolume, mount
+Qual comando monta o subvolume `BKP` do Btrfs em `/dev/sdb1` no diretório `/mnt/bkp`?
+= `mount -t btrfs -o subvol=BKP /dev/sdb1 /mnt/bkp`
+- `mount -t btrfs -o subvolid=BKP /dev/sdb1 /mnt/bkp`
+- `mount -t btrfs -o subvolume=BKP /dev/sdb1 /mnt/bkp`
+- `mount -t btrfs /dev/sdb1/BKP /mnt/bkp`
+> O parâmetro correto é `subvol=NOME`. A opção `subvolid` espera o **número** de identificação do subvolume, e `subvolume=` não existe. Um subvolume não é um dispositivo, então `/dev/sdb1/BKP` não é um caminho de dispositivo válido.
+
+### 104.1-023 | unica | 3
+ref: 101:p.444-445
+tags: parted, mkpart, intervalo
+Qual é o efeito do comando abaixo no `parted`, em um disco com tabela MBR?
+
+```
+(parted) mkpart primary ext4 500m 800m
+```
+= Cria uma primária de 300 MB a partir de 500 MB, sem criar o sistema de arquivos
+- Cria uma partição primária de 800 MB, começando em 500 MB, já formatada em ext4
+- Cria uma partição primária de 300 MB, começando em 500 MB, já formatada em ext4
+- Falha, pois o último valor deve ser o tamanho, e não a posição final
+> Os dois últimos números de `mkpart` são **posições** no disco (início e fim), e não tamanho: 800m − 500m = 300 MB. O `ext4` apenas marca o tipo esperado; o `parted` não executa `mkfs`, portanto o sistema de arquivos precisa ser criado depois com `mkfs.ext4`.
+
+### 104.1-024 | unica | 1
+ref: 101:p.442
+tags: parted, imediato
+Qual característica distingue o `parted` do `fdisk` e do `gdisk`?
+= Grava cada comando na hora, sem um comando de gravação
+- Só trabalha com discos GPT e não aceita tabelas do tipo MBR (msdos)
+- Exige que o disco esteja montado durante toda a edição da tabela
+- Só altera a tabela em memória até que o comando `w` seja digitado
+> O `parted` grava no disco assim que o comando é emitido, sem um passo final `w`, e por isso é preciso cuidado ao praticar. Ele trabalha tanto com MBR (`msdos`) quanto com GPT e não exige o disco montado. A espera por `w` é característica do `fdisk` e do `gdisk`.
+
+### 104.1-025 | unica | 2
+ref: 101:p.444
+tags: parted, mklabel, msdos
+Qual comando do `parted` cria uma nova tabela de partições do tipo MBR em um disco vazio?
+= `mklabel msdos`
+- `mklabel mbr`
+- `mklabel dos`
+- `mklabel --type=mbr`
+> No `parted`, o rótulo de disco do MBR chama-se `msdos`, e o da GPT chama-se `gpt`. Os nomes `mbr` e `dos` (e uma sintaxe como `--type=mbr`) são recusados com o erro "Expecting a disk label type".
+
+### 104.1-026 | unica | 2
+ref: 101:p.445-446
+tags: parted, rescue, recuperação
+Uma partição foi apagada por engano com `rm 2` no `parted`, mas suas posições aproximadas de início e fim (90 MB e 210 MB) são conhecidas. Qual comando tenta recuperá-la?
+= `rescue 90m 210m`
+- `undelete 2`
+- `recover 90m 210m`
+- `restore 2`
+> `rescue INÍCIO FIM` varre o intervalo indicado, procura sistemas de arquivos de partições perdidas e oferece adicioná-los à tabela. Só consegue recuperar partições que continham um sistema de arquivos. `undelete`, `recover` e `restore` não são comandos do `parted`.
+
+### 104.1-027 | unica | 3
+ref: 101:p.446-449, 101:p.456
+tags: parted, resize2fs, reduzir
+Em que ordem se reduz uma partição ext4 `/dev/sdb3` sem perder dados?
+= Desmontar, reduzir o sistema de arquivos com `resize2fs` e depois a partição com `resizepart`
+- Desmontar, reduzir a partição com `parted resizepart` e depois o sistema de arquivos com `resize2fs`
+- Reduzir a partição montada com `parted resizepart` e então executar `mkfs.ext4` para ajustá-la
+- Reduzir só a partição com `parted resizepart`, pois o ext4 se ajusta sozinho no próximo boot
+> Para reduzir, o sistema de arquivos deve ficar menor **antes** da partição (por exemplo, `resize2fs /dev/sdb3 88m`, ou `resize2fs -M` para o mínimo); se a partição fosse cortada primeiro, o final do sistema de arquivos seria destruído. Para ampliar, a ordem se inverte: primeiro a partição, depois o `resize2fs`. O `mkfs` apagaria os dados.
+
+### 104.1-028 | unica | 2
+ref: 101:p.447-448
+tags: parted, resizepart, resize2fs, ampliar
+Após ampliar a partição ext4 `/dev/sdb3` com `resizepart 3 350m` no `parted`, o `df -h /dev/sdb3` ainda mostra o tamanho antigo. O que falta fazer?
+= Executar `resize2fs /dev/sdb3`, para o sistema de arquivos ocupar a nova área
+- Executar `mkfs.ext4 /dev/sdb3` para que o sistema de arquivos reconheça o novo tamanho
+- Executar `tune2fs -l /dev/sdb3` para atualizar o tamanho registrado no superbloco
+- Executar `e2fsck -p /dev/sdb3` para recalcular o tamanho do sistema de arquivos
+> A partição e o sistema de arquivos são camadas diferentes: o `resizepart` só muda o limite da partição. `resize2fs DISPOSITIVO` (sem tamanho) amplia o ext2/3/4 até ocupar todo o espaço disponível. `mkfs` apagaria os dados, `tune2fs -l` apenas lista parâmetros e o `e2fsck` apenas verifica.
+
+### 104.1-029 | multipla | 2
+ref: 101:p.449-450
+tags: swap, mkswap, swapon
+Uma partição `/dev/sda2`, já com o tipo Linux swap, será usada como área de troca. Quais comandos completam o procedimento?
+= `mkswap /dev/sda2`
+= `swapon /dev/sda2`
+- `mkfs.swap /dev/sda2`
+- `mkfs.ext4 /dev/sda2`
+- `fsck -t swap /dev/sda2`
+> `mkswap` grava o cabeçalho de swap na partição, e `swapon` a ativa para uso imediato (`swapoff` a desativa). Não existe `mkfs.swap`, `mkfs.ext4` criaria um sistema de arquivos comum, e `fsck` não se aplica a swap. Para ativar automaticamente a cada boot, falta ainda uma linha no `/etc/fstab`.
+
+### 104.1-030 | lacuna | 2
+ref: 101:p.450
+tags: swap, arquivo de troca, permissões
+Ao executar `mkswap myswap`, o aviso "insecure permissions 0644, fix with: chmod 0600 myswap" é exibido. Qual permissão, em notação octal, é a recomendada para um arquivo de troca? `chmod ____ myswap`
+= 0600
+= 600
+> Um arquivo de swap pode conter trechos da memória de qualquer processo, por isso só o proprietário (root) deve ler e escrever: `0600` (`-rw-------`). Tanto o `mkswap` quanto o `swapon` reclamam de permissões mais abertas.
+
+### 104.1-031 | unica | 3
+ref: 101:p.434-435
+tags: mkfs.xfs, log, logdev
+Qual opção do `mkfs.xfs` coloca a seção de log (journal) em um dispositivo separado, `/dev/sdc1`?
+= `-l logdev=/dev/sdc1`
+- `-J size=10,device=/dev/sdc1`
+- `-L /dev/sdc1`
+- `-j /dev/sdc1`
+> O XFS divide-se em seção de dados e seção de log; por padrão o log fica dentro da seção de dados, mas `-l logdev=DISPOSITIVO` permite movê-lo. A forma `-J device=` é do `tune2fs`/`mke2fs` (diário de ext3/4). O `-L` define o rótulo, e `-j` é a opção do `mke2fs` que cria um diário.
+
+### 104.1-032 | unica | 2
+ref: 101:p.435-436
+tags: FAT32, exFAT, limites
+Qual limitação do FAT32 faz o exFAT ser mais adequado para um cartão de memória usado para gravar vídeos grandes?
+= O tamanho máximo de um arquivo é de 4 GB
+- O FAT32 não aceita nomes longos de arquivo
+- O FAT32 só funciona em discos com até 2 GB
+- O FAT32 não é lido pelo Windows ou pelo macOS
+> No FAT32 cada arquivo pode ter no máximo 4 GB, e o exFAT eleva esse limite a 16 EB, com suporte nos três grandes sistemas operacionais. Nomes longos (até 255 caracteres) vêm da extensão VFAT. E o limite de 2 GB (4 GB, com clusters grandes) para o volume é do FAT16; um volume FAT32 chega a vários TB.
+
+### 104.1-033 | lacuna | 1
+ref: 101:p.436
+tags: exFAT, mkfs.exfat
+Complete o comando que cria um sistema de arquivos exFAT na partição `/dev/sdb2`: `mkfs.____ /dev/sdb2`
+= exfat
+> O utilitário é o `mkfs.exfat` (do pacote exfatprogs, em distribuições atuais). O exFAT foi criado para superar o limite de 4 GB por arquivo do FAT32 e é bem suportado por Windows, Linux e macOS.
+
+### 104.1-034 | lacuna | 1
+ref: 101:p.431
+tags: mkfs, -t, XFS
+Complete o comando genérico `mkfs` para criar um sistema de arquivos XFS: `mkfs -t ____ /dev/sdb1`
+= xfs
+> `mkfs -t TIPO` chama o utilitário específico (`mkfs.xfs`, `mkfs.ext4`, `mkfs.vfat`...). As ferramentas do XFS vêm no pacote `xfsprogs`.
+
+### 104.1-035 | lacuna | 2
+ref: 101:p.424-425
+tags: fdisk, GPT, g
+Nas versões atuais do `fdisk`, qual comando do menu cria uma nova tabela de partições **GPT** vazia (em vez de MBR, criada com `o`)?
+= g
+> No `fdisk` do util-linux 2.23 em diante, `g` cria uma tabela GPT vazia e `o` cria uma tabela DOS (MBR). Nada é gravado até o comando `w`.
+
+### 104.1-036 | unica | 2
+ref: 101:p.434
+tags: mkfs.xfs, bloco
+Qual é o tamanho de bloco padrão do XFS criado com `mkfs.xfs` sem opções extras?
+= 4096 bytes (4 KiB)
+- 1024 bytes (1 KiB)
+- 512 bytes
+- 65536 bytes (64 KiB)
+> O valor padrão do XFS é 4096 bytes; o mínimo é 512 e o máximo, 65536, ajustáveis por `-b size=`. Em ext2/3/4 pequenos, o padrão pode ser 1024 (e 4096 em sistemas maiores).

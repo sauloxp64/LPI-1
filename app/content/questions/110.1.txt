@@ -1,0 +1,606 @@
+### 110.1-001 | unica | 2
+ref: 102:p.502-503
+tags: find, suid, -perm
+Qual comando localiza, a partir de `/usr`, todos os arquivos com o bit SUID ativo, independentemente das demais permissões?
+- find /usr -type f -perm 4000
+= find /usr -perm -4000
+- find /usr -perm -2000
+- find /usr -perm /6000
+> Com o prefixo `-` (`-perm -4000`), o `find` exige que todos os bits informados estejam ativos, aceitando quaisquer outros: é a busca por "SUID e o que mais houver". Sem prefixo (`-perm 4000`), a comparação é exata e só encontra arquivos cujo modo seja exatamente 4000 (`---S------`), o que raramente existe. `-2000` procura SGID, e `/6000` procura SUID ou SGID.
+
+### 110.1-002 | unica | 3
+ref: 102:p.503-504
+tags: find, suid, sgid, -perm
+Qual comando lista os arquivos de `/usr/bin` que possuem o bit SUID ou o bit SGID (um deles ou ambos)?
+- find /usr/bin -type f -perm -6000
+= find /usr/bin -perm /6000
+- find /usr/bin -perm 6000
+- find /usr/bin -perm +6000
+> Com o prefixo `/`, o `find` encontra arquivos que tenham qualquer um dos bits do modo: 4000 (SUID) ou 2000 (SGID), somados em 6000. Com `-6000`, só aparecem os arquivos que têm os dois bits ao mesmo tempo. Sem prefixo, a comparação é exata. A forma antiga `+6000` foi removida das versões atuais do GNU find e gera "invalid mode".
+
+### 110.1-003 | lacuna | 2
+ref: 102:p.503
+tags: find, sgid, -perm
+Complete o comando para localizar arquivos com o bit SGID ativo (independentemente das demais permissões) em `/usr/bin`:
+
+`find /usr/bin -type f -perm ____`
+= -2000
+= -g+s
+= /2000
+= -02000
+> O valor numérico do SGID é 2000, e `-` antes dele exige que o bit esteja ativo, aceitando outros. A notação simbólica equivalente é `-g+s`. Sem o `-`, a comparação seria exata e quase nenhum arquivo apareceria.
+
+### 110.1-004 | multipla | 3
+ref: 102:p.502-503
+tags: find, suid, -perm
+Quais comandos encontram arquivos com o bit SUID ativo, mesmo que eles também tenham outras permissões, como `rwsr-xr-x`?
+= find / -perm -4000
+= find / -perm -u+s
+= find / -perm /4000
+- find / -perm 4000
+- find / -perm -2000
+> `-perm -4000` e `-perm -u+s` exigem o bit SUID e aceitam qualquer outro; `-perm /4000` aceita arquivos com qualquer um dos bits do modo, e como só há um (SUID), o resultado é o mesmo. `-perm 4000` é comparação exata (só modo 4000 puro), e `-2000` procura SGID.
+
+### 110.1-005 | unica | 2
+ref: 102:p.502
+tags: suid, ls
+Um arquivo aparece na listagem com as permissões abaixo:
+
+```
+-rwSr--r-- 1 root root 0 out 19 17:51 relatorio
+```
+
+O que significa o `S` maiúsculo?
+= O SUID está ativo, mas o dono não tem permissão de execução
+- O SGID está ativo e o grupo do arquivo não tem permissão de execução
+- O sticky bit está ativo e os demais usuários não podem executá-lo
+- O arquivo está bloqueado para escrita por qualquer usuário
+> No campo de execução do dono, `s` minúsculo indica SUID com permissão de execução (como em `/usr/bin/passwd`), e `S` maiúsculo indica SUID sem o `x` do dono, o que normalmente não tem efeito prático. O SGID aparece no campo de execução do grupo, e o sticky bit, no de outros (como `t`/`T`).
+
+### 110.1-006 | unica | 2
+ref: 102:p.502
+tags: sgid, diretório
+O que muda ao aplicar `chmod 2755 projetos/` em um diretório?
+= Os arquivos criados dentro dele herdam o grupo do diretório
+- Somente o dono do diretório pode apagar os arquivos que estão dentro dele
+- Os arquivos criados dentro dele passam a ser executados com os privilégios do dono
+- Somente os membros do grupo do diretório conseguem entrar nele
+> Em diretórios, o bit SGID (2000) faz com que os novos arquivos e subdiretórios recebam o grupo do diretório, e não o grupo primário de quem os criou, o que facilita pastas compartilhadas. A restrição de apagar apenas os próprios arquivos é do sticky bit (`chmod +t`, como em `/tmp`). A execução com privilégios do dono é efeito do SUID em arquivos.
+
+### 110.1-007 | unica | 2
+ref: 102:p.528, 102:p.535
+tags: find, sticky bit
+Qual comando localiza os diretórios do diretório inicial que têm o sticky bit ativo, independentemente das demais permissões?
+- find ~ -type d -perm 1000
+= find ~ -type d -perm -1000
+- find ~ -type d -perm -2000 -print
+- find ~ -type d -perm -4000
+> O sticky bit vale 1000. Com `-perm -1000`, o `find` aceita qualquer diretório em que esse bit esteja ativo (por exemplo, modo 1755 ou 1777). `-perm 1000` só encontraria modos exatamente iguais a 1000, e `-2000`/`-4000` procuram SGID e SUID.
+
+### 110.1-008 | unica | 2
+ref: 102:p.504-505
+tags: passwd, -S
+A saída de `passwd -S carol` é:
+
+```
+carol P 2026-10-19 0 99999 7 -1
+```
+
+O que significa o valor `99999`?
+- O número máximo de logins simultâneos que carol pode manter abertos
+- O período de inatividade da conta após a senha vencer, em dias
+= A idade máxima da senha em dias; 99999 equivale a nunca expirar
+- O número de dias de aviso antes do vencimento da senha
+> Os campos de `passwd -S` são: login, estado (`P` senha utilizável, `L` bloqueada, `NP` sem senha), data da última alteração, idade mínima (0), idade máxima (99999), período de aviso (7) e período de inatividade (-1, sem inatividade). O valor 99999 dias equivale a mais de 270 anos, e por isso a senha praticamente nunca expira.
+
+### 110.1-009 | lacuna | 1
+ref: 102:p.505
+tags: passwd, bloqueio
+Complete o comando para bloquear a senha da conta carol usando o `passwd`:
+
+`passwd ____ carol`
+= -l
+= --lock
+> `passwd -l` coloca `!` antes do hash em `/etc/shadow`, impedindo o login por senha. O inverso é `passwd -u` (`--unlock`). O `usermod -L` e `usermod -U` fazem o mesmo.
+
+### 110.1-010 | unica | 2
+ref: 102:p.507, 102:p.531
+tags: chage, -M
+Como root, qual comando faz a senha de mary ser válida por no máximo 365 dias?
+- chage -m 365 mary
+= chage -M 365 mary
+- chage -E 365 mary
+- chage --warndays 365 mary
+> `chage -M` (`--maxdays`) define a idade máxima da senha. Já `-m` define a idade mínima entre trocas, `-E` define a data de expiração da conta (e `365` seria interpretado como o 365º dia desde 01/01/1970, ou seja, um dia em 1971) e `-W` define os dias de aviso.
+
+### 110.1-011 | unica | 2
+ref: 102:p.507, 102:p.532
+tags: chage, -m
+Qual comando permite que mary altere a senha a qualquer momento, sem intervalo mínimo entre as trocas?
+- chage -M 0 mary
+= chage -m 0 mary
+- chage -d 0 mary
+- chage --inactive 0 mary
+> `chage -m` (`--mindays`) define o número mínimo de dias entre trocas de senha, e o valor 0 libera a troca a qualquer momento. `-M 0` definiria a validade máxima como zero dia (senha já vencida), `-d 0` obriga a troca no próximo login e `-I 0` mexe com o período de inatividade.
+
+### 110.1-012 | unica | 3
+ref: 102:p.507, 102:p.532
+tags: chage, -W, -E
+Qual é o efeito de `chage -W 7 -E 2050-08-20 mary`?
+- Obriga mary a trocar a senha a cada 7 dias até 20/08/2050
+- Impede a troca da senha por 7 dias e a faz expirar em 20/08/2050
+= Avisa 7 dias antes de a senha expirar; a conta expira em 20/08/2050
+- Desativa a conta após 7 dias de inatividade e a remove em 20/08/2050
+> `-W` (`--warndays`) define quantos dias antes do vencimento da senha o usuário é avisado, e `-E` (`--expiredate`) define a data em que a conta expira e passa a ser bloqueada. A idade mínima seria `-m`, a inatividade seria `-I`, e nenhum desses comandos remove a conta.
+
+### 110.1-013 | multipla | 3
+ref: 102:p.506-507, 102:p.531, 102:p.535
+tags: chage, passwd, usermod, equivalência
+Quais pares de comandos são equivalentes (alteram o mesmo campo de expiração em `/etc/shadow`)?
+= usermod -e 2030-12-31 carol e chage -E 2030-12-31 carol
+= usermod -f 3 carol e chage -I 3 carol
+= passwd -x 60 carol e chage -M 60 carol
+- passwd -w 60 carol e chage -M 60 carol
+- passwd -n 5 carol e chage -I 5 carol
+> `usermod -e` equivale a `chage -E` (data de expiração da conta), `usermod -f` a `chage -I` (inatividade após a expiração da senha) e `passwd -x` a `chage -M` (idade máxima). Já `passwd -w` corresponde a `chage -W` (aviso), e `passwd -n` a `chage -m` (idade mínima).
+
+### 110.1-014 | unica | 1
+ref: 102:p.508
+tags: lsof, -i, porta
+Qual comando lista os processos que têm arquivos de rede abertos na porta 22?
+= lsof -i :22
+- lsof -p 22
+- lsof -u 22
+- lsof -d 22
+> `lsof -i` seleciona arquivos de rede (soquetes), e o sufixo `:22` filtra pela porta. As demais são opções reais com outro significado: `-p` filtra por PID, `-u` por usuário e `-d` por número de descritor de arquivo.
+
+### 110.1-015 | lacuna | 2
+ref: 102:p.508-509, 102:p.532
+tags: lsof, -i, host
+Complete o comando para mostrar os arquivos de rede do host 192.168.1.55 na porta 22:
+
+`lsof ____@192.168.1.55:22`
+= -i
+= -iTCP
+= -i4
+> A sintaxe é `lsof -i[protocolo][@host][:porta]`. Sem `-i`, o `@host:porta` seria interpretado como nome de arquivo. Várias portas podem ser separadas por vírgula (`:22,80`) e intervalos usam hífen.
+
+### 110.1-016 | unica | 2
+ref: 102:p.509-510
+tags: fuser, -n, porta
+Qual comando exibe, de forma detalhada (verbose), os processos que acessam a porta TCP 80?
+- fuser -v -n 80 tcp
+= fuser -vn tcp 80
+- fuser -k 80/tcp
+- fuser -vm tcp 80
+> Com `-n` (`--namespace`) informam-se primeiro o protocolo e depois o número da porta: `fuser -vn tcp 80`, equivalente a `fuser -v 80/tcp`. Trocar a ordem gera "Invalid namespace name". `-k` não apenas lista: envia sinal para encerrar os processos. `-m` trata o argumento como ponto de montagem ou arquivo, não como porta.
+
+### 110.1-017 | unica | 2
+ref: 102:p.509-510
+tags: fuser, ACCESS
+Observe a saída do `fuser`:
+
+```
+                    USER        PID ACCESS COMMAND
+/home/carol:        carol      2210 ..c.. bash
+```
+
+O que indica a letra `c` na coluna ACCESS?
+= O processo usa esse diretório como diretório atual
+- O processo mantém esse arquivo aberto para escrita no momento
+- O processo foi iniciado a partir desse arquivo executável
+- O processo usa o diretório como diretório raiz
+> Na coluna ACCESS: `c` é o diretório atual, `e` um executável em execução, `f` arquivo aberto, `F` arquivo aberto para escrita, `r` diretório raiz e `m` arquivo mapeado em memória ou biblioteca compartilhada. Aqui o bash de carol está com `/home/carol` como diretório atual.
+
+### 110.1-018 | unica | 2
+ref: 102:p.511-512
+tags: netstat, -l, -t, -n
+Qual comando lista apenas os soquetes TCP em escuta, com endereços e portas em formato numérico?
+- netstat -tn
+= netstat -ltn
+- netstat -lun
+- netstat -l --tcp
+> `-l` seleciona os soquetes em escuta, `-t` restringe ao TCP e `-n` mostra endereços e portas numericamente (22 em vez de ssh). `-tn` mostra só as conexões estabelecidas, `-lun` lista UDP, e `-l --tcp` (ou `-lt`) lista TCP em escuta, mas com nomes de serviços em vez de números.
+
+### 110.1-019 | lacuna | 2
+ref: 102:p.511, 102:p.532
+tags: netstat, udp, -l
+Complete o comando para listar todos os soquetes UDP em escuta (use somente as opções de escuta e de protocolo, sem `-n`):
+
+`netstat ____`
+= -lu
+= -ul
+= -l -u
+= -u -l
+= --listening --udp
+= --udp --listening
+> `-l` (`--listening`) restringe a soquetes em escuta, e `-u` (`--udp`) ao protocolo UDP. As opções curtas podem ser combinadas (`-lu`). Para TCP, usa-se `-t`, e `-n` desativa a resolução de nomes.
+
+### 110.1-020 | unica | 3
+ref: 102:p.511-512
+tags: netstat, conexões estabelecidas
+O que exibe o comando `netstat -tn` (sem a opção `-l`)?
+- Os soquetes TCP em escuta, com endereços e portas em formato numérico
+- Todas as conexões TCP e UDP, tanto estabelecidas quanto em escuta
+= Apenas as conexões TCP estabelecidas, em formato numérico
+- A tabela de roteamento, com os endereços em formato numérico
+> Sem `-l` (ou `-a`), o `netstat` omite os soquetes em escuta e mostra só as conexões ativas, no cabeçalho "Active Internet connections (w/o servers)". Para ver os servidores em escuta, é preciso `-l`; para todos, `-a`. A tabela de roteamento é obtida com `-r`.
+
+### 110.1-021 | unica | 2
+ref: 102:p.513, 102:p.532
+tags: nmap, -p
+Qual comando varre somente as portas 22 e 80 do host 192.168.1.55?
+= nmap -p 22,80 192.168.1.55
+- nmap -p 22-80 192.168.1.55
+- nmap -sP 22,80 192.168.1.55
+- nmap -F 22,80 192.168.1.55
+> A opção `-p` aceita uma lista separada por vírgulas (22,80), intervalos com hífen (22-80, que examinaria 59 portas) e nomes de serviço (ssh,http). `-F` faz uma varredura rápida das 100 portas mais comuns e não recebe lista de portas.
+
+### 110.1-022 | lacuna | 2
+ref: 102:p.513, 102:p.535
+tags: nmap, -p, todas as portas
+Complete o comando para varrer todas as 65535 portas TCP do host local usando a forma abreviada:
+
+`nmap ____ localhost`
+= -p-
+= -p 1-65535
+> `-p-` equivale a `-p 1-65535`. Sem `-p`, o `nmap` examina somente as 1000 portas mais comuns.
+
+### 110.1-023 | unica | 1
+ref: 102:p.514
+tags: nmap, -F
+O que faz a opção `-F` do nmap?
+= Faz uma varredura rápida das 100 portas mais comuns
+- Examina todas as 65535 portas, forçando o término do scan
+- Ignora o firewall do alvo, enviando pacotes fragmentados
+- Examina apenas as portas UDP mais usadas pelo alvo
+> `-F` significa varredura rápida (fast): em vez das 1000 portas padrão, examina as 100 mais comuns. Para todas as portas, usa-se `-p-`. Fragmentação de pacotes é `-f` (minúsculo), e UDP exige `-sU`.
+
+### 110.1-024 | unica | 3
+ref: 102:p.512-513
+tags: nmap, portas padrão
+Um administrador executa `nmap localhost` (sem a opção `-p`) e obtém:
+
+```
+Not shown: 998 closed tcp ports (reset)
+PORT     STATE SERVICE
+80/tcp   open  http
+8080/tcp open  http-proxy
+```
+
+Quantas portas o nmap examinou nessa varredura?
+- 100
+- 998
+= 1000
+- 65535
+> Sem `-p`, o `nmap` examina as 1000 portas TCP mais comuns. A linha "Not shown: 998 closed" soma-se às 2 portas listadas (80 e 8080), dando 1000. Com `-F` seriam 100 portas, e com `-p-`, as 65535.
+
+### 110.1-025 | unica | 2
+ref: 102:p.513
+tags: nmap, sub-rede, --exclude
+Qual comando varre todos os hosts da rede 192.168.1.0/24, exceto o 192.168.1.7?
+= nmap 192.168.1.0/24 --exclude 192.168.1.7
+- nmap 192.168.1.0/24 --skip-host 192.168.1.7
+- nmap 192.168.1.0/24 -p !192.168.1.7
+- nmap 192.168.1.0/24 --not 192.168.1.7
+> A notação CIDR (ou curinga, como `192.168.1.*`) define a sub-rede, e `--exclude` retira hosts do alvo. Os outros nomes de opção não existem, e `-p` é só para portas.
+
+### 110.1-026 | unica | 1
+ref: 102:p.507, 102:p.512
+tags: nmap, netstat, lsof
+Para descobrir, a partir de outra máquina da rede, quais portas TCP estão abertas em 192.168.1.55, sem ter acesso de login nela, qual ferramenta é adequada?
+= nmap
+- netstat
+- lsof
+- fuser
+> O `nmap` é um scanner de portas: envia pacotes ao alvo pela rede e analisa as respostas, por isso funciona a distância. `netstat`, `lsof` e `fuser` mostram sockets e processos do sistema local e precisam ser executados na própria máquina que se quer examinar.
+
+### 110.1-027 | multipla | 2
+ref: 102:p.507-514
+tags: portas abertas, netstat, lsof, nmap
+Quais comandos podem ser usados para descobrir portas abertas (em escuta) em um sistema Linux?
+= netstat -ltu
+= lsof -i
+= nmap localhost
+- ulimit -a
+- last -i
+> `netstat -ltu` lista soquetes TCP e UDP em escuta, `lsof -i` mostra os arquivos de rede abertos com o processo dono, e `nmap localhost` examina as portas do host local pela interface de rede. `ulimit -a` lista limites de recursos do shell, e `last -i` mostra o histórico de logins com endereços IP.
+
+### 110.1-028 | unica | 1
+ref: 102:p.514-515
+tags: ulimit, -a
+Qual comando exibe todos os limites flexíveis (soft) em vigor no shell atual?
+= ulimit -a
+- ulimit -Ha
+- ulimit -l
+- ulimit -s
+> `ulimit -a` (equivalente a `-Sa`) mostra todos os limites flexíveis. Os limites rígidos (hard) vêm com `-Ha`. As opções `-l` e `-s` mostram apenas um recurso: a memória máxima que pode ser bloqueada e o tamanho da pilha, respectivamente.
+
+### 110.1-029 | unica | 2
+ref: 102:p.515
+tags: ulimit, -u
+Qual opção do `ulimit` limita o número máximo de processos que um único usuário pode ter?
+= -u
+- -p
+- -n
+- -v
+> `-u` controla o número máximo de processos de usuário. As demais são outros recursos: `-p` é o tamanho do pipe, `-n` o número de arquivos abertos e `-v` a quantidade máxima de memória virtual.
+
+### 110.1-030 | unica | 3
+ref: 102:p.516, 102:p.533
+tags: ulimit, hard, soft
+Um usuário comum executa, nesta ordem, os comandos abaixo no mesmo shell, partindo de limites ilimitados:
+
+```
+$ ulimit -Sf 5000
+$ ulimit -Hf 10000
+$ ulimit -Hf 15000
+```
+
+O que acontece com o terceiro comando?
+- Funciona: o usuário pode elevar o limite rígido, mas não o flexível
+- Funciona: o novo valor passa a valer para todos os usuários do sistema
+= Falha com "Operation not permitted": só o root aumenta o limite rígido
+- Falha com "Invalid argument": o limite rígido não pode ficar acima do flexível
+> Um usuário comum pode diminuir o limite rígido e aumentar o flexível até o valor do rígido, mas não pode voltar a elevar o limite rígido depois de reduzido: o shell retorna `cannot modify limit: Operation not permitted` (testado no laboratório com o usuário `nobody`). O limite se aplica apenas ao shell e aos seus filhos, e não a outros usuários.
+> A regra é limite flexível menor ou igual ao rígido: por isso o segundo comando funciona (10000 é maior que 5000), enquanto `ulimit -Sf 12000` falharia com "Invalid argument". Atenção: reduzir só o limite rígido (`ulimit -H`) abaixo de um limite flexível `unlimited` também falha com "Invalid argument", e é por isso que o exemplo começa fixando o flexível.
+
+### 110.1-031 | unica | 2
+ref: 102:p.516
+tags: ulimit, -S, -H
+O root executa os comandos abaixo em um shell novo (limites iniciais `unlimited`):
+
+```
+# ulimit -f 500
+# ulimit -Sf
+# ulimit -Hf
+```
+
+Quais valores são exibidos pelos dois últimos comandos?
+- 500 e unlimited
+- unlimited e 500
+= 500 e 500
+- unlimited e unlimited
+> Ao definir um valor sem `-S` nem `-H`, o `ulimit` altera ambos os limites (flexível e rígido). Por isso `-Sf` e `-Hf` mostram 500. Para mexer em apenas um deles, usa-se `-S` ou `-H` explicitamente.
+
+### 110.1-032 | multipla | 2
+ref: 102:p.514-517
+tags: ulimit, soft, hard, limits.conf
+Quais afirmações sobre o `ulimit` são verdadeiras?
+= A opção -S refere-se ao limite flexível (soft), e -H, ao limite rígido (hard)
+= Ao definir um valor sem -S nem -H, ambos os limites são alterados
+= Limites persistentes entre sessões são configurados em /etc/security/limits.conf
+- Um usuário comum pode aumentar livremente o limite rígido dos próprios processos
+- Os valores definidos com ulimit em um shell são gravados em /etc/security/limits.conf
+> `-S` e `-H` escolhem qual limite é lido ou alterado; sem eles, a definição vale para os dois. O `ulimit` só afeta o shell atual e seus processos filhos; para valores permanentes ou por usuário, edita-se `/etc/security/limits.conf`. Aumentar o limite rígido é uma ação restrita ao root.
+
+### 110.1-033 | lacuna | 1
+ref: 102:p.516-517
+tags: limits.conf
+Qual arquivo guarda os limites de recursos persistentes aplicados a usuários e grupos?
+Informe o caminho completo.
+= /etc/security/limits.conf
+> O `/etc/security/limits.conf` (lido pelo módulo PAM `pam_limits`) define limites de processos, arquivos abertos, memória etc. que são aplicados no login. Os valores definidos diretamente com `ulimit` valem apenas para a sessão atual.
+
+### 110.1-034 | unica | 1
+ref: 102:p.517
+tags: ulimit, builtin
+O que é o `ulimit`, e onde se encontra a documentação dele?
+= É um comando interno do bash, documentado em man bash
+- É um programa em /usr/bin, documentado na página man ulimit
+- É um alias para o arquivo /etc/security/limits.conf, sem manual
+- É um utilitário do util-linux, com página de manual própria
+> `ulimit` é um comando interno (builtin) do shell, e por isso `type ulimit` responde "ulimit is a shell builtin". A documentação está em `man bash` (seção SHELL BUILTIN COMMANDS) ou em `help ulimit`.
+
+### 110.1-035 | unica | 2
+ref: 102:p.517-518
+tags: last, interpretar
+Uma linha da saída de `last` é:
+
+```
+mimi   pts/0   192.168.1.4   Sat Jun  6 12:07 - 14:24  (02:16)
+```
+
+Qual afirmação está correta?
+= mimi esteve conectada de 192.168.1.4 por 2 horas e 16 minutos
+- mimi ainda está conectada a partir de 192.168.1.4 desde as 12:07
+- mimi acessou pelo console local, e a sessão durou 14 horas e 24 minutos
+- mimi teve 2 acessos bem-sucedidos e 16 tentativas de login falhas
+> As colunas são: usuário, terminal (`pts/0`, um pseudoterminal), host de origem (aqui um IP, ou seja, acesso remoto), horários de início e fim e, entre parênteses, a duração da sessão (02:16). Uma sessão em andamento mostraria "still logged in". Tentativas falhas são consultadas com `lastb`.
+
+### 110.1-036 | lacuna | 1
+ref: 102:p.518
+tags: lastb, btmp
+Qual comando lista as tentativas de login que falharam?
+= lastb
+> `lastb` lê `/var/log/btmp`, onde ficam registradas as tentativas inválidas de login. Já o `last` lê `/var/log/wtmp`, com os logins bem-sucedidos e as reinicializações. O `lastb` normalmente exige privilégios de root.
+
+### 110.1-037 | unica | 1
+ref: 102:p.517
+tags: last, wtmp
+De qual arquivo o comando `last` obtém o histórico de logins?
+= /var/log/wtmp
+- /var/log/btmp
+- /var/log/lastlog
+- /var/log/auth.log
+> O `last` consulta `/var/log/wtmp`, e a primeira linha de rodapé ("wtmp begins ...") indica desde quando há registros. O `/var/log/btmp` guarda logins falhos (usado por `lastb`), e `lastlog` é outro banco de dados, com o último login de cada conta.
+
+### 110.1-038 | unica | 1
+ref: 102:p.518
+tags: who, w
+Qual é a diferença entre os comandos `who` e `w`?
+- O who mostra o histórico de logins, e o w mostra só os usuários atuais
+- O who lista apenas o root, enquanto o w lista todos os usuários conectados
+- O w exibe as tentativas de login com falha, e o who as bem-sucedidas
+= O w mostra também o que cada usuário está executando e a carga do sistema
+> Ambos listam os usuários conectados neste momento. O `w` acrescenta o tempo ocioso, os tempos de CPU, o comando em execução (coluna WHAT) e, na primeira linha, o tempo de atividade e a carga média. O histórico é do `last`, e logins falhos são do `lastb`.
+
+### 110.1-039 | unica | 2
+ref: 102:p.518
+tags: who, -b
+Qual comando exibe a data e a hora da última inicialização do sistema?
+= who -b
+- who -r
+- who -H
+- who -q
+> `who -b` (`--boot`) mostra o momento do último boot. `-r` exibe o runlevel atual, `-H` imprime o cabeçalho das colunas, e `-q` apenas conta os usuários conectados.
+
+### 110.1-040 | unica | 2
+ref: 102:p.518-519
+tags: w, load average
+Na primeira linha da saída do `w` aparece `load average: 0.04, 0.12, 0.09`. O que representam esses três números?
+= A média de processos na fila de execução em 1, 5 e 15 minutos
+- Os percentuais de CPU usados por usuários, sistema e processos ociosos
+- O uso médio de memória RAM, swap e disco nos últimos 15 minutos
+- O número de usuários conectados, de processos e de terminais abertos
+> A carga média (load average) mostra a quantidade média de trabalhos na fila de execução nos últimos 1, 5 e 15 minutos, na ordem. Percentuais de CPU e uso de memória são exibidos por outras ferramentas (como `top` e `free`).
+
+### 110.1-041 | unica | 3
+ref: 102:p.519
+tags: w, JCPU, PCPU
+Na saída do comando `w`, qual é a diferença entre as colunas JCPU e PCPU?
+= JCPU: CPU de todos os processos do terminal; PCPU: do processo em WHAT
+- JCPU: CPU consumida pelo usuário; PCPU: CPU consumida pelo kernel do sistema
+- JCPU: tempo desde o login; PCPU: tempo ocioso do terminal (equivalente a IDLE)
+- JCPU: percentual de CPU livre; PCPU: percentual de CPU em uso pelo usuário
+> JCPU é o tempo de CPU usado por todos os processos ligados ao terminal (incluindo jobs em segundo plano), e PCPU é o tempo de CPU do processo atual, aquele mostrado na coluna WHAT. O tempo ocioso é a coluna IDLE, e o horário de entrada é LOGIN@.
+
+### 110.1-042 | multipla | 2
+ref: 102:p.517-518
+tags: who, w, last, lastb
+Quais comandos mostram os usuários conectados neste momento, e não apenas o histórico?
+= who
+= w
+- last
+- lastb
+- uptime
+> `who` e `w` leem o registro de sessões ativas. O `last` mostra o histórico de logins (embora indique "still logged in" nas sessões abertas), e `lastb`, as tentativas falhas. O `uptime` mostra apenas o tempo ligado, o número de usuários e a carga, sem listar quem são.
+
+### 110.1-043 | unica | 2
+ref: 102:p.520
+tags: su, ambiente de login
+Qual é a diferença entre `su carol` e `su - carol`?
+= Com o traço, o shell é de login: carrega o ambiente e o diretório de carol
+- Com o traço, a senha de carol deixa de ser solicitada a quem não for root
+- Sem o traço, o comando é executado como root, e não como carol
+- Com o traço, o ambiente e o diretório atual do usuário anterior são mantidos
+> O traço (`-`, ou `-l`) faz o `su` iniciar um shell de login, carregando o ambiente do usuário de destino (`HOME`, `PATH`, diretório inicial). Sem ele, o diretório atual e a maior parte do ambiente (como o `PATH`) do usuário anterior são mantidos, e o prompt continua no diretório onde o root estava, e não em `/home/carol`. A troca de usuário ocorre nos dois casos, e a senha é pedida em ambos (exceto para o root).
+
+### 110.1-044 | multipla | 2
+ref: 102:p.520
+tags: sudo, su
+Quais são vantagens do `sudo` em relação ao `su`?
+= Não é preciso conhecer a senha do root: pede-se a senha do próprio usuário
+= É possível liberar apenas comandos específicos, por usuário ou grupo
+= Executa um único comando com privilégios, sem abrir um shell completo
+- Dispensa qualquer senha por padrão, em todas as distribuições
+- Só pode ser usado pelo root, para trocar de usuário
+- Dispensa a necessidade de editar o arquivo /etc/sudoers
+> O `sudo` aplica a política de `/etc/sudoers`: normalmente pede a senha do próprio usuário (e não a do root), pode restringir comandos e executa só o comando solicitado. O `su` exige a senha do usuário de destino e abre um novo shell. O `sudo` só funciona para quem estiver autorizado em `sudoers` e, por padrão, pede senha.
+
+### 110.1-045 | lacuna | 2
+ref: 102:p.520
+tags: sudo, -u
+Complete o comando para executar `whoami` como o usuário mimi usando o sudo:
+
+`sudo ____ mimi whoami`
+= -u
+= --user
+> `sudo -u usuario comando` executa o comando em nome do usuário indicado. Sem `-u`, o comando é executado como root. A saída desse exemplo seria `mimi`.
+
+### 110.1-046 | unica | 2
+ref: 102:p.521-522
+tags: sudoers, NOPASSWD
+Analise a linha de `/etc/sudoers`:
+
+```
+carol ALL=(ALL:ALL) NOPASSWD: /usr/bin/systemctl status apache2
+```
+
+O que ela permite?
+- Todos os membros do grupo carol executam qualquer comando como root, sem senha
+- carol executa qualquer comando como root, mas precisa informar a própria senha
+= carol roda só esse comando, como qualquer usuário ou grupo, sem digitar senha
+- carol executa o comando apenas no host chamado ALL, sem informar senha
+> O formato é `usuário host=(usuários:grupos) comandos`. Aqui `ALL` é o host (qualquer máquina), `(ALL:ALL)` indica que pode atuar como qualquer usuário e grupo, `NOPASSWD:` dispensa a senha e, ao final, o comando permitido é somente `systemctl status apache2`. Grupos seriam escritos com `%`.
+
+### 110.1-047 | lacuna | 1
+ref: 102:p.521
+tags: sudoers, grupo
+Complete a linha de `/etc/sudoers` para que os membros do grupo `sudo` possam executar qualquer comando:
+
+`____sudo ALL=(ALL:ALL) ALL`
+= %
+> Em `/etc/sudoers`, o caractere `%` antes do nome indica um grupo (`%sudo`). Sem ele, `sudo` seria interpretado como um usuário. Em distribuições da família Red Hat, o grupo administrativo equivalente é `wheel`.
+
+### 110.1-048 | lacuna | 1
+ref: 102:p.522
+tags: visudo, sudoers
+Qual comando deve ser usado para editar o `/etc/sudoers` com verificação de sintaxe antes de salvar?
+= visudo
+> O `visudo` abre o arquivo em um editor, bloqueia edições simultâneas e valida a sintaxe antes de gravar, evitando que um erro deixe o `sudo` inoperante. A opção `visudo -c` apenas verifica o arquivo sem editá-lo.
+
+### 110.1-049 | unica | 2
+ref: 102:p.522
+tags: usermod, sudo, grupo
+Em um Debian, qual comando concede a carol os privilégios administrativos do grupo `sudo` sem removê-la de seus outros grupos?
+= usermod -aG sudo carol
+- usermod -G sudo carol
+- useradd -aG sudo carol
+- usermod -aG wheel carol
+> `usermod -aG` acrescenta o grupo à lista de secundários sem apagar os existentes. Sem o `-a`, `-G sudo` substituiria todos os grupos secundários de carol. O `useradd` cria contas e não possui a opção `-a`. O grupo `wheel` é o equivalente do `sudo` nas distribuições Red Hat, e no Debian padrão ele nem existe.
+
+### 110.1-050 | unica | 3
+ref: 102:p.523-524, 102:p.533-534
+tags: sudoers, alias, User_Alias
+Considere apenas as linhas abaixo em `/etc/sudoers`:
+
+```
+User_Alias REGULARES = john, mary
+User_Alias ADMINS = carol, %sudo, !REGULARES
+Cmnd_Alias STATUS = /usr/bin/systemctl status apache2
+ADMINS ALL = STATUS
+```
+
+mary também é membro do grupo `sudo`. Ela pode executar `sudo systemctl status apache2`?
+= Não: a negação !REGULARES a exclui de ADMINS, mesmo sendo do grupo sudo
+- Sim: pertencer ao grupo sudo é suficiente para entrar no alias ADMINS
+- Sim: a negação ! só vale para comandos, e nunca para nomes de usuários
+- Não: a regra vale só para carol, o único nome citado explicitamente em ADMINS
+> Em um `User_Alias`, o `!` exclui quem pertencer ao alias citado. Como mary está em `REGULARES`, ela é removida de `ADMINS` mesmo participando do grupo `%sudo` (o `sudo -l -U mary` confirma que não há permissão). A regra vale para carol e para os membros de `sudo` que não estejam em `REGULARES`.
+
+### 110.1-051 | lacuna | 2
+ref: 102:p.521
+tags: sudoers, timestamp_timeout
+Qual opção de `Defaults` em `/etc/sudoers` define por quantos minutos o `sudo` mantém as credenciais em cache antes de pedir a senha novamente?
+= timestamp_timeout
+> Por padrão o `sudo` guarda a autenticação por 15 minutos (por usuário e terminal). `Defaults timestamp_timeout=1` reduz esse tempo para 1 minuto. Com valor 0, a senha é pedida sempre.
+
+### 110.1-052 | unica | 3
+ref: 102:p.516-517
+tags: limits.conf, maxlogins
+Qual linha de `/etc/security/limits.conf` limita o usuário carol a, no máximo, 2 logins simultâneos?
+- carol maxlogins hard 2
+= carol hard maxlogins 2
+- hard carol maxlogins 2
+- carol limit logins 2
+> Cada linha do `limits.conf` segue o formato `domínio tipo item valor`: o domínio é o usuário (ou `@grupo`, ou `*`), o tipo é `hard`, `soft` ou `-` (ambos), o item é o recurso (como `nproc`, `nofile`, `maxlogins`) e o último campo é o valor. Os limites são aplicados pelo módulo PAM `pam_limits` no login e, no caso de `maxlogins`, não valem para o root (UID 0).
+
+### 110.1-053 | lacuna | 2
+ref: 102:p.516-517
+tags: limits.conf, nproc, grupo
+Complete a linha de `/etc/security/limits.conf` para que cada usuário do grupo `devs` possa ter, no máximo, 200 processos (limite rígido):
+
+`@devs hard ____ 200`
+= nproc
+> O item `nproc` limita o número de processos. O `@` antes do nome indica que o domínio é um grupo. Outros itens comuns: `nofile` (arquivos abertos), `fsize` (tamanho de arquivo), `core` (core dumps) e `memlock` (memória bloqueada). A ferramenta equivalente de linha de comando para a sessão atual é `ulimit -u`.
+
+### 110.1-054 | unica | 2
+ref: 102:p.501-502
+tags: passwd, suid
+Um usuário comum consegue trocar a própria senha com o comando `passwd`, embora as senhas fiquem em `/etc/shadow`, que só o root pode gravar. Por quê?
+= O executável passwd tem o bit SUID e roda com os privilégios do dono, o root
+- O arquivo /etc/shadow permite escrita a qualquer usuário do sistema
+- O passwd chama o sudo automaticamente para elevar os privilégios do usuário
+- O usuário é temporariamente adicionado ao grupo shadow durante a troca
+> O `/usr/bin/passwd` tem o bit SUID (`-rwsr-xr-x root root`): quando executado, o processo assume a identidade do dono do arquivo (root) e pode gravar em `/etc/shadow`, validando antes que o usuário só altere a própria senha (o root pode alterar a de qualquer conta). `/etc/shadow` tem modo 640 e não é gravável por usuários comuns, e o `passwd` não depende do `sudo` nem de mudanças de grupo.

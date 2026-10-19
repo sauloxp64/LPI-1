@@ -1,0 +1,324 @@
+### 104.7-001 | unica | 1
+ref: 101:p.547
+tags: FHS, /opt
+Segundo o FHS, qual diretório de primeiro nível é destinado a pacotes de software opcionais (aplicações adicionais, geralmente em subdiretórios próprios)?
+- /srv
+= /opt
+- /mnt
+- /media
+> O FHS reserva `/opt` para pacotes de aplicativos opcionais, que costumam trazer seus próprios subdiretórios (por exemplo, `/opt/google/chrome`).
+> `/srv` guarda dados servidos pelo sistema (web, FTP), e `/mnt` e `/media` são pontos de montagem.
+
+### 104.7-002 | lacuna | 1
+ref: 101:p.546
+tags: FHS, /etc
+Qual diretório do FHS guarda os arquivos de configuração específicos do computador (host)?
+Informe o caminho absoluto.
+= /etc
+= /etc/
+> `/etc` contém a configuração local do sistema e dos serviços, com subdiretórios por programa quando necessário (por exemplo, `/etc/ssh`).
+
+### 104.7-003 | lacuna | 1
+ref: 101:p.548
+tags: FHS, /run, pid
+Qual diretório do FHS 3.0 guarda dados variáveis de tempo de execução, como arquivos `.pid` de processos ativos, e deve ser limpo durante a inicialização do sistema?
+= /run
+= /run/
+= /var/run
+> `/run` armazena dados de execução (sockets, arquivos `.pid`) e é esvaziado a cada boot. Antigamente essa finalidade pertencia a `/var/run`, que em sistemas atuais é um link simbólico para `/run`.
+
+### 104.7-004 | unica | 2
+ref: 101:p.548
+tags: FHS, /tmp, /var/tmp
+Um programa precisa gravar um arquivo temporário que deve continuar disponível depois de uma reinicialização do sistema. Qual diretório está de acordo com o FHS?
+- /tmp
+= /var/tmp
+- /run
+- /proc
+> `/var/tmp` é o local de temporários que não devem ser apagados na inicialização.
+> `/tmp` pode ser esvaziado no boot (o FHS recomenda isso), e os programas não devem presumir que seus arquivos serão preservados. `/run` é limpo obrigatoriamente na inicialização. `/proc` é um sistema de arquivos virtual do kernel, não serve para gravar arquivos.
+
+### 104.7-005 | unica | 2
+ref: 101:p.547
+tags: FHS, /srv
+Onde o FHS prevê que fiquem os dados fornecidos por serviços do sistema, como as páginas de um servidor web ou os arquivos de um servidor FTP?
+- /opt
+- /usr/share
+= /srv
+- /mnt
+> `/srv` guarda os dados de serviços oferecidos pelo sistema, por exemplo `/srv/www`.
+> `/opt` é para software opcional, `/usr/share` guarda dados estáticos independentes de arquitetura dos programas instalados (documentação, ícones), e `/mnt` é ponto de montagem temporária.
+
+### 104.7-006 | unica | 2
+ref: 101:p.546, 101:p.561
+tags: FHS, /media, /mnt, montagem
+Qual par de diretórios corresponde, nesta ordem, ao uso previsto no FHS para (1) mídias removíveis, como pendrives e CDs, e (2) sistemas de arquivos montados temporariamente pelo administrador?
+- /mnt e /media
+= /media e /mnt
+- /srv e /mnt
+- /media e /usr/local
+> Mídias removíveis montadas pelo usuário vão em `/media`. Montagens temporárias (por exemplo, um disco interno `/dev/sdc1` para manutenção) vão em `/mnt`.
+> A primeira opção inverte os dois diretórios. `/srv`, `/opt` e `/usr/local` não são pontos de montagem.
+
+### 104.7-007 | multipla | 2
+ref: 101:p.546-547
+tags: FHS, diretórios, finalidade
+Quais afirmações sobre diretórios do FHS são corretas?
+= `/boot` contém arquivos necessários à inicialização, como o kernel e o initrd
+= `/dev` contém arquivos de dispositivos, físicos ou virtuais
+= `/proc` é um sistema de arquivos virtual com dados de processos e do kernel
+- `/home` contém o diretório pessoal do superusuário
+- `/usr` guarda logs, filas de impressão e caixas de e-mail
+- `/lib` guarda os executáveis comuns usados por todos os usuários
+> `/boot` guarda o kernel e o initrd, `/dev` guarda os arquivos de dispositivo (como `/dev/sda`) e `/proc` é um sistema de arquivos virtual criado pelo kernel.
+> O diretório pessoal do root é `/root`, e não um subdiretório de `/home`. Logs, filas de impressão e caixas de e-mail são dados variáveis e ficam em `/var`, e `/usr` guarda principalmente dados e programas em geral somente para leitura. Os executáveis comuns ficam em `/bin` (e `/usr/bin`), enquanto `/lib` guarda bibliotecas compartilhadas.
+
+### 104.7-008 | unica | 2
+ref: 101:p.548-549
+tags: find, -name, curinga
+Em um diretório existem os arquivos `foto.jpg`, `foto.JPG`, `foto.jpg.zip` e `foto.jpeg`. Quais são exibidos por este comando?
+
+```
+$ find . -name '*.jpg*'
+```
+= ./foto.jpg e ./foto.jpg.zip
+- Somente ./foto.jpg
+- ./foto.jpg e ./foto.JPG
+- ./foto.jpg, ./foto.JPG e ./foto.jpg.zip
+> O padrão `*.jpg*` significa "qualquer coisa, `.jpg`, qualquer coisa". Casam `foto.jpg` e `foto.jpg.zip`.
+> `-name` diferencia maiúsculas de minúsculas, então `foto.JPG` não casa (seria necessário `-iname`). `foto.jpeg` não contém a sequência `.jpg`. O padrão `*.jpg` (sem o último asterisco) casaria somente `foto.jpg`.
+
+### 104.7-009 | lacuna | 1
+ref: 101:p.549
+tags: find, -iname
+Complete o comando para localizar, sem diferenciar maiúsculas de minúsculas, todos os arquivos terminados em `.jpg` ou `.JPG`:
+
+```
+$ find ~ ____ '*.jpg'
+```
+= -iname
+> `-iname` funciona como `-name`, mas ignora a diferença entre maiúsculas e minúsculas. Lembre-se de proteger o padrão com aspas simples para que o shell não o expanda.
+
+### 104.7-010 | unica | 3
+ref: 101:p.550-551
+tags: find, -perm
+Em um diretório existem quatro arquivos regulares:
+
+```
+-rw------- 1 ana ana 0 Mar  3 10:00 f600
+-rw-r--r-- 1 ana ana 0 Mar  3 10:00 f644
+-rw-rw-r-- 1 ana ana 0 Mar  3 10:00 f664
+-rwxr-xr-x 1 ana ana 0 Mar  3 10:00 f755
+```
+
+Quais deles são listados por `find . -type f -perm -644`?
+- Somente f644
+- f644 e f664
+= f644, f664 e f755
+- f600, f644, f664 e f755
+> Com o prefixo `-` antes do modo, o `find` seleciona arquivos que têm **pelo menos** aquelas permissões (todos os bits de 644 ligados), mesmo que tenham outras. `f644`, `f664` e `f755` incluem `rw-r--r--`.
+> `-perm 644` (sem sinal) seria o modo exato e listaria só `f644`. `f600` não tem leitura para grupo e outros, então não casa.
+
+### 104.7-011 | unica | 2
+ref: 101:p.551
+tags: find, -size
+Qual comando lista os arquivos regulares com mais de 100 MiB sob `/var`?
+- find /var -type f -size 100M
+- find /var -type f -size -100M
+= find /var -type f -size +100M
+- find /var -type f -size +102400
+> O `+` antes do tamanho significa "maior que". O sufixo `M` indica mebibytes.
+> Sem sinal, `-size 100M` busca tamanho igual a 100M (arredondado para cima), e `-100M` busca arquivos menores. Sem sufixo, o `find` conta em blocos de 512 bytes, então `+102400` seleciona arquivos com mais de 50 MiB, e não de 100 MiB.
+
+### 104.7-012 | unica | 2
+ref: 101:p.551-552
+tags: find, -mtime
+Qual comando lista os arquivos regulares de `/var/log` cuja última modificação ocorreu há **mais de 30 dias**?
+- find /var/log -type f -mtime 30
+- find /var/log -type f -mtime -30
+- find /var/log -type f -newermt '30 days ago'
+= find /var/log -type f -mtime +30
+> `-mtime N` conta em períodos de 24 horas desde a modificação. Com `+30`, o `find` seleciona o que foi modificado há mais de 30 períodos de 24 horas.
+> `-mtime 30` seleciona somente os modificados há exatamente 30 períodos de 24 horas, e `-mtime -30` seleciona os modificados há menos de 30 dias. `-newermt '30 days ago'` seleciona o oposto: arquivos modificados depois daquela data, ou seja, nos últimos 30 dias.
+
+### 104.7-013 | lacuna | 2
+ref: 101:p.549-550
+tags: find, -maxdepth
+Complete o comando para procurar arquivos `.conf` somente dentro de `/etc`, sem descer em seus subdiretórios:
+
+```
+$ find /etc ____ 1 -name '*.conf'
+```
+= -maxdepth
+> `-maxdepth N` limita a descida a N níveis. O ponto de partida tem nível 0, então `-maxdepth 1` considera apenas as entradas diretas de `/etc`. A opção `-mindepth N` faz o contrário e ignora os níveis menores que N.
+
+### 104.7-014 | unica | 3
+ref: 101:p.549-550, 101:p.562
+tags: find, -mindepth, -maxdepth
+Considere a estrutura abaixo e execute os comandos a partir de `.` (o ponto de partida conta como nível 0):
+
+```
+.
+├── a.txt
+└── d1
+    ├── b.txt
+    └── d2
+        └── c.txt
+```
+
+Qual comando exibe **somente** `./d1/d2/c.txt`?
+- find . -mindepth 2 -name '*.txt'
+- find . -maxdepth 3 -name '*.txt'
+= find . -mindepth 3 -name '*.txt'
+- find . -maxdepth 2 -mindepth 2 -name '*.txt'
+> `a.txt` está no nível 1, `b.txt` no nível 2 e `c.txt` no nível 3. Com `-mindepth 3`, só o nível 3 ou mais profundo é considerado.
+> `-mindepth 2` mostra `b.txt` e `c.txt`. `-maxdepth 3` mostra os três arquivos, e combinar `-maxdepth 2` com `-mindepth 2` mostra somente `b.txt`.
+
+### 104.7-015 | unica | 2
+ref: 101:p.548-552
+tags: find, -exec
+No comando abaixo, o que é substituído pelo `{}`?
+
+```
+$ find /srv -name '*.bak' -exec rm {} \;
+```
+- O diretório inicial da busca, `/srv`
+= O caminho de cada arquivo encontrado, um a um
+- A quantidade total de arquivos encontrados
+- O padrão `*.bak` informado em `-name`
+> A ação `-exec` executa o comando uma vez para cada resultado, e `{}` é substituído pelo caminho do arquivo encontrado. O `\;` marca o fim do comando (a barra impede que o shell interprete o `;`).
+> As demais opções descrevem coisas que o `find` não fornece ao `-exec`.
+
+### 104.7-016 | unica | 3
+ref: 101:p.552, 101:p.554
+tags: locate, updatedb, banco de dados
+A usuária Ana criou `/srv/relatorio.pdf` há dois minutos. O comando `find /srv -name relatorio.pdf` encontra o arquivo, mas `locate relatorio.pdf` não retorna nada. Qual é a explicação e a solução?
+- O `locate` só indexa arquivos que o usuário comum pode ler; é preciso rodar `sudo locate`
+= O banco de dados do `locate` é anterior ao arquivo; execute `updatedb` como root
+- O `locate` diferencia maiúsculas de minúsculas no nome; é preciso usar a opção `-i`
+- O `locate` ignora `/srv` por padrão; é preciso informar o diretório com `locate -d /srv`
+> O `find` percorre o sistema de arquivos no momento da execução, e o `locate` consulta um banco de dados gerado pelo `updatedb`. Arquivos criados depois da última atualização não aparecem, e `updatedb` (com privilégio de root) reconstrói o banco.
+> O nome já estava em minúsculas, então `-i` não resolveria. O `-d` do `locate` indica o arquivo de banco de dados a consultar, não um diretório de busca, e `/srv` não é ignorado por padrão. Como o `locate` consulta um banco que é montado pelo `updatedb`, executar com `sudo` não faz entrar no banco um arquivo criado depois da última atualização.
+
+### 104.7-017 | unica | 2
+ref: 101:p.552
+tags: locate, padrão, substring
+O banco de dados do `locate` contém estas entradas:
+
+```
+/data/a.jpg
+/data/b.JPG
+/data/c.jpg.zip
+/data/jpg_notes.txt
+/data/d.png
+```
+
+Quais entradas são exibidas por `locate jpg`?
+- /data/a.jpg e /data/c.jpg.zip
+- /data/a.jpg, /data/b.JPG e /data/c.jpg.zip
+= /data/a.jpg, /data/c.jpg.zip e /data/jpg_notes.txt
+- /data/a.jpg, /data/b.JPG, /data/c.jpg.zip e /data/jpg_notes.txt
+> O `locate` procura o padrão como substring em qualquer parte do caminho, e não como extensão. Por isso `jpg_notes.txt` aparece e `c.jpg.zip` também.
+> A busca diferencia maiúsculas de minúsculas, então `b.JPG` só apareceria com `locate -i jpg`.
+
+### 104.7-018 | multipla | 3
+ref: 101:p.552-554
+tags: locate, opções
+Quais afirmações sobre opções do `locate` são corretas?
+= `-c` exibe apenas a quantidade de entradas que casam, em vez de listá-las
+= `-e` exibe apenas as entradas cujos arquivos ainda existem
+= `-A` exibe apenas as entradas que casam com todos os padrões informados
+- `-i` faz a busca diferenciar maiúsculas de minúsculas
+- `-d` define o diretório onde a busca começa
+> `-c` conta, `-e` confere se o arquivo ainda existe antes de exibir (útil quando o banco está desatualizado) e `-A` exige que todos os padrões casem. Veja que o `-e` não faz aparecer arquivos criados depois da última atualização do banco.
+> `-i` faz o contrário: ignora a diferença entre maiúsculas e minúsculas. `-d` informa o caminho do arquivo de banco de dados a ser consultado, e não um diretório inicial.
+
+### 104.7-019 | lacuna | 2
+ref: 101:p.554
+tags: locate, -e
+Complete o comando para que o `locate` mostre somente resultados cujos arquivos ainda existem no momento da consulta:
+
+```
+$ locate ____ relatorio
+```
+= -e
+= --existing
+> A opção `-e` (`--existing`) faz o `locate` verificar se cada arquivo listado ainda existe. É a forma de evitar entradas obsoletas sem rodar `updatedb`, mas ela não inclui arquivos novos que ainda não estão no banco.
+
+### 104.7-020 | unica | 2
+ref: 101:p.554
+tags: updatedb.conf, PRUNEPATHS
+O administrador não quer que `updatedb` indexe os diretórios `/var/spool` e `/media`. Qual variável de `/etc/updatedb.conf` deve receber esses caminhos?
+- PRUNEFS
+- PRUNENAMES
+= PRUNEPATHS
+- PRUNE_BIND_MOUNTS
+> `PRUNEPATHS` recebe uma lista de caminhos de diretórios, separados por espaços, que o `updatedb` deve ignorar.
+> `PRUNEFS` lista tipos de sistemas de arquivos (nfs, iso9660), `PRUNENAMES` lista apenas nomes de diretórios, sem caminho (como `.git`), e `PRUNE_BIND_MOUNTS` é uma opção yes/no para ignorar montagens do tipo bind.
+
+### 104.7-021 | lacuna | 2
+ref: 101:p.554, 101:p.560
+tags: updatedb.conf, PRUNEFS
+Qual variável de `/etc/updatedb.conf` indica os tipos de sistemas de arquivos (por exemplo, `nfs` ou `iso9660`) que o `updatedb` não deve percorrer?
+= PRUNEFS
+> `PRUNEFS` lista os tipos de sistemas de arquivos ignorados, separados por espaços, e a comparação não diferencia maiúsculas de minúsculas (`NFS` e `nfs` são equivalentes).
+
+### 104.7-022 | multipla | 2
+ref: 101:p.555
+tags: which, type, -a
+Quais comandos exibem **todas** as ocorrências de `ls` encontradas nos diretórios do `PATH`, e não somente a primeira?
+= which -a ls
+= type -a ls
+- which ls
+- type -t ls
+- whereis -m ls
+> A opção `-a` de `which` e de `type` lista todos os caminhos que casam, na ordem do `PATH`. Em sistemas com /bin ligado a /usr/bin, o mesmo arquivo aparece pelos dois caminhos.
+> `which ls` mostra apenas a primeira ocorrência. `type -t ls` imprime só o tipo (`file`, `alias`, `builtin`...). `whereis -m ls` mostra páginas de manual.
+
+### 104.7-023 | lacuna | 2
+ref: 101:p.555-556
+tags: type, -t
+Qual opção do comando `type` faz com que ele imprima apenas uma palavra que classifica o nome (`alias`, `keyword`, `function`, `builtin` ou `file`)?
+= -t
+> `type -t nome` imprime apenas a classe do comando: por exemplo, `type -t cd` retorna `builtin` e `type -t ls` pode retornar `file` (ou `alias`, se houver um alias com esse nome). Sem `-t`, o `type` mostra uma frase completa com mais detalhes.
+
+### 104.7-024 | unica | 3
+ref: 101:p.554-556
+tags: which, whereis, PATH
+Um usuário comum, cujo `PATH` é `/usr/local/bin:/usr/bin:/bin`, executa os comandos abaixo:
+
+```
+$ which fdisk
+$ whereis fdisk
+fdisk: /usr/sbin/fdisk /usr/share/man/man8/fdisk.8.gz
+```
+
+O `which` não imprimiu nada. Por quê?
+- O `fdisk` não está instalado; o `whereis` lê apenas a página de manual
+= O `which` só procura nos diretórios do `PATH`, e `/usr/sbin` não está nele
+- O `which` só localiza programas de scripts; o `fdisk` é um binário
+- O `fdisk` é um comando interno do shell e, por isso, o `which` o ignora
+> `which` percorre apenas os diretórios listados em `$PATH`. Como `/usr/sbin` não está no `PATH` desse usuário, nada é encontrado (e o código de saída é 1).
+> `whereis` usa uma lista de locais padrão do sistema e localiza binários, páginas de manual e código-fonte, independentemente do `PATH`. Por isso mostra `/usr/sbin/fdisk` e a página do manual. O arquivo existe, então o `fdisk` está instalado, e ele é um executável comum, não um builtin.
+
+### 104.7-025 | unica | 2
+ref: 101:p.556, 101:p.560
+tags: whereis, -m
+Qual comando mostra **somente** o caminho da página de manual do `ifconfig`, sem listar binários?
+- whereis -b ifconfig
+- whereis -s ifconfig
+= whereis -m ifconfig
+- whereis -b -s ifconfig
+> A opção `-m` do `whereis` limita a saída às páginas de manual, `-b` aos binários e `-s` ao código-fonte.
+> Combinar `-b` e `-s` mostra binários e código-fonte juntos, mas não as páginas de manual.
+
+### 104.7-026 | unica | 3
+ref: 101:p.550-552, 101:p.560
+tags: find, -writable, -mtime, -size, -maxdepth
+Qual comando lista, **apenas no diretório atual** (sem descer em subdiretórios), os arquivos graváveis pelo usuário que foram modificados nos últimos 10 dias e têm mais de 4 GiB?
+- find . -maxdepth 1 -writable -mtime 10 -size +4G
+- find . -maxdepth 1 -writable -mtime -10 -size 4G
+= find . -maxdepth 1 -writable -mtime -10 -size +4G
+- find . -writable -mtime -10 -size +4G
+> `-maxdepth 1` mantém a busca no diretório atual, `-writable` seleciona o que o usuário pode gravar, `-mtime -10` seleciona o modificado há menos de 10 dias e `-size +4G` seleciona arquivos maiores que 4 GiB.
+> `-mtime 10` casa apenas o que foi modificado há exatamente 10 períodos de 24 horas, e `-size 4G` casa apenas o tamanho igual a 4 GiB (arredondado para cima). Sem `-maxdepth 1`, o `find` desce por todos os subdiretórios.

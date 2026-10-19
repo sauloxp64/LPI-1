@@ -1,0 +1,269 @@
+### 102.1-001 | unica | 1
+ref: 101:p.68, 101:p.75
+tags: ESP, /boot/efi, UEFI
+Em um sistema Linux com UEFI, em qual ponto de montagem a partição do sistema EFI (ESP) costuma ser montada?
+= /boot/efi
+- /boot/grub
+- /mnt/efi
+- /sys/firmware/efi
+> A ESP é montada em `/boot/efi`; é lá que ficam os aplicativos EFI (por exemplo, o bootloader) de cada sistema instalado. `/boot/grub` guarda arquivos do GRUB na partição `/boot`, `/mnt/efi` não é um padrão, e `/sys/firmware/efi` é uma parte do sysfs (exposta pelo kernel) usada para interagir com a UEFI, e não um ponto de montagem da ESP.
+
+### 102.1-002 | unica | 1
+ref: 101:p.68
+tags: ESP, FAT32, sistema de arquivos
+Qual sistema de arquivos é usado na partição do sistema EFI (ESP)?
+= Um sistema baseado em FAT, normalmente FAT32
+- ext4, por ser o padrão dos sistemas de arquivos Linux modernos
+- XFS, por suportar volumes grandes
+- NTFS, compatível com o Windows
+> A ESP é formatada com um sistema de arquivos baseado em FAT (na prática, FAT32), que o firmware UEFI sabe ler. Os sistemas ext4 e XFS são usados para dados no Linux, e o NTFS não faz parte do padrão exigido pela especificação para a ESP.
+
+### 102.1-003 | lacuna | 2
+ref: 101:p.68, 101:p.76
+tags: ESP, MBR, 0xEF
+Em um disco com esquema de particionamento MBR, qual é o ID (tipo) da partição do sistema EFI? Informe o valor em hexadecimal: ____
+= 0xEF
+= 0xef
+= EF
+= ef
+> No MBR, o tipo da ESP é `0xEF` (o `sfdisk --list-types` mostra `ef  EFI (FAT-12/16/32)`). Em discos GPT, o tipo é identificado pelo GUID `C12A7328-F81F-11D2-BA4B-00A0C93EC93B`.
+
+### 102.1-004 | unica | 3
+ref: 101:p.68
+tags: ESP, GPT, GUID
+Em um disco com tabela de partições GPT, qual identificador de tipo (GUID) caracteriza a partição do sistema EFI?
+= C12A7328-F81F-11D2-BA4B-00A0C93EC93B
+- 0FC63DAF-8483-4772-8E79-3D69D8477DE4
+- 21686148-6449-6E6F-744E-656564454649
+- Nenhum: a ESP em GPT usa o mesmo tipo das demais partições de dados do Linux
+> O GUID `C12A7328-F81F-11D2-BA4B-00A0C93EC93B` é o tipo "EFI System". `0FC63DAF-...` é o tipo "Linux filesystem" (dados Linux em geral) e `21686148-...` é a "BIOS boot partition", usada pelo GRUB em máquinas com BIOS e disco GPT (todos conferidos com `sfdisk --list-types --label gpt`).
+
+### 102.1-005 | unica | 2
+ref: 101:p.67-68
+tags: /boot, partição separada
+Qual é uma razão válida para manter o `/boot` em uma partição separada?
+= Garantir que o sistema ainda consiga carregar o kernel mesmo se houver falha no sistema de arquivos raiz
+- Permitir que o GRUB carregue o kernel a partir do diretório /home dos usuários
+- Atender a uma exigência do kernel, que não inicia sem partição /boot própria
+- Reduzir o consumo de memória durante a execução do sistema
+> Uma partição `/boot` separada (com kernel, initrd e arquivos do bootloader) permite inicializar mesmo se o sistema de arquivos raiz falhar, e também resolve casos em que a raiz usa um sistema de arquivos, criptografia ou compactação que o bootloader não entende. Tecnicamente ela não é obrigatória: o GRUB normalmente consegue montar a raiz e ler o diretório `/boot`.
+
+### 102.1-006 | unica | 3
+ref: 101:p.67-68
+tags: /boot, cilindro 1024, BIOS, CHS
+Para garantir máxima compatibilidade com BIOS antigas (endereçamento CHS), onde a partição `/boot` deve ficar no disco?
+= No início do disco, terminando antes do cilindro 1024 (cerca de 528 MB)
+- No final do disco, depois da partição de swap, para não ser fragmentada
+- Em qualquer posição, desde que seja a partição ativa (marcada com boot flag)
+- Dentro de um volume lógico do LVM criado ao final do disco
+> A BIOS original endereçava discos por cilindro/cabeça/setor (CHS) com limite de 1024 cilindros (cerca de 528 MB). Colocar `/boot` no início e terminar antes desse limite garante que o kernel possa ser lido em qualquer máquina. Para um sistema atual, o material sugere cerca de 300 MB para essa partição.
+
+### 102.1-007 | multipla | 2
+ref: 101:p.67-68
+tags: /boot, conteúdo, GRUB
+Quais afirmações sobre o diretório/partição `/boot` estão corretas?
+= Armazena o kernel, a imagem do disco RAM inicial (initrd) e os arquivos do gerenciador de boot
+= Os arquivos do GRUB ficam em /boot/grub
+- Deve ser sempre a última partição do disco
+- Precisa ser um volume lógico do LVM
+- Deve ser formatada como swap
+> O `/boot` guarda o kernel, o initrd e os arquivos do gerenciador de inicialização, que no GRUB ficam em `/boot/grub`. Não há exigência de que seja a última partição (pelo contrário, costuma ser a primeira) nem de que use LVM, e a swap não é montável nem contém arquivos.
+
+### 102.1-008 | unica | 2
+ref: 101:p.66
+tags: ponto de montagem, mount
+O diretório `/mnt/dados` contém alguns arquivos. O que acontece com eles quando uma partição é montada nesse diretório?
+= Ficam ocultos até a partição ser desmontada
+- São apagados permanentemente quando a partição é montada
+- São copiados automaticamente para dentro da partição montada
+- Passam a ser exibidos misturados com os arquivos da partição
+> Ao montar um sistema de arquivos, o conteúdo dele passa a ser exibido no ponto de montagem e o conteúdo original do diretório fica "encoberto" até a partição ser desmontada; nada é apagado nem copiado. O ponto de montagem precisa existir antes do mount.
+
+### 102.1-009 | unica | 2
+ref: 101:p.66-67
+tags: /media, /mnt, mídia removível
+Onde os ambientes de desktop modernos costumam montar automaticamente um pen drive USB chamado "FlashDrive" conectado pelo usuário `john`?
+= /media/john/FlashDrive
+- /mnt/john/FlashDrive
+- /home/john/Desktop/FlashDrive
+- /dev/john/FlashDrive
+> O `/media` é o local padrão para mídia removível, no formato `/media/USUÁRIO/RÓTULO` (em algumas distribuições, como Fedora e Arch, o caminho equivalente é `/run/media/USUÁRIO/RÓTULO`). O `/mnt` era o local tradicional e é recomendado para montagens **manuais** temporárias. Em `/dev` ficam os arquivos de dispositivo (e não os pontos de montagem).
+
+### 102.1-010 | lacuna | 1
+ref: 101:p.67, 101:p.75
+tags: /mnt, mount manual
+Em qual diretório se recomenda montar manualmente um sistema de arquivos temporário (por exemplo, um disco externo para uma tarefa rápida)? Informe o caminho: ____
+= /mnt
+= /mnt/
+> O material recomenda `/mnt` para montagens manuais, ficando `/media` para a montagem automática de mídia removível. Não é obrigatório: é possível montar a partição em qualquer diretório existente.
+
+### 102.1-011 | multipla | 2
+ref: 101:p.67
+tags: partições separadas, /home, /var
+Quais diretórios são candidatos naturais a ter uma partição (ou disco) próprio em um servidor?
+= /home
+= /var
+= /boot
+- /proc
+- /sys
+- /run
+> `/home` (dados dos usuários), `/var` (dados variáveis, como logs, bancos e web) e `/boot` costumam ser separados. `/proc` e `/sys` são pseudossistemas de arquivos gerados pelo kernel na memória, e `/run` é um sistema de arquivos temporário em memória; nenhum deles faz sentido em partição de disco.
+
+### 102.1-012 | unica | 2
+ref: 101:p.69
+tags: /var, estabilidade
+Qual é a principal vantagem de colocar `/var` em uma partição separada de `/`?
+= Um serviço que lote /var/log não esgota o espaço do sistema de arquivos raiz
+- Os logs passam a ser gravados mais rápido, por usarem outro barramento do computador
+- O diretório /var deixa de ser acessível a usuários comuns
+- O kernel libera o diretório /var para ser montado em swap
+> O `/var` abriga logs (`/var/log`), arquivos temporários (`/var/tmp`), cache e dados de serviços (`/var/www/html`, `/var/lib/mysql`). Se ele estiver na raiz, um serviço que escreva sem parar pode lotar o disco e comprometer todo o sistema; em partição própria, o problema fica contido. Em servidores, ainda facilita acrescentar espaço (ou mover o `/var` para outro disco).
+
+### 102.1-013 | unica | 2
+ref: 101:p.67
+tags: /home, reinstalação
+Qual é uma vantagem de manter o `/home` em uma partição separada?
+= Reinstalar o sistema sem afetar os arquivos pessoais dos usuários
+- Permitir que o kernel carregue mais rápido o initramfs
+- Impedir que os usuários gravem dados na raiz do sistema
+- Dispensar o uso de partição de swap
+> Com `/home` separado, é possível reformatar a raiz e reinstalar o sistema preservando os dados e as configurações dos usuários. Também permite dimensionar o espaço conforme o uso (por exemplo, edição de vídeo exige muito mais espaço que navegação na web). Não tem relação com o initramfs, com as permissões nem com a swap.
+
+### 102.1-014 | lacuna | 1
+ref: 101:p.69
+tags: swap, mkswap
+Qual utilitário prepara uma partição (ou arquivo) para ser usada como área de troca? ____ /dev/sdb2
+= mkswap
+> `mkswap` configura a área de troca (a partição também precisa ter o tipo adequado). Depois disso, a área é ativada com `swapon` e, para ser usada a cada boot, listada em `/etc/fstab`. A área de swap não é formatada com `mkfs`, pois não contém um sistema de arquivos.
+
+### 102.1-015 | lacuna | 2
+ref: 101:p.69-70
+tags: swap, swapon
+Depois de executar o `mkswap`, qual comando ativa a área de troca para uso imediato? ____ /dev/sdb2
+= swapon
+> `swapon` ativa a área de troca (e `swapoff` a desativa). O `mount` não funciona com swap, pois a partição não contém um sistema de arquivos acessível como diretório.
+
+### 102.1-016 | unica | 2
+ref: 101:p.69-70
+tags: swap, montagem
+Por que uma partição de troca (swap) não pode ser montada em um diretório como as demais?
+= Porque ela guarda páginas de memória usadas pelo kernel e não contém um sistema de arquivos navegável
+- Porque o swap só pode ser acessado pelo usuário root, e o mount exige um usuário comum
+- Porque a partição de troca é sempre criptografada e precisa de senha
+- Porque o swap só funciona em discos SSD, e o mount não os reconhece
+> O swap armazena páginas de memória movidas da RAM para o disco e não possui diretórios e arquivos para serem listados; por isso é ativada com `swapon`, e não montada. A restrição não tem relação com usuários comuns, criptografia ou tipo de disco.
+
+### 102.1-017 | unica | 2
+ref: 101:p.70, 101:p.76
+tags: swap, arquivo de troca
+Além de criar uma nova partição de troca, como é possível aumentar rapidamente o espaço de swap em um sistema Linux?
+= Criando e ativando um arquivo de troca
+- Montando o diretório /swap no sistema de arquivos raiz
+- Aumentando o valor de vm.swap_file no arquivo /etc/fstab
+- Convertendo a partição /boot em uma partição de troca
+> O Linux aceita arquivos de troca além de partições: cria-se o arquivo, prepara-se com `mkswap` e ativa-se com `swapon`. É uma forma rápida de aumentar o espaço de swap quando necessário, sem repartir o disco. Os demais itens não existem ou comprometeriam o boot.
+
+### 102.1-018 | unica | 1
+ref: 101:p.70
+tags: swap, dimensionamento
+Qual era a regra tradicional, dos primeiros anos do Linux, para dimensionar a área de swap, e que nem sempre se aplica atualmente?
+= Duas vezes a quantidade de RAM
+- Metade da quantidade de RAM
+- Exatamente 1 GB, independentemente da RAM
+- Dez por cento do tamanho do disco
+> A regra antiga era "duas vezes a RAM", mas o dimensionamento depende de como o sistema é usado e da RAM instalada (a Red Hat, por exemplo, publica tabelas que variam com a faixa de RAM e com o uso de hibernação). Para bancos de dados e outros serviços críticos, convém consultar a documentação do fornecedor.
+
+### 102.1-019 | unica | 2
+ref: 101:p.71
+tags: LVM, PV, VG, LV
+Qual é a organização do LVM, do nível mais baixo (físico) ao mais alto (lógico)?
+= Volumes Físicos (PV), agrupados em Grupos de Volumes (VG), divididos em Volumes Lógicos (LV)
+- Grupos de Volumes (VG), agrupados em Volumes Físicos (PV), divididos em Volumes Lógicos (LV)
+- Volumes Lógicos (LV), agrupados em Volumes Físicos (PV), que por sua vez são reunidos em Grupos de Volumes (VG)
+- Volumes Físicos (PV), divididos em Volumes Lógicos (LV), reunidos em Grupos de Volumes (VG)
+> Os PVs (partições, discos ou RAID) são reunidos em um VG, que se comporta como um único pool de espaço; o VG é então dividido em LVs, que o sistema enxerga como dispositivos de bloco comuns (`/dev/VG/LV`) onde se cria o sistema de arquivos. As outras ordens invertem os papéis dos níveis.
+
+### 102.1-020 | lacuna | 1
+ref: 101:p.71
+tags: LVM, PV, sigla
+No LVM, qual é a sigla do componente de nível mais baixo, que corresponde a um dispositivo de bloco do sistema, como uma partição de disco? ____
+= PV
+= pv
+> O Volume Físico (Physical Volume, PV) é a unidade básica do LVM: uma partição, um disco inteiro ou uma matriz RAID preparada com `pvcreate`. Os PVs são agrupados em Grupos de Volumes (VG).
+
+### 102.1-021 | unica | 2
+ref: 101:p.71, 101:p.76
+tags: LVM, extensões, tamanho do LV
+Em um grupo de volumes que usa extensões físicas de 4 MiB (valor padrão), um volume lógico foi criado com 250 extensões. Qual é o tamanho desse volume?
+= 1000 MiB
+- 250 MiB
+- 62,5 MiB (250 ÷ 4)
+- 4 MiB
+> O tamanho de um LV é o tamanho da extensão física multiplicado pelo número de extensões: 250 × 4 MiB = 1000 MiB. Para aumentar o LV, basta acrescentar extensões livres do VG; para reduzir, retiram-se extensões. O valor padrão de 4 MiB conferiu-se na configuração `physical_extent_size=4096` (em KiB) do LVM.
+
+### 102.1-022 | lacuna | 2
+ref: 101:p.71
+tags: LVM, /dev, volume lógico
+Um volume lógico chamado `dados` no grupo de volumes `vg0` é acessado, depois de criado, pelo dispositivo de bloco `/dev/VGNAME/LVNAME`. Qual é o caminho completo desse volume? ____
+= /dev/vg0/dados
+= /dev/mapper/vg0-dados
+> O LVM cria o nó `/dev/<VG>/<LV>`, no caso `/dev/vg0/dados`, que na verdade é um link para o nó do device mapper `/dev/mapper/vg0-dados` (traço separando VG e LV). Depois disso, formata-se com `mkfs.ext4` (por exemplo) e monta-se normalmente com `mount` ou em `/etc/fstab`.
+
+### 102.1-023 | unica | 3
+ref: 101:p.66, 101:p.70-71
+tags: LVM, vantagens, partições
+Qual afirmação sobre LVM e partições tradicionais está correta?
+= Com LVM, um volume lógico pode usar espaço de partições em discos diferentes; uma partição não abrange vários discos
+- Com LVM, uma partição tradicional passa a abranger vários discos sem outras mudanças
+- Em ambos, a única forma de ampliar um sistema de arquivos é mover os dados para um disco maior
+- Um volume lógico exige que o disco inteiro seja dedicado a um único LV
+> Partições não podem abranger vários discos, mas um grupo de volumes pode reunir vários PVs, inclusive em discos diferentes, e dele saem os LVs. Isso é útil quando uma partição precisa de mais espaço sem migrar dados: acrescentam-se extensões do VG ao LV. Um VG pode conter vários LVs, e discos inteiros não precisam ser dedicados a um único volume.
+
+### 102.1-024 | unica | 2
+ref: 101:p.71, 101:p.76
+tags: LVM, extensões, VG
+Qual é a menor unidade de alocação dentro de um grupo de volumes (VG) do LVM?
+= A extensão (extent)
+- O setor de 512 bytes do disco
+- O bloco do sistema de arquivos
+- O volume físico (PV)
+> O VG e os volumes são subdivididos em extensões de tamanho fixo: físicas (PE) nos PVs e lógicas (LE) nos LVs, cada LE mapeada normalmente para uma PE. O tamanho de um LV é determinado pelo número de extensões. Setor e bloco do sistema de arquivos são conceitos de camadas inferior e superior, e o PV é composto por muitas extensões.
+
+### 102.1-025 | lacuna | 3
+ref: 101:p.71
+tags: LVM, extensões, tamanho do LV
+Um volume lógico de 2 GiB é criado em um grupo de volumes cujas extensões físicas têm o tamanho padrão (4 MiB). De quantas extensões ele é formado? ____
+= 512
+> Cada extensão tem 4 MiB e 2 GiB = 2048 MiB, portanto são 2048 ÷ 4 = 512 extensões. O tamanho do LV é sempre o tamanho da extensão física multiplicado pelo número de extensões.
+
+### 102.1-026 | unica | 1
+ref: 101:p.67-68
+tags: / raiz, partições, mínimo
+Em um PC com BIOS, qual dos pontos de montagem abaixo é indispensável em uma instalação Linux, sendo os demais opcionais?
+= / (sistema de arquivos raiz)
+- /boot
+- /home
+- /var
+> O sistema de arquivos raiz (`/`) é o único estritamente necessário. Uma partição `/boot` separada não é imprescindível (o GRUB normalmente consegue ler `/boot` dentro da raiz), e `/home` e `/var` são separados por conveniência: facilitam a reinstalação sem perder dados de usuários e contêm o crescimento de logs e dados de serviços. Em máquinas UEFI, é necessária também a ESP.
+
+### 102.1-027 | multipla | 2
+ref: 101:p.69-70
+tags: swap, mkswap, arquivo de troca
+Quais afirmações sobre a área de troca (swap) no Linux estão corretas?
+= Precisa ser preparada com o utilitário mkswap antes de ser usada
+= Não é montada como um diretório; seu conteúdo não pode ser listado como o de um sistema de arquivos
+= Pode existir como partição ou como arquivo de troca
+- Deve ter sempre exatamente o dobro da quantidade de RAM
+- Deve ser formatada com mkfs.ext4 antes do uso
+> A swap é preparada com `mkswap` e ativada com `swapon`; pode ser uma partição ou um arquivo (útil para ampliar rapidamente o espaço). Como não contém diretórios nem arquivos para serem acessados, não é "montada". A regra de "duas vezes a RAM" é antiga e não se aplica sempre, e a swap não usa `mkfs`.
+
+### 102.1-028 | multipla | 2
+ref: 101:p.68
+tags: ESP, FAT, /boot/efi
+Quais afirmações sobre a partição do sistema EFI (ESP) estão corretas?
+= É formatada em um sistema de arquivos baseado em FAT
+= No Linux, costuma ser montada em /boot/efi
+= Armazena os aplicativos EFI, como gerenciadores de boot, usados em máquinas UEFI
+- Deve ser a mesma partição do sistema de arquivos raiz (/)
+- Deve ser formatada em ext4 para que o Linux consiga ler as permissões
+> A ESP é uma partição FAT montada em `/boot/efi`, onde ficam os aplicativos EFI (bootloaders e outras ferramentas) executados pelo firmware UEFI. Ela não deve ser compartilhada com o sistema de arquivos raiz ou de dados do usuário, e o ext4 não é o formato esperado pelo firmware.

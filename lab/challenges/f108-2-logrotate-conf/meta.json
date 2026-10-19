@@ -1,0 +1,27 @@
+{
+  "id": "f108-2-logrotate-conf",
+  "obj": "108.2",
+  "titulo": "Configurar o logrotate para o log de uma aplicação",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "app": { "escolha": ["vendas", "estoque", "fiscal", "pagamentos", "cadastro"] },
+    "freq": { "escolha": ["daily", "weekly", "monthly"] },
+    "n": { "faixa": [3, 12] },
+    "modo": { "escolha": ["0640", "0600", "0644"] }
+  },
+  "enunciado": "A aplicação `{app}` grava seu log em `/var/log/appsrv/{app}.log` e o arquivo está crescendo sem controle. Crie, com `sudo`, o arquivo **`/etc/logrotate.d/app-{app}`** com uma configuração do `logrotate` para **esse log** (somente esse arquivo, sem curingas) com estas regras:\n\n* rotação **`{freq}`**;\n* manter **`{n}` rotações** (arquivos antigos);\n* compactar os antigos (`gzip`), mas **adiar** a compactação para a rotação seguinte;\n* não dar erro se o log não existir e **não rotacionar** se estiver vazio;\n* recriar o log depois da rotação com modo **`{modo}`**, dono **`root`** e grupo **`adm`**.\n\nValide a sintaxe **sem rotacionar de verdade**, usando o modo de depuração (`-d`) do `logrotate`.",
+  "verifica": [
+    "o arquivo `/etc/logrotate.d/app-{app}` existe e `logrotate -d` não acusa erro de sintaxe",
+    "ele trata exatamente um log: `/var/log/appsrv/{app}.log`, com frequência `{freq}` e `{n}` rotações",
+    "as diretivas `compress`, `delaycompress`, `missingok`, `notifempty` estão presentes",
+    "o log seria recriado (`logrotate -d -f`) com modo `{modo}`, dono `root` e grupo `adm`"
+  ],
+  "dicas": [
+    "Um arquivo em `/etc/logrotate.d/` tem blocos assim: `/caminho/do/log { diretiva  diretiva ... }`. As diretivas ficam entre as chaves, uma por linha.",
+    "Nomes das diretivas: a frequência é a própria palavra (`daily`/`weekly`/`monthly`); `rotate N`; `compress` e `delaycompress`; `missingok`; `notifempty`; `create MODO DONO GRUPO`.",
+    "`sudo logrotate -d /etc/logrotate.d/app-{app}` só simula e mostra o que seria feito (não altera nada); linhas que começam com `error:` indicam problema de sintaxe. Com `-d -f` ele simula também uma rotação forçada.",
+    "Bloco completo: `/var/log/appsrv/{app}.log {` com `{freq}`, `rotate {n}`, `compress`, `delaycompress`, `missingok`, `notifempty`, `create {modo} root adm`, e `}`."
+  ],
+  "solucao": "```\nsudo tee /etc/logrotate.d/app-{app} <<'X'\n/var/log/appsrv/{app}.log {\n    {freq}\n    rotate {n}\n    compress\n    delaycompress\n    missingok\n    notifempty\n    create {modo} root adm\n}\nX\nsudo logrotate -d /etc/logrotate.d/app-{app}        # simulação: não altera nada\nsudo logrotate -d -f /etc/logrotate.d/app-{app}     # simula uma rotação forçada\n```\n`rotate N` é a quantidade de cópias antigas mantidas; `compress` usa gzip e `delaycompress` deixa a rotação mais recente (`.1`) sem compactar até o ciclo seguinte (útil quando o programa ainda pode estar escrevendo no arquivo antigo); `missingok` evita erro se o log não existir e `notifempty` não rotaciona arquivo vazio; `create` define modo/dono/grupo do novo arquivo. O `logrotate` roda normalmente pelo cron diário (`/etc/cron.daily/logrotate`) lendo `/etc/logrotate.conf`, que inclui `/etc/logrotate.d/`. `-d` (debug) não executa nada; `-f` força a rotação mesmo que não seja a hora — em produção você usaria `-v`/`-f` sem `-d` para executar de fato. Pegadinha: um erro de sintaxe só aparece como linha `error:` e o código de saída pode continuar 0 — leia a saída."
+}

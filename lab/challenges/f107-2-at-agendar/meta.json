@@ -1,0 +1,24 @@
+{
+  "id": "f107-2-at-agendar",
+  "obj": "107.2",
+  "titulo": "Agendar uma execução única com at e cancelar o job antigo",
+  "nivel": 1,
+  "minutos": 5,
+  "params": {
+    "script": { "escolha": ["backup-noturno.sh", "limpa-logs.sh", "exporta-vendas.sh", "atualiza-indice.sh"] },
+    "tag": { "escolha": ["alfa", "beta", "gama", "delta"] },
+    "hora": { "escolha": ["02", "03", "04", "21", "22", "23"] },
+    "minuto": { "escolha": ["05", "10", "20", "35", "40", "50"] }
+  },
+  "enunciado": "Duas tarefas únicas (não recorrentes) com o `at`, como o usuário `aluno` (sem `sudo`):\n\n1. Agende a execução do script `~/lab/atjob/{script}` **uma única vez, amanhã às {hora}:{minuto}**.\n2. Existe um job antigo na fila que executaria `~/lab/atjob/obsoleto-{tag}.sh`; ele não deve mais rodar. **Remova-o da fila** sem mexer no job que você acabou de criar.\n\nO daemon `atd` já está rodando no laboratório. Para conferir, liste a fila de jobs do usuário.",
+  "verifica": [
+    "existe, na fila do `aluno`, exatamente um job que executa `~/lab/atjob/{script}`, marcado para amanhã às `{hora}:{minuto}`",
+    "o job que executaria `obsoleto-{tag}.sh` não está mais na fila"
+  ],
+  "dicas": [
+    "O `at` lê o comando da entrada padrão (ou de um arquivo com `-f`) e aceita horários como `HH:MM` e palavras como `tomorrow`.",
+    "Para listar a fila use `atq`; para ver o conteúdo de um job, `at -c NUMERO`; para cancelar, `atrm NUMERO`.",
+    "`echo ~/lab/atjob/{script} | at {hora}:{minuto} tomorrow` (ou `at -f arquivo ...`). Descubra o número do job antigo com `atq` e `at -c`, e remova com `atrm`."
+  ],
+  "solucao": "```\necho \"$HOME/lab/atjob/{script}\" | at {hora}:{minuto} tomorrow\natq                      # lista: número, data/hora, fila, usuário\nat -c NUMERO | tail -3   # mostra o comando de cada job (acha o 'obsoleto-{tag}.sh')\natrm NUMERO_DO_ANTIGO\natq\n```\nO `at` agenda uma execução **única**; para tarefas repetidas é o cron. A hora aceita `HH:MM` seguido de `today`/`tomorrow` ou de uma data, e também formas relativas (`now + 3 hours`). `atq` lista a fila (cada usuário só vê os próprios jobs; o root vê todos), `at -c` imprime o script completo do job (incluindo o ambiente salvo) e `atrm` (ou `at -r`) remove pelo número. A permissão de uso é controlada por `/etc/at.allow` e `/etc/at.deny`."
+}

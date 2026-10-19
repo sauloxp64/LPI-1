@@ -1,0 +1,501 @@
+### 105.1-001 | unica | 2
+ref: 102:p.19-20
+tags: shell de login, .bash_profile, .bash_login, .profile
+A usuária ana tem no diretório pessoal os três arquivos ~/.bash_profile, ~/.bash_login e ~/.profile. Ela abre uma sessão em um console de texto (shell de login interativo). Além de /etc/profile, quais arquivos do usuário o bash lê?
+= Somente ~/.bash_profile
+- ~/.bash_profile e, em seguida, ~/.bash_login e ~/.profile
+- Somente ~/.profile, por ser o arquivo comum a todos os shells
+- Somente ~/.bash_login, por ser o específico de login
+- ~/.bash_login e ~/.profile, ignorando ~/.bash_profile
+> Um shell de login lê /etc/profile e depois apenas o primeiro arquivo encontrado, nesta ordem de procura: ~/.bash_profile, ~/.bash_login, ~/.profile. Os demais são ignorados (testado no Debian 12).
+> Por isso as outras combinações, que leem vários arquivos ou invertem a ordem, estão erradas.
+
+### 105.1-002 | unica | 2
+ref: 102:p.19-20
+tags: shell de login, .bash_login
+No diretório pessoal de bruno existem ~/.bash_login e ~/.profile, mas não existe ~/.bash_profile. Qual arquivo do usuário é lido quando ele faz login em um console de texto?
+= ~/.bash_login
+- ~/.profile
+- ~/.bash_login e ~/.profile
+- Nenhum dos dois, pois só ~/.bashrc é lido em logins interativos
+- ~/.bash_logout
+> Na ausência de ~/.bash_profile, o bash usa ~/.bash_login; o ~/.profile só seria lido se nenhum dos dois primeiros existisse (testado).
+> ~/.bash_logout é lido na saída do shell de login, não na entrada, e o ~/.bashrc não é lido diretamente por um shell de login (apenas se algum dos arquivos acima o executar).
+
+### 105.1-003 | unica | 3
+ref: 102:p.19-20, 102:p.24
+tags: .bash_profile, .profile, .bashrc, login
+No Debian, o ~/.profile padrão de ana adiciona ~/bin ao PATH e carrega o ~/.bashrc, onde ficam seus aliases. Ela cria um ~/.bash_profile contendo apenas `export EDITOR=vim`. No login seguinte, o PATH personalizado e os aliases desaparecem. Qual é a causa?
+= O bash lê só o primeiro entre ~/.bash_profile, ~/.bash_login e ~/.profile; o ~/.profile deixou de ser lido
+- O ~/.bash_profile é lido primeiro e apaga as definições feitas pelos demais arquivos de inicialização
+- O ~/.bash_profile vale apenas para shells sem login e, nesse caso, passou a substituir o ~/.bashrc
+- A variável EDITOR exportada no ~/.bash_profile redefine o PATH e desativa os aliases do usuário
+> No Debian, o ~/.profile é quem executa o ~/.bashrc (se bash) e ajusta o PATH. Ao criar ~/.bash_profile, ele passa a ser o único arquivo de usuário lido no login, e o ~/.profile é ignorado, levando junto o carregamento do ~/.bashrc. A solução é incluir no ~/.bash_profile as linhas `[ -f ~/.profile ] && . ~/.profile` ou `[ -f ~/.bashrc ] && . ~/.bashrc`. Testado: no login interativo o marcador do ~/.bashrc deixou de aparecer.
+> O bash não "apaga" nada de outros arquivos, o ~/.bash_profile é um arquivo de login (não de shells sem login) e o EDITOR não interfere no PATH.
+
+### 105.1-004 | unica | 1
+ref: 102:p.17
+tags: su, shell de login
+Qual comando inicia um shell de login interativo como o usuário user2?
+= su - user2
+- su user2
+- sudo -u user2 -s
+- sudo -u user2 bash
+> O hífen (`su -`, equivalente a `su -l` ou `su --login`) faz o su iniciar um shell de login, lendo /etc/profile e os arquivos de login de user2, e ajusta HOME, PATH e outras variáveis.
+> `su user2` e `sudo -u user2 -s` abrem shells interativos sem login; `sudo -u user2 bash` também (o bash é iniciado como processo comum, sem login).
+
+### 105.1-005 | unica | 3
+ref: 102:p.23-24
+tags: su -, ordem de leitura, /etc/profile, /etc/bash.bashrc
+No Debian, foi acrescentada ao final de cada um destes arquivos uma linha `echo` com o próprio nome: /etc/profile, /etc/bash.bashrc, ~/.profile e ~/.bashrc. Em que ordem as mensagens aparecem quando o root executa `su - user2`?
+= /etc/bash.bashrc, /etc/profile, ~/.bashrc, ~/.profile
+- /etc/profile, /etc/bash.bashrc, ~/.profile, ~/.bashrc
+- /etc/profile, ~/.profile, /etc/bash.bashrc, ~/.bashrc
+- /etc/bash.bashrc, ~/.bashrc, /etc/profile, ~/.profile
+> `su -` abre um shell de login. O /etc/profile executa o /etc/bash.bashrc em seu corpo, por isso a mensagem de /etc/bash.bashrc sai antes da do final do /etc/profile; depois, o ~/.profile executa o ~/.bashrc, cuja mensagem sai antes da do final do ~/.profile. Testado no Debian 12 com `su - ana` em um terminal.
+> As outras ordens ignoram que os arquivos "de cima" executam os "de baixo" antes de chegar à última linha.
+
+### 105.1-006 | unica | 1
+ref: 102:p.18
+tags: echo $0, shell de login
+Após o login em um console de texto (tty1), o que o comando `echo $0` exibe?
+= -bash
+- bash
+- /bin/bash
+- login
+- sh
+> Em um shell de login, o processo é iniciado com um hífen no início do nome (`-bash`), e `echo $0` mostra isso. Em um shell interativo sem login (por exemplo, um terminal gráfico) aparece `bash` ou `/bin/bash`, e em um script aparece o nome do script. Testado com `su -` (mostra `-bash`) e `su` sem hífen (mostra `bash`).
+> Atenção: `bash -l` também é shell de login, mas mostra `bash`; para confirmar, use `shopt login_shell`.
+
+### 105.1-007 | unica | 2
+ref: 102:p.23, 102:p.48
+tags: BASH_ENV, shell não interativo, script
+O cron executa o script `bash /opt/backup.sh`. Quais arquivos de inicialização o bash lê antes de rodar o script?
+= Nenhum, exceto o arquivo indicado em BASH_ENV, se a variável estiver definida
+- /etc/profile e o primeiro arquivo entre ~/.bash_profile, ~/.bash_login e ~/.profile
+- /etc/bash.bashrc e ~/.bashrc, como em qualquer shell do bash
+- Somente ~/.bashrc, para que as funções do usuário estejam disponíveis
+> Um shell não interativo e sem login (script) não lê /etc/profile, ~/.profile, /etc/bash.bashrc nem ~/.bashrc; ele apenas executa o arquivo cujo nome está em BASH_ENV, quando existe. Testado: com `BASH_ENV=/tmp/arquivo bash script.sh`, o conteúdo do arquivo foi executado antes do script.
+> Por isso variáveis e aliases definidos em ~/.bashrc não estão disponíveis para o script.
+
+### 105.1-008 | unica | 3
+ref: 102:p.22
+tags: bash -l, login não interativo
+Qual é o efeito de executar `bash -l relatorio.sh` em vez de `bash relatorio.sh`?
+= O bash age como shell de login e lê /etc/profile e o arquivo de login do usuário antes de executar o script
+- O bash lê apenas /etc/bash.bashrc e ~/.bashrc antes de executar o script, como em um shell sem login
+- O script é executado de forma interativa e passa a pedir entrada ao usuário a cada comando
+- O bash pede a senha do usuário e registra um novo login no sistema antes de executar o script
+> A opção `-l` (`--login`) força o comportamento de shell de login mesmo sem interatividade: o bash lê /etc/profile e o primeiro arquivo entre ~/.bash_profile, ~/.bash_login e ~/.profile antes do script. Testado: as mensagens colocadas em /etc/profile e ~/.profile apareceram antes da saída do script.
+> `-i` é a opção de shell interativo; o `-l` não pede senha nem cria sessão (isso é do login(1)).
+
+### 105.1-009 | unica | 2
+ref: 102:p.17-18
+tags: sudo -i, sudo -s, shell de login
+Qual comando abre um shell de login interativo como root usando o sudo?
+= sudo -i
+- sudo -s
+- sudo su
+- sudo bash
+- sudo -u root -s
+> `sudo -i` simula um login inicial: o shell lê os arquivos de login (/etc/profile e os do root) e começa no diretório pessoal do root. Testado no Debian 12: `$0` foi `-bash` e `shopt login_shell` retornou `on`.
+> `sudo -s`, `sudo -u root -s`, `sudo bash` e `sudo su` (sem hífen) abrem shells sem login. Para login com su seria `sudo su -`.
+
+### 105.1-010 | unica | 1
+ref: 102:p.39-40
+tags: variáveis, atribuição
+Qual comando atribui corretamente o valor debian à variável distro?
+= distro=debian
+- distro = debian
+- $distro=debian
+- set distro debian
+> A atribuição no bash não aceita espaços ao redor do `=`. Com espaços, o bash interpreta `distro` como um comando e tenta executá-lo (testado: `distro: command not found`).
+> O `$` só é usado ao referenciar o valor (`echo $distro`); `set distro debian` não cria variável, apenas define os parâmetros posicionais $1 e $2.
+
+### 105.1-011 | unica | 2
+ref: 102:p.44-45
+tags: export, variável local, variável de ambiente
+Observe os comandos executados em sequência. Quais são as duas linhas impressas?
+
+```
+$ reptile=tortoise
+$ bash -c 'echo "[$reptile]"'
+$ export reptile
+$ bash -c 'echo "[$reptile]"'
+```
+= [] e depois [tortoise]
+- [tortoise] e depois [tortoise]
+- [] e depois []
+- [tortoise] e depois []
+> Uma variável de shell (local) não é herdada por processos filhos; `export` a transforma em variável de ambiente, que os filhos recebem. Por isso o primeiro `bash -c` imprime vazio e o segundo imprime o valor. Testado.
+> Para voltar a deixá-la local, usa-se `export -n reptile`.
+
+### 105.1-012 | unica | 3
+ref: 102:p.44
+tags: unset, variáveis
+A variável EDITOR contém `vim`. O administrador executa `unset $EDITOR`. O que acontece?
+= O comando tenta remover uma variável chamada vim; EDITOR continua definida
+- A variável EDITOR é removida do shell atual, como acontece em `unset EDITOR`
+- A variável EDITOR continua existindo, mas passa a ter valor vazio (EDITOR=)
+- Ocorre um erro de sintaxe e nenhuma variável do shell é alterada
+> O `unset` espera o nome da variável, sem `$`. Com `$EDITOR`, o shell substitui o valor antes de executar o comando, que vira `unset vim` (testado: EDITOR continuou com `vim`). A forma correta é `unset EDITOR`.
+> Deixar a variável vazia seria `EDITOR=`, e o `unset` não gera erro por nome inexistente.
+
+### 105.1-013 | unica | 1
+ref: 102:p.43-44
+tags: set, variáveis locais, funções
+Qual comando lista todas as variáveis e funções do shell atual, inclusive as locais que não foram exportadas?
+= set
+- env
+- printenv
+- export -p
+- alias
+> `set`, sem argumentos, mostra todas as variáveis do shell (locais e de ambiente) e as funções definidas. Testado: uma variável local e uma função apareceram em `set`, mas não em `env`.
+> `env`, `printenv` e `export -p` mostram apenas variáveis exportadas, e `alias` lista aliases.
+
+### 105.1-014 | unica | 2
+ref: 102:p.52-53
+tags: PATH, caminhos de busca
+Os executáveis `hello` existem em /opt/a e em /opt/b. Com `PATH=/opt/b:/opt/a:/usr/bin:/bin`, qual deles é executado ao digitar `hello`?
+= O de /opt/b, por ser o primeiro diretório do PATH que contém o arquivo
+- O de /opt/a, pois o bash prefere o último diretório encontrado
+- O de /opt/a, pois o bash usa a ordem alfabética dos diretórios
+- Nenhum deles, pois só diretórios do sistema (/bin, /usr/bin) são pesquisados
+> O bash percorre os diretórios do PATH, separados por dois-pontos, da esquerda para a direita e executa o primeiro executável encontrado. Para dar prioridade a um diretório, ele vai no início (`PATH=/opt/b:$PATH`); no fim, ele só é consultado se nada for achado antes (`PATH=$PATH:/opt/b`). Testado.
+
+### 105.1-015 | unica | 2
+ref: 102:p.52-53, 102:p.65, 102:p.19-20
+tags: PATH, ~/.profile, persistência
+A usuária ana, que não tem ~/.bash_profile nem ~/.bash_login, quer que /opt/app/bin faça parte do PATH em todos os seus logins, sem afetar outros usuários. Em qual arquivo ela deve colocar `export PATH="$PATH:/opt/app/bin"`?
+= ~/.profile
+- /etc/profile
+- /etc/skel/.profile
+- ~/.bash_logout
+- /etc/bash.bashrc
+> O ~/.profile é lido nos shells de login do próprio usuário e é o lugar clássico para ajustar o PATH.
+> /etc/profile e /etc/bash.bashrc valem para todos os usuários; /etc/skel/.profile só serve de modelo para contas criadas depois; o ~/.bash_logout é executado ao sair do shell, e não ao entrar.
+
+### 105.1-016 | unica | 2
+ref: 102:p.24-25
+tags: source, bash, variáveis
+O arquivo ambiente.sh contém a linha `export EDITOR=vim`. Observe os comandos e escolha as saídas dos dois `echo`.
+
+```
+$ bash ambiente.sh
+$ echo "[$EDITOR]"
+$ source ambiente.sh
+$ echo "[$EDITOR]"
+```
+= [] e depois [vim]
+- [vim] e depois [vim]
+- [] e depois []
+- [vim] e depois []
+> `bash ambiente.sh` cria um processo filho: as variáveis definidas lá morrem com ele. `source` (ou `.`) executa o arquivo no próprio shell, e a variável passa a existir nele. É por isso que se usa `source ~/.bashrc` depois de editar o arquivo. Testado.
+
+### 105.1-017 | unica | 3
+ref: 102:p.24-25
+tags: ., source, dash
+Em um Debian, o script abaixo começa com #!/bin/sh e falha com a mensagem `source: not found`. Qual é a correção que funciona no sh?
+
+```
+#!/bin/sh
+source /etc/app.conf
+```
+= . /etc/app.conf
+- import /etc/app.conf
+- bash /etc/app.conf
+- exec /etc/app.conf
+> `.` é o comando padrão (POSIX) para executar um arquivo no shell atual, e funciona em qualquer sh. `source` é sinônimo de `.` no bash, mas não existe no dash, que é o /bin/sh do Debian (testado: `sh: 1: source: not found`, e `. arquivo` funcionou).
+> `bash /etc/app.conf` roda o arquivo em um processo filho, sem afetar o shell do script; `exec` substituiria o processo; `import` não existe no shell.
+
+### 105.1-018 | unica | 2
+ref: 102:p.74-76
+tags: parâmetros posicionais, funções, $#, $@
+Observe a função e a chamada. Qual é a saída?
+
+```
+$ info() { echo "$# $1 $@"; }
+$ info lua sol mar
+```
+= 3 lua lua sol mar
+- 3 lua sol mar
+- 1 lua lua sol mar
+- 3 info lua sol mar
+> `$#` é o número de argumentos (3), `$1` é o primeiro (lua) e `$@` expande para todos (lua sol mar). A saída é `3 lua lua sol mar` (testado).
+> `$0` é que seria o nome do shell ou do script, não da função.
+
+### 105.1-019 | unica | 3
+ref: 102:p.71
+tags: alias, aspas
+Qual é a saída da última linha?
+
+```
+$ cd /tmp
+$ alias aqui="echo $PWD"
+$ cd /var
+$ aqui
+```
+= /tmp
+- /var
+- $PWD
+- aqui: command not found
+> Com aspas duplas, `$PWD` é expandido na hora da definição do alias, que passa a ser `echo /tmp`. Com aspas simples (`alias aqui='echo $PWD'`), a expansão ficaria para o momento da execução e a saída seria /var.
+
+### 105.1-020 | unica | 2
+ref: 102:p.70-71
+tags: alias, escape, barra invertida
+Existe o alias `ls='ls -l --color=always'`. Como executar o ls original, sem o alias, uma única vez e sem remover o alias?
+= \ls
+- unalias ls
+- ls --noalias
+- !ls
+> A barra invertida antes do nome (`\ls`) impede a expansão do alias naquela execução. Testado: com `alias ls='echo ALIAS'`, `\ls` executou o comando real.
+> `unalias ls` remove o alias (não é pontual); `--noalias` não existe; `!ls` repete o último comando do histórico que começa com "ls".
+
+### 105.1-021 | unica | 3
+ref: 102:p.72
+tags: alias, shell não interativo, script
+Ana definiu `alias ll='ls -l'` em ~/.bashrc, e o alias funciona no terminal. O script backup.sh, executado com `bash backup.sh`, usa `ll` e falha com "ll: command not found". Qual é a explicação?
+= Aliases não são expandidos em shells não interativos, como o que executa um script
+- O ~/.bashrc só é lido por shells de login, e o script não é um deles, por isso o alias não existe
+- O alias precisaria ser exportado com `export -a ll` para que o script pudesse enxergá-lo
+- Aliases só funcionam se definidos em /etc/profile, e não em arquivos pessoais como o ~/.bashrc
+> Por padrão, o bash só expande aliases em shells interativos (e o shell que executa `bash backup.sh` também não lê o ~/.bashrc, então o alias nem chegaria a ser definido ali); scripts devem chamar `ls -l` diretamente (ou usar funções, que funcionam em scripts). Testado: em `bash -c 'alias ll="echo oi"; ll'` o resultado foi "command not found".
+> O ~/.bashrc é lido justamente pelos shells interativos sem login; `export -a` não existe; e aliases podem ficar em ~/.bashrc normalmente.
+
+### 105.1-022 | unica | 3
+ref: 102:p.71, 102:p.73-74
+tags: alias, função, precedência
+Existem um alias, uma função e um executável no PATH, todos chamados ola. Ao digitar `ola` em um shell interativo, o que é executado?
+= O alias
+- A função
+- O executável do PATH
+- O primeiro que tiver sido definido, na ordem cronológica
+> O bash resolve o primeiro termo de um comando nesta ordem: aliases, funções, comandos internos (builtins) e, por fim, arquivos encontrados no PATH. Testado: com os três definidos, `ola` executou o alias; `\ola` executou a função; após `unalias` a função, e após `unset -f` o arquivo.
+> Não importa a ordem de definição.
+
+### 105.1-023 | unica | 2
+ref: 102:p.25-27, 102:p.37
+tags: skel, /etc/skel, novas contas
+O administrador cria o arquivo /etc/skel/.bash_login com uma mensagem de boas-vindas. Quem recebe esse arquivo?
+= Somente as contas criadas depois, com diretório pessoal (useradd -m ou adduser)
+- Todas as contas existentes, no próximo login de cada uma delas
+- Somente as contas existentes que ainda não possuem um ~/.bash_login
+- Todas as contas existentes, assim que o arquivo for salvo no diretório /etc/skel
+> O diretório skeleton (`/etc/skel`) é um modelo: o conteúdo é copiado para o diretório pessoal no momento em que a conta é criada com home. Contas já existentes não são alteradas. Testado: o usuário criado antes não recebeu o arquivo, e o criado depois sim (junto com um subdiretório adicionado).
+> Para atualizar contas antigas é preciso copiar o arquivo manualmente.
+
+### 105.1-024 | unica | 1
+ref: 102:p.26
+tags: skel, Debian
+Que arquivos de inicialização do bash o diretório /etc/skel de um Debian traz por padrão?
+= .bash_logout, .bashrc e .profile
+- .bash_profile, .bash_login e .profile
+- .bash_logout, .bash_profile e .bashrc
+- .bashrc, .bash_aliases e .profile
+> No Debian (e derivados), `ls -A /etc/skel` mostra .bash_logout, .bashrc e .profile (testado). Esses arquivos ficam ocultos, por isso é preciso `ls -a` ou `ls -A`.
+> A terceira lista é o conjunto padrão do RHEL/Fedora (que usa ~/.bash_profile). Os arquivos .bash_login e .bash_aliases não são distribuídos por padrão.
+
+### 105.1-025 | unica | 2
+ref: 102:p.52-53
+tags: PATH, /etc/profile, root
+No Debian, o /etc/profile define o PATH conforme o usuário seja o root ou não. Qual diretório está no PATH padrão do root, mas não no de um usuário comum?
+= /usr/sbin
+- /usr/local/bin
+- /usr/bin
+- /bin
+> O /etc/profile usa `id -u` para testar se o usuário é root (UID 0). O root recebe `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`; os demais, `/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games`. Testado no Debian 12 com `bash -l`.
+> Os diretórios `sbin` guardam comandos administrativos; por isso comandos como `fdisk` costumam não ser achados por usuários comuns sem o caminho completo.
+
+### 105.1-026 | unica | 2
+ref: 102:p.77-79
+tags: função, variáveis, escopo
+Observe a função e escolha a saída da última linha.
+
+```
+$ editors() { editor=emacs; }
+$ editors
+$ echo "[$editor]"
+```
+= [emacs]
+- []
+- [editor]
+- editor: command not found
+> Variáveis atribuídas dentro de uma função são, por padrão, variáveis do shell atual: continuam existindo depois que a função termina. Para limitar o escopo à função, usa-se `local editor=emacs` (testado: com `local`, a saída fica `[]`).
+
+### 105.1-027 | unica | 2
+ref: 102:p.72-74
+tags: função, /etc/bash.bashrc, persistência
+No Debian, onde colocar uma função para que ela fique disponível para todos os usuários em seus shells interativos?
+= /etc/bash.bashrc
+- ~/.bashrc
+- /etc/skel/.bashrc
+- ~/.bash_logout
+> O /etc/bash.bashrc é o arquivo global lido por shells interativos do bash. Depois de editar, é preciso abrir um novo shell ou executar `source /etc/bash.bashrc`. No RHEL/Fedora, o equivalente é /etc/bashrc.
+> ~/.bashrc vale só para o usuário dono; /etc/skel/.bashrc é modelo apenas para contas criadas depois; ~/.bash_logout é executado na saída do shell de login.
+
+### 105.1-028 | unica | 2
+ref: 102:p.49-50
+tags: HISTCONTROL, histórico
+Qual é o efeito de `HISTCONTROL=ignoreboth`?
+= Não salva no histórico os comandos iniciados por espaço nem os iguais ao comando anterior
+- Não salva no histórico nenhum comando digitado pelo usuário durante a sessão
+- Salva no histórico apenas os comandos iniciados por espaço, ignorando os demais
+- Apaga do histórico todas as ocorrências anteriores do mesmo comando digitado
+> `ignoreboth` é a soma de `ignorespace` (ignora linhas que começam com espaço) e `ignoredups` (ignora a repetição do comando imediatamente anterior), conforme a man page do bash. O valor `erasedups`, por sua vez, é o que remove ocorrências anteriores do mesmo comando.
+
+### 105.1-029 | multipla | 2
+ref: 102:p.72-74
+tags: função, sintaxe
+Quais definições de função são válidas no bash?
+= saudar() { echo Oi; }
+= function saudar { echo Oi; }
+= function saudar() { echo Oi; }
+- saudar { echo Oi; }
+- saudar() { echo Oi }
+> O bash aceita `nome() { ...; }`, `function nome { ...; }` e a combinação `function nome() { ...; }`. Em uma linha, cada comando deve terminar com `;`, inclusive o último, antes do `}`.
+> `saudar { echo Oi; }` não declara função (sem `()` nem `function`), e em `saudar() { echo Oi }` falta o `;` antes do `}` (o bash fica esperando o fim do bloco). Todas testadas.
+
+### 105.1-030 | multipla | 2
+ref: 102:p.46-47
+tags: env, printenv, export, variáveis de ambiente
+Quais comandos exibem somente as variáveis de ambiente (exportadas), sem as variáveis locais do shell?
+= env
+= printenv
+= export -p
+- set
+- declare -p
+> `env` e `printenv` listam o ambiente; `export -p` lista as variáveis exportadas no formato `declare -x`.
+> `set` e `declare -p` listam todas as variáveis do shell, locais inclusive (testado: a variável local aparecia nesses dois, mas não nos três primeiros).
+
+### 105.1-031 | multipla | 2
+ref: 102:p.21
+tags: shell interativo sem login, /etc/bash.bashrc, ~/.bashrc
+No Debian, o usuário abre um terminal gráfico (shell interativo sem login). Quais arquivos de inicialização o bash lê?
+= /etc/bash.bashrc
+= ~/.bashrc
+- /etc/profile
+- ~/.profile
+- ~/.bash_logout
+> Um shell interativo sem login lê apenas /etc/bash.bashrc e ~/.bashrc (testado com `bash -i`). Os arquivos /etc/profile e ~/.profile são de shells de login.
+> ~/.bash_logout só é executado quando um shell de login termina.
+
+### 105.1-032 | multipla | 2
+ref: 102:p.24-25
+tags: source, ., ~/.bashrc
+Depois de editar o ~/.bashrc, quais comandos fazem o shell atual aplicar as mudanças sem novo login?
+= source ~/.bashrc
+= . ~/.bashrc
+- bash ~/.bashrc
+- sh ~/.bashrc
+- ~/.bashrc
+> `source` e `.` executam o arquivo no próprio shell, de modo que variáveis, aliases e funções passam a valer nele.
+> `bash` e `sh` rodam o arquivo em um processo filho, e as definições morrem com ele; executar `~/.bashrc` diretamente falha por falta de permissão de execução ("Permission denied", testado) e também seria um processo filho.
+
+### 105.1-033 | multipla | 2
+ref: 102:p.74-76
+tags: variáveis especiais, $?, $#, $!
+Quais associações entre variável especial do bash e significado estão corretas?
+= $? : código de saída do último comando executado
+= $# : quantidade de argumentos posicionais
+= $! : PID do último processo colocado em segundo plano
+- $$ : PID do último processo colocado em segundo plano
+- $0 : primeiro argumento passado ao script
+> `$?` (0 = sucesso; 127 = comando não encontrado, testado), `$#` e `$!` têm os significados indicados. `$$` é o PID do próprio shell (testado: difere de `$!`), e `$0` é o nome do shell ou script; o primeiro argumento é `$1`.
+
+### 105.1-034 | multipla | 2
+ref: 102:p.40-41
+tags: variáveis, aspas, atribuição
+Quais atribuições gravam corretamente o texto `zorin 12.4` na variável distro?
+= distro="zorin 12.4"
+= distro='zorin 12.4'
+= distro=zorin\ 12.4
+- distro=zorin 12.4
+- distro = "zorin 12.4"
+> Valores com espaço precisam de aspas (simples ou duplas) ou de uma barra invertida antes do espaço. Sem isso, o bash trata `12.4` como um comando (testado: `12.4: command not found`).
+> Com espaços ao redor do `=`, `distro` vira um comando (`distro: command not found`).
+
+### 105.1-035 | lacuna | 2
+ref: 102:p.46
+tags: export, -n
+Complete o comando que transforma a variável de ambiente reptile novamente em variável local do shell: export ____ reptile
+= -n
+> `export -n` remove o atributo de exportação, e os processos filhos deixam de receber a variável. Testado.
+
+### 105.1-036 | lacuna | 1
+ref: 102:p.80-81
+tags: unset, função, -f
+Complete o comando que remove a função minha_funcao da sessão atual: unset ____ minha_funcao
+= -f
+> `unset -f` remove funções e `unset -v` remove variáveis. Sem opção, o bash tenta primeiro remover uma variável com esse nome e, se não existir, uma função.
+
+### 105.1-037 | lacuna | 2
+ref: 102:p.47
+tags: env, ambiente limpo
+Complete o comando que abre um novo bash com o ambiente praticamente vazio: env ____ bash
+= -i
+= --ignore-environment
+> `env -i` (ou `--ignore-environment`) executa o comando com o ambiente vazio (sem as variáveis herdadas). Testado: `USER` e `HOME` ficaram vazios.
+
+### 105.1-038 | lacuna | 2
+ref: 102:p.23, 102:p.48
+tags: BASH_ENV
+Qual variável de ambiente indica o arquivo de inicialização lido por shells não interativos, como os que executam scripts?
+= BASH_ENV
+= $BASH_ENV
+> Scripts não leem ~/.bashrc nem /etc/profile; se BASH_ENV estiver definida, o bash expande seu valor e executa o arquivo indicado antes do script.
+
+### 105.1-039 | lacuna | 1
+ref: 102:p.19
+tags: /etc/profile.d
+Qual diretório contém scripts (*.sh) que o /etc/profile executa durante o login?
+= /etc/profile.d
+= /etc/profile.d/
+> O /etc/profile percorre `/etc/profile.d/*.sh` e executa cada script. É uma forma organizada de definir variáveis para todos os usuários sem editar o /etc/profile. Testado no Debian 12.
+
+### 105.1-040 | lacuna | 1
+ref: 102:p.25-26
+tags: skel
+Qual diretório é o modelo cujo conteúdo é copiado para o diretório pessoal de novos usuários?
+= /etc/skel
+= /etc/skel/
+> O diretório skeleton (`/etc/skel`) guarda os arquivos que as novas contas recebem, como .bashrc e .profile.
+
+### 105.1-041 | lacuna | 2
+ref: 102:p.25-26
+tags: skel, useradd, -k
+Complete o comando para criar o usuário dev1 copiando os arquivos de modelo de /etc/skel.dev: useradd -m ____ /etc/skel.dev dev1
+= -k
+= --skel
+> A opção `-k` (`--skel`) indica um diretório skeleton alternativo e só é aceita junto com `-m`. Testado: sem `-m`, o useradd responde `-k flag is only allowed with the -m flag`.
+
+### 105.1-042 | lacuna | 1
+ref: 102:p.50
+tags: HISTSIZE, histórico
+Qual variável define quantos comandos o bash mantém na memória, no histórico da sessão?
+= HISTSIZE
+= $HISTSIZE
+> `HISTSIZE` é o tamanho do histórico em memória; `HISTFILESIZE` é o número de linhas guardadas no arquivo `HISTFILE` (por padrão ~/.bash_history).
+
+### 105.1-043 | lacuna | 1
+ref: 102:p.20
+tags: .bash_logout
+Qual arquivo do usuário o bash lê ao encerrar um shell de login, normalmente para tarefas de limpeza?
+= ~/.bash_logout
+= .bash_logout
+= $HOME/.bash_logout
+> O ~/.bash_logout é executado quando o shell de login termina (testado: com `exit` em `bash -l`, o conteúdo foi executado; não é lido ao sair de um shell sem login).
+
+### 105.1-044 | lacuna | 2
+ref: 102:p.16
+tags: bash, --norc
+Complete o comando para iniciar um shell interativo que não leia /etc/bash.bashrc nem ~/.bashrc: bash ____ -i
+= --norc
+> `--norc` faz o shell interativo ignorar os arquivos de inicialização do bash (testado: nenhuma mensagem dos arquivos apareceu). Opções longas devem vir antes das curtas. Já `--noprofile` é a opção que ignora os arquivos de login.
+
+### 105.1-045 | lacuna | 3
+ref: 102:p.25
+tags: adduser, SKEL, adduser.conf
+Em qual arquivo o adduser, no Debian, define o diretório skeleton (variável SKEL)?
+= /etc/adduser.conf
+> O /etc/adduser.conf contém SKEL (padrão /etc/skel) e SKEL_IGNORE_REGEX, entre outras opções do adduser. O useradd lê as suas em /etc/default/useradd e /etc/login.defs.

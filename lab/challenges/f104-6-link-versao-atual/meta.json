@@ -1,0 +1,26 @@
+{
+  "id": "f104-6-link-versao-atual",
+  "obj": "104.6",
+  "titulo": "Publicar a nova versão com links simbólicos",
+  "nivel": 2,
+  "minutos": 7,
+  "params": {
+    "app": { "escolha": ["faturamento", "portal", "agenda", "estoque"] },
+    "antiga": { "escolha": ["1.4.2", "1.5.0", "2.0.1"] },
+    "nova": { "escolha": ["2.1.0", "2.2.3", "3.0.0"] }
+  },
+  "enunciado": "A aplicação `{app}` fica em `~/lab/releases/{app}/`. Cada versão tem sua pasta em `versoes/` e o link simbólico `atual` indica a versão em produção — hoje a `{antiga}`. A versão **{nova}** já foi copiada para `versoes/{nova}/`. Faça a publicação, trabalhando dentro de `~/lab/releases/{app}/`:\n\n1. **Troque o link `atual`** para a versão `{nova}`, **no próprio lugar** (ele continua sendo um link simbólico e **relativo**, ou seja, o destino não começa com `/`). Não deixe nenhum link novo perdido dentro das pastas de versões.\n2. Crie o link simbólico **`comando`** (dentro de `{app}/`) apontando, com **caminho absoluto**, para `atual/bin/{app}` — assim ele sempre alcança o executável da versão em produção.\n3. A limpeza de versões antigas deixou **links quebrados** espalhados pela árvore. Encontre e **remova todos**, sem apagar nenhum link que ainda funciona (por exemplo `docs/manual`).",
+  "verifica": [
+    "`atual` continua sendo um link simbólico relativo e aponta para `versoes/{nova}`",
+    "nenhum link perdido dentro de `versoes/`",
+    "`comando` é um link absoluto passando por `atual/bin/{app}` e executá-lo mostra a versão `{nova}`",
+    "não há links quebrados em `{app}/` e o link válido `docs/manual` foi preservado"
+  ],
+  "dicas": [
+    "Um `ln -s` comum não substitui um link que já existe; e, se `atual` aponta para um diretório, o `ln` trata o destino como pasta e cria o novo link *dentro* dela. Procure as opções que forçam a substituição e tratam o destino como o próprio link.",
+    "`ln -sfn alvo atual`: `-f` substitui o link existente e `-n` impede que `atual` seja tratado como diretório. O alvo relativo é interpretado a partir da pasta onde o link está.",
+    "Para o link absoluto: `ln -s \"$PWD/atual/bin/{app}\" comando`. Para achar links quebrados: `find . -xtype l` (ou `find -L . -type l`); depois, `-delete`.",
+    "Confira com `ls -l` e `readlink`; execute `./comando` para testar."
+  ],
+  "solucao": "```\ncd ~/lab/releases/{app}\nln -sfn versoes/{nova} atual                 # -n: trata 'atual' como o próprio link, não como a pasta\nln -s \"$PWD/atual/bin/{app}\" comando         # alvo absoluto, passando por 'atual'\nfind . -xtype l                               # lista os quebrados (alvo inexistente)\nfind . -xtype l -delete                       # remove só os quebrados\nls -l . docs config; ./comando\n```\nSem o `-n`, `ln -sf versoes/{nova} atual` cria o link `versoes/{antiga}/{nova}` *dentro* da pasta antiga (porque `atual` aponta para um diretório) e deixa `atual` como estava — erro clássico. Links **relativos** são resolvidos a partir da pasta do link (por isso sobrevivem a mover a árvore inteira); links **absolutos** quebram se o caminho mudar. `find -xtype l` testa o *destino* do link, listando só os quebrados; `-type l` listaria todos os links."
+}

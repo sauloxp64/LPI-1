@@ -1,0 +1,27 @@
+{
+  "id": "f107-1-conta-servico",
+  "obj": "107.1",
+  "titulo": "Conta de serviço sem login interativo",
+  "nivel": 1,
+  "minutos": 6,
+  "params": {
+    "servico": { "escolha": ["svc-coletor", "svc-agendador", "svc-sincro", "svc-exportador", "svc-monitor"] },
+    "uid": { "faixa": [300, 899] },
+    "modo": { "escolha": ["750", "700", "2750"] }
+  },
+  "enunciado": "Vamos instalar o serviço `{servico}` e ele precisa rodar com uma conta própria, sem privilégios e sem permitir login interativo. Use `sudo` e deixe o sistema assim:\n\n* uma conta de **sistema** chamada `{servico}` com **UID `{uid}`** (faixa de contas de sistema, não de usuários comuns);\n* o **grupo primário** deve ser um grupo de sistema com o mesmo nome da conta;\n* **shell que impede login** (`nologin`);\n* **diretório pessoal** `/var/lib/{servico}`, que deve **existir**, pertencer a `{servico}:{servico}` e ter o modo `{modo}`;\n* a conta **não deve ter senha utilizável** (login por senha impossível).\n\nNão copie arquivos do `/etc/skel` para dentro do diretório do serviço.",
+  "verifica": [
+    "a conta `{servico}` existe com UID `{uid}` (faixa de sistema, menor que 1000)",
+    "o grupo primário é de sistema e se chama `{servico}`",
+    "o shell é `nologin` (ou `false`)",
+    "`/var/lib/{servico}` é o home, existe, pertence a `{servico}:{servico}` e tem o modo `{modo}`",
+    "a senha da conta está bloqueada no `/etc/shadow` e o diretório não recebeu arquivos do skel"
+  ],
+  "dicas": [
+    "O `useradd` tem uma opção que cria conta de sistema (UID baixo, sem expiração de senha, sem home por padrão).",
+    "`-r` conta de sistema, `-u` UID, `-s` shell, `-d` home, `-M`/`-m` sem/com criação do home. Se o home não for criado pelo `useradd`, crie e acerte dono e modo você mesmo.",
+    "Shell sem login: `/usr/sbin/nologin`. Uma conta recém-criada já nasce com senha bloqueada (`!` no shadow) enquanto você não rodar `passwd`.",
+    "`sudo useradd -r -u {uid} -M -d /var/lib/{servico} -s /usr/sbin/nologin {servico}` e depois `sudo mkdir /var/lib/{servico}`, `sudo chown {servico}:{servico} ...`, `sudo chmod {modo} ...`."
+  ],
+  "solucao": "```\nsudo useradd -r -u {uid} -M -d /var/lib/{servico} -s /usr/sbin/nologin {servico}\nsudo mkdir -p /var/lib/{servico}\nsudo chown {servico}:{servico} /var/lib/{servico}\nsudo chmod {modo} /var/lib/{servico}\n\ngetent passwd {servico}\nsudo getent shadow {servico}\nls -ld /var/lib/{servico}\n```\n`-r` cria uma **conta de sistema**: UID/GID tirados da faixa `SYS_UID_MIN..SYS_UID_MAX` (100–999 no Debian), sem envelhecimento de senha e **sem home**; com o `USERGROUPS_ENAB` ativo o `useradd` também cria o grupo de mesmo nome, igualmente de sistema. O shell `/usr/sbin/nologin` recusa o login interativo (diferente de bloquear a senha: `su -s /bin/bash` ainda funcionaria sem o nologin). A senha fica `!` no `/etc/shadow` até alguém rodar `passwd`. Dica de prova: `-d` apenas grava o caminho; criar o diretório é com `-m` (que copiaria o skel, indesejável aqui) ou manualmente com `mkdir`/`chown`/`chmod`."
+}

@@ -1,0 +1,421 @@
+### 109.4-001 | unica | 1
+ref: 102:p.483
+tags: nsswitch, resolução de nomes
+Ao resolver um nome, as funções da biblioteca C (glibc) leem primeiro um arquivo para saber quais fontes consultar e em que ordem. Qual é ele?
+= /etc/nsswitch.conf
+- /etc/resolv.conf
+- /etc/hosts
+- /etc/hostname
+> O Name Service Switch (`/etc/nsswitch.conf`) é lido antes de qualquer consulta; ele indica as fontes (`files`, `dns`, `nis`...) de cada banco de dados (hosts, passwd, group, services...). `/etc/hosts` e `/etc/resolv.conf` são consultados somente se o `nsswitch.conf` mandar usar `files` e `dns`, respectivamente.
+
+### 109.4-002 | unica | 2
+ref: 102:p.484, 102:p.485
+tags: nsswitch, ordem
+Qual linha de `/etc/nsswitch.conf` faz o sistema consultar o DNS antes do arquivo `/etc/hosts` ao resolver nomes de host?
+= hosts: dns files
+- hosts: files dns
+- hosts: dns
+- hosts: resolv files
+> As fontes são consultadas da esquerda para a direita. `dns files` consulta primeiro o DNS e só usa `/etc/hosts` se o DNS não resolver; `files dns` é o padrão (hosts locais antes). Em teste, com `dns files` um nome presente nos dois lugares foi resolvido pelo endereço do DNS.
+> `hosts: dns` eliminaria totalmente o `/etc/hosts` (nem `localhost` resolveria) e `resolv` não é uma fonte válida.
+
+### 109.4-003 | unica | 3
+ref: 102:p.484-485
+tags: nsswitch, NOTFOUND
+Considere a linha abaixo em `/etc/nsswitch.conf`. O que acontece com um nome que não existe em `/etc/hosts`?
+
+```
+hosts: files [NOTFOUND=return] dns
+```
+= A busca termina sem consultar o DNS, e o nome não é resolvido
+- O DNS é consultado normalmente, pois o nome não foi achado no arquivo
+- O sistema repete a consulta em /etc/hosts até que o nome seja encontrado
+- A busca é refeita em ordem inversa, primeiro no DNS e depois em /etc/hosts
+> O trecho `[NOTFOUND=return]` vale para a fonte à esquerda (`files`): se a consulta funcionou mas o nome não foi encontrado, a ação é `return` (parar). O DNS só seria usado se `files` estivesse indisponível ou não fosse conclusivo de outra forma. Em teste, com essa linha, um nome presente apenas no DNS não foi resolvido e nenhuma consulta chegou ao servidor DNS.
+
+### 109.4-004 | unica | 3
+ref: 102:p.484-485
+tags: nsswitch, UNAVAIL
+Com `hosts: dns [!UNAVAIL=return] files`, um nome existe apenas em `/etc/hosts` e o servidor DNS está acessível, mas responde que o nome não existe. Qual é o resultado?
+= O nome não é resolvido: o DNS está disponível, então a busca termina sem consultar o arquivo
+- O nome é resolvido por /etc/hosts, pois o DNS não encontrou nenhuma resposta
+- O nome é resolvido por /etc/hosts, mas só depois de uma nova tentativa no DNS
+- O sistema retorna um erro de sintaxe, pois nsswitch.conf não aceita colchetes
+> `[!UNAVAIL=return]` significa: se o resultado do DNS for diferente de "indisponível" (ou seja, o DNS respondeu, ainda que com "não encontrado"), execute `return` e pare. Só se o DNS estiver indisponível o `files` é consultado. Em teste: DNS ativo respondendo NXDOMAIN, nome só em `/etc/hosts` não foi resolvido; com o DNS inacessível, foi resolvido pelo arquivo.
+
+### 109.4-005 | unica | 2
+ref: 102:p.487, 102:p.496
+tags: getent, host, dig, /etc/hosts
+O arquivo `/etc/hosts` associa `alvo.example.com` a 10.1.1.1, enquanto o DNS responde 203.0.113.7. Com `hosts: files dns`, o `ping alvo.example.com` usa 10.1.1.1, mas `dig +short alvo.example.com` mostra 203.0.113.7. Por quê?
+= O dig consulta direto o DNS e ignora o nsswitch.conf e o /etc/hosts
+- O dig lê /etc/hosts, mas dá preferência à resposta do servidor DNS
+- O ping consulta o DNS, mas dá preferência à entrada de /etc/hosts
+- O dig usa um cache próprio, que ainda guarda a resposta antiga do DNS
+> `host` e `dig` são ferramentas de consulta DNS: enviam a pergunta direto ao servidor de `/etc/resolv.conf` (ou ao indicado), sem passar por `/etc/nsswitch.conf` nem por `/etc/hosts`. Programas comuns (como o `ping`) e o `getent hosts` usam o resolvedor da biblioteca C e, portanto, respeitam a ordem do `nsswitch.conf`.
+
+### 109.4-006 | unica | 2
+ref: 102:p.487, 102:p.496
+tags: getent
+Qual é a maior diferença do `getent` em relação a `host` e `dig`?
+= Usa o resolvedor da biblioteca C e o nsswitch.conf; host e dig consultam só o DNS
+- Consulta apenas /etc/hosts, enquanto host e dig consultam apenas o servidor DNS
+- Só funciona com nomes de host, enquanto host e dig funcionam com qualquer banco
+- É uma interface gráfica do dig e usa exatamente os mesmos servidores DNS
+> O `getent` mostra o resultado que um programa real obteria, passando por todas as fontes do `nsswitch.conf` (files, dns, ldap...) e funciona com vários bancos (hosts, passwd, group, services...). Por isso é a ferramenta indicada para depurar a configuração de `/etc/nsswitch.conf`. `host` e `dig` fazem consultas DNS.
+
+### 109.4-007 | unica | 2
+ref: 102:p.487
+tags: getent, passwd
+O que faz o comando `getent passwd root`?
+= Consulta, nas fontes de nsswitch.conf para passwd, a entrada do usuário root
+- Altera a senha do usuário root nas fontes indicadas por nsswitch.conf
+- Lista os processos em execução que pertencem ao usuário root
+- Lê somente o arquivo /etc/passwd e ignora as demais fontes de usuários
+> O `getent <banco> <chave>` consulta um banco de dados de nomes (passwd, group, hosts, services...) pelas fontes configuradas em `/etc/nsswitch.conf`, incluindo, por exemplo, LDAP ou NIS. Se a chave não existe, o `getent` retorna o código 2 sem imprimir nada.
+
+### 109.4-008 | lacuna | 2
+ref: 102:p.488, 102:p.496
+tags: getent, fonte
+Qual opção do `getent` define a fonte de dados a ser usada na consulta? Complete: getent ____ dns hosts learning.lpi.org
+= -s
+= --service
+> A opção `-s <fonte>` (ou `--service`) força uma fonte específica, como `files` ou `dns`: `getent -s files hosts nome` consulta apenas `/etc/hosts` e `getent -s dns hosts nome` apenas o DNS (em teste, as duas deram respostas diferentes quando os dados divergiam).
+
+### 109.4-009 | unica | 2
+ref: 102:p.487-488
+tags: getent, hosts
+O que o comando `getent hosts`, sem informar nenhum nome, exibe?
+= Todas as entradas do banco de dados hosts que permitem enumeração, como as de /etc/hosts
+- O endereço IP da máquina local, obtido a partir do nome do host
+- Todos os nomes que o servidor DNS configurado conhece, via transferência de zona
+- Uma mensagem de erro, pois é obrigatório indicar o nome a ser consultado
+> Sem chave, o `getent` tenta listar todas as entradas do banco indicado. Para `hosts`, isso mostra o conteúdo do arquivo `/etc/hosts` (o DNS não permite enumeração). Em teste, listou `localhost`, o nome da máquina e as entradas adicionadas ao arquivo.
+
+### 109.4-010 | unica | 1
+ref: 102:p.488
+tags: host, MX
+Qual comando consulta o registro MX do domínio lpi.org?
+= host -t MX lpi.org
+- host -m lpi.org
+- host --mx lpi.org
+- host lpi.org -type=mx
+> A opção `-t` define o tipo de registro consultado (`A`, `AAAA`, `MX`, `NS`, `SOA`, `TXT`...). As outras formas não existem no `host`. Em teste, `host -t MX lab.test` retornou `lab.test mail is handled by 10 mail.lab.test.`
+
+### 109.4-011 | lacuna | 1
+ref: 102:p.488, 102:p.496
+tags: host, dig, tipo de registro
+Qual opção é usada tanto no `host` quanto no `dig` para especificar o tipo de registro DNS desejado? ____
+= -t
+> Ambos usam `-t`, como em `host -t NS lpi.org` e `dig -t SOA lpi.org`. O `dig` também aceita o tipo como argumento posicional (`dig lpi.org SOA`).
+
+### 109.4-012 | unica | 2
+ref: 102:p.488
+tags: host, PTR
+O que o comando `host 208.80.154.224` retorna quando o IP possui registro reverso?
+= O registro PTR, com o nome associado ao endereço
+- O registro A, com o endereço IPv4 do servidor DNS que respondeu
+- O registro MX, com o servidor de e-mail do domínio daquele IP
+- O registro NS, com os servidores de nomes autoritativos da rede
+> Quando o argumento é um endereço IPv4 ou IPv6, o `host` faz a consulta reversa e mostra o PTR: `224.154.80.208.in-addr.arpa domain name pointer ...`. Para nomes, retorna os registros A, AAAA e MX.
+
+### 109.4-013 | unica | 2
+ref: 102:p.489
+tags: host, servidor DNS
+Qual comando usa o servidor DNS 8.8.8.8, em vez dos configurados em /etc/resolv.conf, para consultar o registro MX de lpi.org com o `host`?
+= host -t MX lpi.org 8.8.8.8
+- host -t MX lpi.org @8.8.8.8
+- host -t MX 8.8.8.8 lpi.org
+- host -s 8.8.8.8 -t MX lpi.org
+> No `host`, o servidor a consultar é o último argumento da linha de comando, sem prefixo. A saída começa com `Using domain server:`.
+> A forma `@servidor` é do `dig`; invertendo a ordem, o `host` tentaria resolver `lpi.org` como se fosse o servidor; e `-s` no `host` não escolhe servidor (faz o host não passar ao próximo servidor quando recebe SERVFAIL).
+
+### 109.4-014 | unica | 2
+ref: 102:p.489
+tags: dig, servidor DNS
+Qual comando consulta o registro MX de lpi.org diretamente no servidor DNS 8.8.8.8 usando o `dig`?
+= dig @8.8.8.8 lpi.org MX
+- dig -s 8.8.8.8 lpi.org MX
+- dig lpi.org MX --server 8.8.8.8
+- dig lpi.org:8.8.8.8 MX
+> No `dig`, o servidor é indicado com `@servidor` (em qualquer posição), e o tipo pode vir como argumento (`MX`) ou com `-t MX`. Sem `@`, o `dig` usa os servidores de `/etc/resolv.conf`.
+
+### 109.4-015 | unica | 1
+ref: 102:p.489
+tags: dig, registro A
+Se nenhum tipo de registro for informado, qual tipo o `dig` consulta por padrão?
+= A
+- MX
+- NS
+- ANY
+> O padrão é o registro `A` (endereço IPv4 do nome). Para outros tipos usa-se `-t` ou um argumento posicional, como `dig -t MX lpi.org`.
+
+### 109.4-016 | lacuna | 2
+ref: 102:p.491
+tags: dig, +short
+Qual opção do `dig` suprime todas as informações e mostra apenas o resultado da consulta? dig ____ lpi.org
+= +short
+> `dig +short lpi.org` imprime só o valor da resposta (por exemplo, `65.39.134.165`). As opções do `dig` que alteram o comportamento começam com `+`.
+
+### 109.4-017 | unica | 2
+ref: 102:p.489
+tags: dig, saída, TTL
+Na seção ANSWER da saída do `dig`, aparece a linha `learning.lpi.org. 600 IN A 208.94.166.198`. O que representa o número 600?
+= O TTL do registro, em segundos: por quanto tempo a resposta pode ficar em cache
+- A porta do servidor DNS que respondeu à consulta, no caso a porta 600
+- O tempo gasto na consulta, medido em milissegundos
+- O número de saltos entre o cliente e o servidor DNS
+> Na linha do registro, a segunda coluna é o TTL (tempo de vida) em segundos; `IN` é a classe (Internet), `A` o tipo de registro e, por fim, o valor (endereço IPv4). O tempo da consulta aparece em `Query time` e o servidor consultado em `SERVER`.
+
+### 109.4-018 | multipla | 2
+ref: 102:p.489-490
+tags: dig, status, erros de resolução
+Quais associações entre o status exibido pelo `dig` e seu significado estão corretas?
+= NXDOMAIN: o nome consultado não existe
+= SERVFAIL: o servidor consultado falhou ao processar a consulta
+= REFUSED: o servidor recusou responder à consulta
+- NOERROR: a consulta falhou por tempo esgotado
+- NXDOMAIN: o servidor DNS está desligado
+- SERVFAIL: o nome consultado não existe
+> No cabeçalho (`status:`), `NOERROR` indica que o servidor respondeu sem erro; `NXDOMAIN` indica que o nome não existe; `SERVFAIL`, que o servidor teve falha ao responder; e `REFUSED`, que ele recusou a consulta (por política ou ACL). Se o servidor está desligado ou inacessível, não há status algum: o `dig` mostra `no servers could be reached`.
+
+### 109.4-019 | unica | 3
+ref: 102:p.489, 102:p.485-486
+tags: dig, search, host
+Em um host com `search lab.test` em `/etc/resolv.conf`, o `ping web` encontra `web.lab.test`, mas `dig web` retorna NXDOMAIN. Por que isso acontece?
+= O dig não aplica a lista search por padrão, a menos que se use a opção +search
+- O dig só consulta nomes completos, e por isso rejeita qualquer nome sem ponto
+- O ping consulta o DNS duas vezes, e na segunda tentativa acrescenta o domínio
+- O dig ignora /etc/resolv.conf e consulta apenas os servidores raiz da Internet
+> O resolvedor da biblioteca C (usado por `ping` e `getent`) aplica a lista `search`/`domain` a nomes curtos. O `dig`, por padrão, consulta o nome exatamente como digitado; com `dig +search web` o domínio é acrescentado. Em teste, `dig web` perguntou por `web.` e recebeu NXDOMAIN, enquanto `dig +search web` obteve `web.lab.test`.
+
+### 109.4-020 | lacuna | 2
+ref: 102:p.497
+tags: dig, .digrc
+Qual arquivo, no diretório pessoal do usuário, guarda opções padrão do `dig` que passam a valer sem digitá-las na linha de comando? ____
+= .digrc
+= ~/.digrc
+= $HOME/.digrc
+> Um arquivo `.digrc` no diretório pessoal pode conter opções do `dig` (como `+noall +answer`), aplicadas a todas as consultas. Em teste, com `+noall +answer` no `.digrc`, o `dig` passou a mostrar apenas a seção de resposta.
+
+### 109.4-021 | unica | 2
+ref: 102:p.494, 102:p.497
+tags: dig, +noall, +answer
+O que faz o comando `dig +noall +answer +question lpi.org`?
+= Consulta o registro A de lpi.org e exibe apenas a pergunta e a resposta
+- Consulta todos os tipos de registro de lpi.org e omite as respostas
+- Consulta o registro A de lpi.org e exibe todas as seções, menos a resposta
+- Consulta apenas o servidor autoritativo de lpi.org e exibe o resumo final
+> `+noall` desativa a exibição de todas as seções; depois, `+answer` e `+question` reativam somente a seção de resposta e a de pergunta. Como não há tipo, a consulta é por registro A. Saída típica: `;lpi.org. IN A` e `lpi.org. 600 IN A ...`.
+
+### 109.4-022 | unica | 2
+ref: 102:p.485, 102:p.497
+tags: /etc/resolv.conf, NetworkManager
+O arquivo `/etc/resolv.conf` começa com `# Generated by NetworkManager`. O administrador o altera com um editor de texto. O que provavelmente acontece?
+= As alterações serão sobrescritas pelo NetworkManager
+- O NetworkManager lê as alterações e atualiza a sua própria configuração
+- As alterações permanecem, mas não têm nenhum efeito no sistema
+- O NetworkManager é desativado até que o arquivo seja restaurado
+> O NetworkManager (e ferramentas como o systemd-resolved e clientes DHCP) gera esse arquivo automaticamente e o reescreve quando a conexão muda. Para tornar a alteração permanente, configure os servidores DNS na conexão (por exemplo, com `nmcli connection modify <nome> ipv4.dns <IP>`) em vez de editar o arquivo.
+
+### 109.4-023 | unica | 3
+ref: 102:p.494, 102:p.497
+tags: /etc/resolv.conf, nameserver, diagnóstico
+Um host tem `/etc/resolv.conf` com apenas `search lpi.org` e duas linhas `#nameserver ...` comentadas, e nenhum servidor DNS roda localmente. O ping por IP funciona. O que ocorre ao tentar resolver nomes pelo DNS?
+= Falha: sem nameserver ativo, o resolvedor consulta o localhost, onde não há servidor DNS
+- Funciona, pois o resolvedor usa automaticamente os servidores DNS configurados no gateway
+- Funciona, pois o resolvedor lê também as linhas comentadas, que servem de reserva
+- Falha apenas para nomes curtos; nomes completos são resolvidos normalmente pelo sistema
+> Linhas iniciadas por `#` são comentários. Sem nenhuma entrada `nameserver` válida, o resolvedor consulta o servidor de nomes da própria máquina; se ele não existe, qualquer consulta DNS falha. Em teste, a mensagem do `ping` foi `Temporary failure in name resolution`, e o `ping` por IP seguiu funcionando.
+
+### 109.4-024 | unica | 2
+ref: 102:p.485
+tags: erros de resolução, diagnóstico
+Qual é a diferença entre as mensagens `Name or service not known` e `Temporary failure in name resolution`, exibidas por programas como `ping`?
+= A primeira: o DNS informou que o nome não existe; a segunda: a consulta ao DNS falhou
+- A primeira indica falha do servidor DNS; a segunda, que o nome digitado não existe
+- Ambas indicam que a placa de rede está desativada, mudando apenas a mensagem usada
+- A primeira ocorre com nomes IPv4 e a segunda ocorre somente com nomes IPv6 na rede
+> `Name or service not known` aparece quando o resolvedor recebeu resposta negativa (NXDOMAIN): o nome não existe ou foi digitado errado. `Temporary failure in name resolution` aparece quando a consulta falha: servidor DNS inacessível, sem resposta, ou resposta de erro (SERVFAIL/REFUSED). Em teste, os dois casos foram reproduzidos com um servidor DNS de laboratório.
+
+### 109.4-025 | unica | 2
+ref: 102:p.485
+tags: /etc/resolv.conf, timeout
+O que faz a linha `options timeout:3` em `/etc/resolv.conf`?
+= Define em 3 segundos a espera por resposta de um servidor antes de tentar o próximo
+- Limita o resolvedor a 3 consultas DNS por segundo para cada aplicativo
+- Define em 3 horas a validade das respostas guardadas pelo resolvedor
+- Permite no máximo 3 servidores de nomes na configuração do resolvedor
+> A palavra-chave é `options` (plural), seguida de opções como `timeout:n` (segundos de espera por resposta de cada servidor, padrão 5) e `attempts:n` (número de tentativas). O limite de três servidores é do `nameserver`, não do `timeout`.
+
+### 109.4-026 | unica | 1
+ref: 102:p.493, 102:p.496
+tags: /etc/hosts
+Qual das linhas abaixo é uma entrada correta de `/etc/hosts`?
+= ::1 localhost
+- localhost 127.0.0.1
+- 127.0.0.1=localhost
+- localhost:127.0.0.1
+> A primeira coluna é sempre o endereço IP (IPv4 ou IPv6), seguido de um ou mais nomes. `::1 localhost` é válida e associa o loopback IPv6 ao nome `localhost`.
+
+### 109.4-027 | unica | 2
+ref: 102:p.487-488
+tags: getent, host, nsswitch
+Qual comando mostra como um programa comum resolveria o nome `proxy`, respeitando `/etc/nsswitch.conf` e `/etc/hosts`?
+= getent hosts proxy
+- host proxy
+- dig proxy
+- nslookup -type=ns proxy
+> `getent hosts <nome>` usa as mesmas rotinas dos programas e a ordem de `nsswitch.conf`, por isso inclui `/etc/hosts`. `host`, `dig` e `nslookup` consultam apenas o DNS e ignoram o `/etc/hosts`.
+
+### 109.4-028 | unica | 2
+ref: 102:p.485, 102:p.494
+tags: /etc/resolv.conf, nameserver
+Em `/etc/resolv.conf` há duas linhas `nameserver`: a primeira aponta para um servidor que não responde, e a segunda para um servidor ativo. Como o resolvedor se comporta?
+= Tenta o primeiro e, não obtendo resposta, passa a consultar o segundo
+- Consulta os dois ao mesmo tempo e usa a resposta mais rápida
+- Usa apenas o primeiro e relata falha enquanto ele não responder
+- Usa apenas o segundo, pois servidores listados primeiro são ignorados
+> Os servidores são consultados na ordem em que aparecem; os seguintes servem de reserva quando o anterior não responde (ou o tempo se esgota). Em teste, com o primeiro servidor inativo, o nome foi resolvido pelo segundo. A opção `options rotate` muda isso, distribuindo as consultas entre os servidores.
+
+### 109.4-029 | unica | 2
+ref: 102:p.487
+tags: systemd-resolved
+Sobre o systemd-resolved, qual afirmação está correta?
+= É um resolvedor local (stub): recebe consultas em 127.0.0.53 e as repassa aos servidores DNS
+- É um servidor DNS completo e autoritativo, capaz de hospedar zonas e responder por elas
+- Substitui o arquivo /etc/hosts, que deixa de ser consultado quando ele está ativo no host
+- Só atende consultas IPv6 e usa exclusivamente o protocolo mDNS para resolver os nomes
+> O `systemd-resolved` fornece resolução DNS, mDNS e LLMNR, escuta consultas em `127.0.0.53` e as encaminha aos servidores configurados; ele não é um servidor DNS completo. Mantém suporte a `/etc/hosts` por meio da fonte `files` do `nsswitch.conf`.
+
+### 109.4-030 | lacuna | 2
+ref: 102:p.487
+tags: systemd-resolved
+Em qual endereço IP o systemd-resolved escuta as solicitações DNS locais? ____
+= 127.0.0.53
+> O stub resolver do `systemd-resolved` escuta em `127.0.0.53`, e o `/etc/resolv.conf` costuma conter `nameserver 127.0.0.53` quando ele é usado.
+
+### 109.4-031 | unica | 3
+ref: 102:p.487
+tags: systemd-resolved, nsswitch
+Qual serviço deve constar na linha `hosts:` de `/etc/nsswitch.conf` para que as consultas de nomes passem pelo systemd-resolved?
+= resolve
+- resolved
+- systemd
+- dnsmasq
+> A fonte do `nsswitch.conf` fornecida pelo módulo NSS do `systemd-resolved` chama-se `resolve` (por exemplo: `hosts: files resolve dns`). A biblioteca que implementa esse módulo é a `libnss_resolve`, que pode não estar instalada por padrão. `resolved` é o nome do daemon, não da fonte; `systemd` não é uma fonte válida; e `dnsmasq` é outro software de DNS.
+
+### 109.4-032 | unica | 2
+ref: 102:p.487
+tags: systemd-resolved, resolvectl
+Qual comando exibe o estado do systemd-resolved, com os servidores DNS usados por cada interface?
+= resolvectl status
+- dig status
+- host -s
+- getent resolved
+> `resolvectl status` (antes `systemd-resolve --status`) mostra o DNS configurado globalmente e por interface; `resolvectl query <nome>` resolve um nome pelo serviço. `dig` e `host` não têm um comando `status` desse tipo.
+
+### 109.4-033 | unica | 3
+ref: 102:p.487
+tags: systemd-resolved, resolved.conf
+Em qual arquivo ficam as configurações globais do systemd-resolved, como `DNS=` e `FallbackDNS=`?
+= /etc/systemd/resolved.conf
+- /etc/systemd/resolv.conf
+- /etc/resolved.conf
+- /etc/systemd/network/resolved.network
+> O arquivo de configuração do serviço é `/etc/systemd/resolved.conf` (com ajustes complementares em `resolved.conf.d/`). O material oficial cita o nome `/etc/systemd/resolv.conf`, que não é o arquivo real. Já `/etc/resolv.conf` é o arquivo do resolvedor, que o `systemd-resolved` gerencia ou aponta por link simbólico.
+
+### 109.4-034 | unica | 1
+ref: 102:p.488
+tags: host, NS
+O que mostra o comando `host -t NS lpi.org`?
+= Os servidores de nomes (registros NS) responsáveis pelo domínio lpi.org
+- Os servidores de e-mail (registros MX) responsáveis pelo domínio lpi.org
+- O nome do servidor (PTR) que corresponde ao endereço lpi.org
+- O servidor DNS que está configurado no host que executou o comando
+> `-t NS` consulta os registros NS (name server) do domínio: `lpi.org name server dns1.easydns.com.` MX é o tipo para e-mail, PTR é o de consulta reversa, e os servidores usados pelo host estão em `/etc/resolv.conf`.
+
+### 109.4-035 | unica | 1
+ref: 102:p.489, 102:p.495
+tags: dig, host
+Qual das ferramentas é mais adequada para analisar em detalhes uma resposta DNS (cabeçalho, flags, TTL e seções), por exemplo na depuração de um servidor DNS?
+= dig
+- host
+- getent
+- ping
+> O `dig` exibe a resposta completa, dividida em seções (pergunta, resposta, autoridade, informações adicionais), com flags e estatísticas. O `host` produz saída resumida, o `getent` mostra o resultado do resolvedor sem detalhes de DNS e o `ping` não faz consultas DNS detalhadas.
+
+### 109.4-036 | multipla | 2
+ref: 102:p.487-489, 102:p.496
+tags: host, dig, getent, /etc/hosts
+Quais comandos consultam apenas o DNS, sem passar por /etc/nsswitch.conf nem por /etc/hosts?
+= host
+= dig
+= nslookup
+- getent hosts
+- ping
+- curl
+> `host`, `dig` e `nslookup` são clientes DNS: enviam a pergunta direto ao servidor DNS. `getent hosts`, `ping` e `curl` usam o resolvedor da biblioteca C e seguem a ordem de `/etc/nsswitch.conf`, consultando `/etc/hosts` antes do DNS no padrão `files dns`.
+
+### 109.4-037 | multipla | 2
+ref: 102:p.488
+tags: host, registros
+Sem a opção -t, para quais tipos de registro o comando `host nome` mostra resultados?
+= A (endereço IPv4)
+= AAAA (endereço IPv6)
+= MX (servidor de e-mail)
+- NS (servidor de nomes)
+- SOA (início de autoridade)
+- TXT (texto livre)
+> Sem opções, o `host` retorna os registros A, AAAA e MX do nome (os de e-mail aparecem quando existirem). NS, SOA e TXT precisam ser pedidos com `-t`, como em `host -t NS lpi.org`.
+
+### 109.4-038 | multipla | 2
+ref: 102:p.483-485
+tags: nsswitch
+Quais afirmações sobre o arquivo /etc/nsswitch.conf estão corretas?
+= A coluna da esquerda de cada linha é o banco de dados (hosts, passwd, group...)
+= As fontes de cada linha são consultadas da esquerda para a direita
+= Texto após # é comentário e é ignorado pelas funções de resolução
+- Cada linha traz os endereços IP dos servidores DNS, no lugar de /etc/resolv.conf
+- A ordem das fontes de hosts é fixa (files e dns) e não pode ser alterada
+- O arquivo afeta apenas a resolução de nomes de host e não a de usuários e grupos
+> O arquivo é organizado em colunas: banco de dados e fontes (`files`, `dns`, `nis`, `resolve`...); colunas entre colchetes, como `[NOTFOUND=return]`, acrescentam lógica condicional à fonte à esquerda. Ele vale para vários bancos, não só para `hosts`, e a ordem é livremente alterável.
+
+### 109.4-039 | multipla | 3
+ref: 102:p.487-488, 102:p.496
+tags: getent
+Quais comandos getent são válidos?
+= getent hosts proxy
+= getent group openldap
+= getent -s dns hosts learning.lpi.org
+- getent -t MX lpi.org
+- getent @8.8.8.8 hosts lpi.org
+- getent resolv.conf
+> O formato é `getent [-s fonte] <banco> [chave]`: `hosts`, `group`, `passwd` e `services` são bancos de dados do `nsswitch.conf`. O `getent` não faz consultas por tipo de registro DNS (`-t`) nem escolhe servidor DNS (`@`), e `resolv.conf` não é um banco de dados.
+
+### 109.4-040 | lacuna | 2
+ref: 102:p.489
+tags: dig, PTR, consulta reversa
+Qual opção do dig faz a consulta reversa de um endereço IP? Complete: dig ____ 8.8.8.8
+= -x
+> `dig -x 8.8.8.8` consulta o registro PTR (resolução reversa) do endereço. Em teste, `dig -x 10.9.9.9 +short` retornou o nome associado.
+
+### 109.4-041 | lacuna | 1
+ref: 102:p.485
+tags: /etc/resolv.conf
+Qual arquivo (caminho completo) contém os servidores DNS usados pelo resolvedor do sistema? ____
+= /etc/resolv.conf
+> O resolvedor lê as linhas `nameserver` de `/etc/resolv.conf` para saber quais servidores DNS consultar. Em muitos sistemas esse arquivo é gerenciado pelo NetworkManager ou pelo systemd-resolved.
+
+### 109.4-042 | lacuna | 2
+ref: 102:p.485-486
+tags: /etc/resolv.conf, search
+Qual palavra-chave de /etc/resolv.conf define a lista de domínios acrescentados a nomes curtos antes da consulta? ____
+= search
+> Com `search lpi.org`, o nome curto `learning` é consultado como `learning.lpi.org`. A palavra-chave `domain` (obsoleta) faz algo semelhante, mas aceita um único domínio.
+
+### 109.4-043 | lacuna | 2
+ref: 102:p.491
+tags: dig, +nocookie, EDNS
+Complete o comando que consulta o registro MX de lpi.org com o `dig` desativando a extensão EDNS cookie: dig ____ -t MX lpi.org
+= +nocookie
+> As opções do `dig` que ajustam a consulta ou a saída começam com `+`; o prefixo `no` desliga uma opção. `+nocookie` desativa o envio do cookie EDNS na consulta (a linha `; COOKIE:` deixa de aparecer na `OPT PSEUDOSECTION` da resposta, quando o servidor suporta EDNS). Em teste, `dig +nocookie -t MX localhost` foi aceito normalmente.

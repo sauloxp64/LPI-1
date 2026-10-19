@@ -1,0 +1,7 @@
+# Scripts e configs vão para containers Linux: sempre LF.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.pdf binary
+*.png binary
+*.woff2 binary

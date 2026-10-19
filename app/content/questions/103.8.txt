@@ -1,0 +1,387 @@
+### 103.8-001 | lacuna | 1
+ref: 101:p.410
+tags: vi, modos, Esc
+Qual tecla encerra o modo de inserção do vi e devolve o usuário ao modo normal?
+= Esc
+= ESC
+= esc
+= Escape
+= <Esc>
+> No vi, o texto só é digitado no modo de inserção; a tecla `Esc` sai dele e volta ao modo normal (também chamado de modo de comando), que é o modo padrão do editor.
+
+### 103.8-002 | unica | 1
+ref: 101:p.410
+tags: vi, modos
+Em qual modo o vi se encontra logo depois de aberto?
+= Normal, em que as teclas executam comandos
+- Inserção, em que as teclas digitadas viram texto
+- Visual, em que um trecho já vem selecionado
+- Substituição, em que o texto novo sobrescreve o antigo
+> O vi inicia no modo normal (ou de comando): cada tecla é um comando de navegação ou edição. Para digitar texto é preciso antes executar um comando de inserção (`i`, `a`, `o`...), e `Esc` volta ao modo normal.
+
+### 103.8-003 | unica | 2
+ref: 101:p.411
+tags: vi, navegação, h j k l
+Qual tecla move o cursor do vi uma linha para **cima**, no modo normal?
+= `k`
+- `j`
+- `h`
+- `Ctrl-U`
+> A sequência de navegação básica é `h` (esquerda), `j` (baixo), `k` (cima) e `l` (direita). Elas ficam na linha central do teclado e dispensam as setas, que podem não funcionar em terminais antigos ou remotos. `Ctrl-U` rola o texto meia tela para cima, em vez de mover uma única linha.
+
+### 103.8-004 | unica | 1
+ref: 101:p.411
+tags: vi, inserção, o
+Qual tecla do modo normal abre uma nova linha **abaixo** da linha atual e já entra no modo de inserção?
+= `o`
+- `O`
+- `A`
+- `Ctrl-O`
+> `o` abre uma linha abaixo, e `O` (maiúsculo) abre uma linha acima. `A` insere no fim da linha atual, sem criar linhas novas, e `Ctrl-O` no modo normal salta para uma posição anterior do cursor.
+
+### 103.8-005 | unica | 2
+ref: 101:p.411
+tags: vi, inserção, a, i
+O cursor está sobre a letra `c` do texto `abcde`, no modo normal. O usuário digita `aX` e depois pressiona `Esc`. Qual é o texto resultante?
+= abcXde
+- abXcde
+- Xabcde
+- abcde, pois `aX` não é um comando válido
+> `a` (append) entra no modo de inserção **depois** da posição do cursor, então o `X` fica após o `c`. Com `i` o `X` entraria antes do `c` (`abXcde`); com `I` iria ao início da linha (`Xabcde`) e com `A`, ao fim (`abcdeX`).
+
+### 103.8-006 | unica | 3
+ref: 101:p.411
+tags: vi, copiar, colar, yy, p
+Um arquivo tem as linhas `A`, `B` e `C`. Com o cursor na linha `A`, o usuário pressiona `yy`, depois `j` e por fim `p`. Como fica o arquivo?
+= A, B, A, C
+- A, A, B, C
+- A, B, C, A
+- A, B, C, pois a linha só foi copiada e nada foi colado
+> `yy` copia a linha atual e `j` desce para a linha `B`. O `p` (minúsculo) cola **depois** da linha atual, resultando em `A, B, A, C`. O `P` (maiúsculo) colaria **antes** dela (`A, A, B, C`). Nenhum desses comandos remove a linha original; só `dd` ou `x` removem texto.
+
+### 103.8-007 | unica | 2
+ref: 101:p.411
+tags: vi, dd, p, mover linhas
+Um arquivo contém as linhas `1`, `2` e `3`, com o cursor na primeira. Após digitar `ddp` no modo normal, qual é a ordem das linhas?
+= 2, 1, 3
+- 1, 2, 3, pois `dd` e `p` se anulam
+- 1, 3, 2
+- 2, 3, 1
+> `dd` recorta a linha `1` (guardando-a no registro) e o cursor passa à linha `2`; `p` cola o conteúdo **depois** da linha atual. O efeito prático é trocar a linha atual com a seguinte. Se fosse `ddGp`, a linha `1` iria para o final (`2, 3, 1`).
+
+### 103.8-008 | unica | 3
+ref: 101:p.412
+tags: vi, contagem, d, w
+O arquivo tem a linha `um dois tres quatro`, com o cursor no início. Qual será a linha após o comando `d2w` no modo normal?
+= tres quatro
+- dois tres quatro
+- quatro
+- um dois quatro
+> Um número antes ou dentro do comando repete a ação. `d2w` apaga duas palavras a partir do cursor (`um ` e `dois `), restando `tres quatro`. O comando `dw` apagaria apenas `um `, deixando `dois tres quatro`.
+
+### 103.8-009 | lacuna | 1
+ref: 101:p.411
+tags: vi, apagar, dd
+Qual comando do modo normal do vi apaga a linha inteira onde está o cursor?
+= dd
+> `dd` recorta a linha atual (o texto apagado fica disponível para colar com `p` ou `P`). Com um prefixo numérico, como `3dd`, apaga a linha atual e as duas seguintes.
+
+### 103.8-010 | lacuna | 1
+ref: 101:p.411
+tags: vi, copiar, yy
+Qual comando do modo normal copia ("arranca", de *yank*) a linha atual sem removê-la?
+= yy
+> `yy` copia a linha inteira para o registro, sem alterá-la; depois é possível colá-la com `p` ou `P`. Com contagem, `3yy` copia a linha atual mais as duas seguintes.
+
+### 103.8-011 | unica | 2
+ref: 101:p.411
+tags: vi, busca, ?
+No modo normal, o que ocorre ao digitar `?erro` e pressionar Enter?
+= O vi procura a palavra `erro` para trás, a partir do cursor
+- O vi procura a palavra `erro` para frente, a partir do cursor
+- O vi substitui `erro` pela palavra seguinte
+- O vi executa `erro` como comando do shell
+> `/padrão` pesquisa para frente e `?padrão` pesquisa para trás. Em ambos os casos, as teclas `n` e `N` repetem a busca na mesma direção ou na direção oposta. Substituições usam `:s`, e comandos do shell usam `:!`.
+
+### 103.8-012 | lacuna | 2
+ref: 101:p.411
+tags: vi, busca, n
+Depois de uma busca com `/erro`, qual tecla do modo normal salta para a próxima ocorrência, mantendo a mesma direção da busca?
+= n
+> `n` repete a última busca na mesma direção; `N` repete em sentido contrário. Isso vale para `/` (para frente) e `?` (para trás).
+
+### 103.8-013 | multipla | 2
+ref: 101:p.412-413
+tags: vi, salvar, sair, ZZ, :wq, :x
+Quais comandos do vi gravam o arquivo e encerram o editor?
+= `ZZ`
+= `:wq`
+= `:x`
+- `ZQ`
+- `:q!`
+- `:w!`
+> `ZZ` e `:x` gravam apenas se houver modificações e saem; `:wq` sempre grava e sai. Já `ZQ` e `:q!` saem **descartando** as alterações, e `:w!` grava à força, mas o vi continua aberto.
+
+### 103.8-014 | lacuna | 2
+ref: 101:p.413
+tags: vi, sair, :q!
+Qual comando de dois-pontos fecha o vi sem gravar as alterações feitas no arquivo?
+= :q!
+= :quit!
+= :qa!
+> `:q!` (ou `:quit!`) ignora a recusa que o vi faria por haver mudanças não gravadas e sai descartando-as; `:qa!` faz o mesmo com todas as janelas abertas. No modo normal (sem os dois-pontos), `ZQ` tem o mesmo efeito.
+
+### 103.8-015 | unica | 3
+ref: 101:p.413
+tags: vi, :w!, somente leitura
+Um usuário comum, dono do arquivo `ro.txt` (permissão 444), o abre no vi e altera o texto. O comando `:w` é recusado com um aviso de que a opção `readonly` está ativa. Qual comando grava o arquivo mesmo assim?
+= Usar `:w!`, que força a gravação
+- Usar `:wq`, que grava e depois sai do vi
+- Usar `:q!`, que descarta a edição e sai
+- Usar `:e!`, que recarrega o arquivo do disco
+> O `!` força a gravação por cima da proteção de somente leitura (se as permissões do dono permitirem), e por isso `:w!` funciona. `:wq` (e `ZZ`) falham pelo mesmo motivo do `:w`, enquanto `:q!` e `:e!` apenas descartam a edição, saindo do vi ou recarregando o arquivo.
+
+### 103.8-016 | unica | 3
+ref: 101:p.413
+tags: vi, :q, alterações não gravadas
+Depois de editar um arquivo no vi, o usuário digita `:q` e o editor responde com a mensagem `E37: No write since last change (add ! to override)`. O que isso significa?
+= Há alterações não gravadas; `:q!` as descarta e `:wq` grava antes
+- O arquivo está corrompido e deve ser verificado com `fsck`
+- Falta permissão de escrita e é preciso reabrir o arquivo com `sudo`
+- Existe um arquivo de troca antigo que precisa ser apagado
+> O vi se recusa a sair de um buffer modificado sem gravar. O `!` em `:q!` informa que as alterações podem ser jogadas fora. A falta de permissão geraria uma mensagem diferente (por exemplo, `E45` ou `E212`), e o aviso do arquivo de troca (swap) aparece na abertura do arquivo, não ao sair.
+
+### 103.8-017 | unica | 2
+ref: 101:p.413
+tags: vi, substituição, :s
+Qual comando de dois-pontos substitui **todas** as ocorrências de `foo` por `bar` no arquivo inteiro?
+= `:%s/foo/bar/g`
+- `:s/foo/bar/g`, que atua só na linha atual
+- `:%s/foo/bar/`, que troca só a primeira de cada linha
+- `:%/foo/bar/g`, que não tem o comando `s`
+> `%` é o endereço "todas as linhas" e o sinalizador `g` troca todas as ocorrências em cada linha. Sem `%`, `:s` atua só na linha atual. Sem `g`, troca apenas a primeira ocorrência de cada linha. A última forma é inválida porque falta o comando `s`. A sintaxe é a mesma do `sed`.
+
+### 103.8-018 | unica | 1
+ref: 101:p.413
+tags: vi, shell, :!
+No vi, o que faz o comando `:!ls -l`?
+= Roda `ls -l` no shell e exibe a saída
+- Insere a saída de `ls -l` no texto
+- Salva o arquivo e depois executa `ls -l`
+- Busca a cadeia `ls -l` no arquivo
+> `:!comando` roda um comando do shell sem sair do editor. Para inserir a saída no texto seria preciso `:r !ls -l`. A busca de cadeias é feita com `/` ou `?`.
+
+### 103.8-019 | unica | 2
+ref: 101:p.411
+tags: vi, editar, r, s, x
+Qual tecla do modo normal troca **apenas** o caractere sob o cursor por outro digitado em seguida, sem entrar no modo de inserção?
+= `r`
+- `s`
+- `x`
+- `cw`
+> `rX` substitui o caractere sob o cursor por `X` e permanece no modo normal. O `s` também apaga o caractere, mas entra no modo de inserção; `x` apenas apaga o caractere; `cw` altera uma palavra inteira e também entra no modo de inserção.
+
+### 103.8-020 | unica | 2
+ref: 101:p.412
+tags: vi, desfazer, refazer, Ctrl-R
+Qual combinação de teclas refaz uma alteração que acabou de ser desfeita com `u` no vim?
+= `Ctrl-R`
+- `Ctrl-Shift-Z`
+- `Ctrl-Z`
+- `U`
+> `u` desfaz a última ação e `Ctrl-R` (redo) a refaz. `Ctrl-Z` suspende o editor e devolve o terminal ao shell (retorna com `fg`), `Ctrl-Shift-Z` é o "refazer" de editores gráficos, mas não existe no vim, e `U` desfaz todas as mudanças feitas na última linha alterada.
+
+### 103.8-021 | unica | 1
+ref: 101:p.410
+tags: vi, navegação, G
+Qual tecla do modo normal leva o cursor diretamente à última linha do documento?
+= `G`
+- `1G`
+- `$`
+- `0`
+> `G` vai à última linha e `1G` à primeira (um número antes de `G` indica a linha de destino). `0` e `$` movem o cursor para o início e o fim da **linha atual**, não do documento.
+
+### 103.8-022 | unica | 2
+ref: 101:p.411
+tags: vi, navegação, palavras
+No modo normal, qual tecla move o cursor para o fim da palavra atual?
+= `e`
+- `w`
+- `b`
+- `ge`
+> `e` vai ao fim da palavra (e de novo, ao fim da seguinte), enquanto `w` pula para o início da próxima. `b` retorna ao início da palavra anterior e `ge` vai ao **fim da palavra anterior**.
+
+### 103.8-023 | unica | 2
+ref: 101:p.409
+tags: vi, linha de comando, +N
+Qual comando abre `/etc/fstab` no vi com o cursor já posicionado na linha 9?
+= `vi +9 /etc/fstab`
+- `vi --line 9 /etc/fstab`
+- `vi 9 /etc/fstab`
+- `vi /etc/fstab:9`
+> O argumento `+N` antes do nome do arquivo posiciona o cursor na linha `N`; um `+` sozinho (`vi + arquivo`) leva à última linha. Em `vi 9 /etc/fstab`, o `9` seria tratado como um segundo arquivo, e em `/etc/fstab:9` o vi abriria um arquivo de nome estranho.
+
+### 103.8-024 | unica | 1
+ref: 101:p.415
+tags: EDITOR, export, nano
+Qual comando define o `nano` como editor padrão apenas na sessão de shell atual?
+= `export EDITOR=nano`
+- `export DEFAULT_EDITOR=nano`
+- `set editor nano`
+- `EDITOR nano`
+> Os programas consultam a variável de ambiente `EDITOR` (ou `VISUAL`) para decidir qual editor abrir. É preciso exportá-la para que os processos filhos a herdem. Para tornar a mudança permanente, o comando deve constar no arquivo de inicialização do shell (por exemplo, `~/.bash_profile`).
+
+### 103.8-025 | multipla | 2
+ref: 101:p.415
+tags: EDITOR, VISUAL, variáveis
+Quais variáveis de ambiente são consultadas por programas como `crontab -e` para escolher o editor de texto?
+= `EDITOR`
+= `VISUAL`
+- `DEFAULT_EDITOR`
+- `TEXTEDITOR`
+- `PAGER`
+> O Bash e os utilitários que abrem editores (como `crontab -e` ou `visudo`) usam `VISUAL` e `EDITOR`; quando ambas existem, `VISUAL` costuma ter prioridade. `DEFAULT_EDITOR` e `TEXTEDITOR` não são variáveis padrão, e `PAGER` define o paginador (por exemplo, `less`), não o editor.
+
+### 103.8-026 | unica | 3
+ref: 101:p.415
+tags: editor padrão, update-alternatives, Debian
+Em um Debian ou Ubuntu, qual comando permite escolher o editor padrão de **todo o sistema** (a alternativa `editor`), usado quando `EDITOR` e `VISUAL` não estão definidas?
+= `sudo update-alternatives --config editor`
+- `sudo dpkg-reconfigure sensible-utils`
+- `sudo update-rc.d editor defaults`
+- `export EDITOR=/usr/bin/vim`
+> `update-alternatives --config editor` (que exige privilégios de root, daí o `sudo`) muda o link `/usr/bin/editor` para todo o sistema. `select-editor` grava a preferência apenas do usuário que o executa (`~/.selected_editor`); `dpkg-reconfigure sensible-utils` e `update-rc.d` não escolhem o editor (o segundo cuida de scripts de inicialização), e o `export` vale só para a sessão atual. Em RHEL/Fedora o caminho usual é a variável `EDITOR`.
+
+### 103.8-027 | lacuna | 1
+ref: 101:p.414
+tags: vim, vimtutor
+Qual comando abre o tutorial interativo, passo a passo, que ensina os comandos básicos do vim?
+= vimtutor
+> `vimtutor` abre uma cópia editável de um guia dentro do próprio vim, permitindo praticar os comandos de forma progressiva.
+
+### 103.8-028 | unica | 2
+ref: 101:p.409
+tags: vim, vi
+Qual afirmação sobre o `vim` (*vi improved*) é correta?
+= É compatível com o vi e traz realce de sintaxe e desfazer multinível
+- É um editor gráfico que só substitui o vi dentro do ambiente X11
+- Usa comandos incompatíveis com o vi, e o usuário precisa reaprender tudo
+- É o nome do modo de inserção do vi clássico, usado ao digitar texto
+> O vim é uma versão aprimorada e retrocompatível do vi: além de realce de sintaxe e desfazer/refazer multinível, edita vários documentos. Na maioria das distribuições o comando `vi` já é o vim (ou um link para ele).
+
+### 103.8-029 | unica | 2
+ref: 101:p.414
+tags: nano, recortar, colar
+No `nano`, quais teclas recortam a linha atual (ou a seleção) e colam o conteúdo recortado, respectivamente?
+= `Ctrl-K` e `Ctrl-U`
+- `Ctrl-U` e `Ctrl-K`
+- `Ctrl-X` e `Ctrl-V`
+- `Ctrl-Shift-X` e `Ctrl-Shift-V`
+> No nano, `Ctrl-K` corta e `Ctrl-U` cola (*uncut*); `Meta-6` copia a seleção. Os atalhos de editores gráficos não valem aqui: `Ctrl-X` fecha o nano, `Ctrl-V` avança uma página e `Ctrl-C` mostra a posição do cursor.
+
+### 103.8-030 | unica | 2
+ref: 101:p.414
+tags: nano, sair
+Qual tecla fecha o `nano` (pedindo para salvar se houver alterações)?
+= `Ctrl-X`
+- `ZZ`
+- `:q!`
+- `Esc` e depois `:q`
+> No nano o texto digitado vai direto ao documento, e os comandos usam `Ctrl` ou `Meta`: `Ctrl-X` sai e `Ctrl-O` grava. `ZZ` e `:q!` são comandos do vi que, no nano, seriam apenas texto digitado.
+
+### 103.8-031 | unica | 2
+ref: 101:p.415
+tags: Emacs, edição
+Qual afirmação sobre o Emacs é correta?
+= O texto digitado entra direto no documento; os comandos usam Ctrl e Meta
+- É preciso pressionar `i` antes de digitar texto, como no vi, e sair com `Esc`
+- É um editor de fluxo, não interativo, parecido com o `sed`, sem tela de edição
+- Só funciona em ambiente gráfico e não consegue rodar em um terminal de texto
+> No Emacs, assim como no nano, a digitação comum insere texto; a navegação e os comandos usam combinações com `Ctrl` e `Meta`. Ele ainda funciona em terminal e vai além da edição: é um ambiente capaz de compilar programas, ler e-mail e RSS.
+
+### 103.8-032 | unica | 3
+ref: 101:p.419
+tags: vi, operador, motion, dt
+O cursor está no início de `hello world. next`. Qual sequência apaga o texto até **antes** do ponto final, mantendo o ponto?
+= `dt.`
+- `df.`
+- `d3w`
+- `dw`
+> `d` é o operador de apagar e `t.` o movimento "até antes do próximo `.`", então sobra `. next`. `df.` apagaria também o ponto (`f` inclui o caractere), `dw` apagaria só a palavra `hello ` (resta `world. next`) e `d3w` apagaria três palavras, sobrando apenas `next`.
+
+### 103.8-033 | unica | 3
+ref: 101:p.412
+tags: vim, registros, "lp
+No vim, a sequência `"ly` guarda o texto selecionado no registro `l`. Como esse registro é colado depois do cursor?
+= `"lp`
+- `@lp`
+- `:l p`
+- `lp`
+> O prefixo `"` seguido do nome do registro escolhe qual registro o próximo comando usará: `"ly` copia para `l` e `"lp` cola dele. `@l` executaria o registro como macro, e `l` apenas move o cursor para a direita.
+
+### 103.8-034 | unica | 2
+ref: 101:p.411
+tags: vim, seleção, visual
+No vim, qual tecla do modo normal inicia a seleção de **linhas inteiras**?
+= `V`
+- `v`
+- `Ctrl-V`
+- `y`
+> `V` (maiúsculo) seleciona por linhas; `v` seleciona por caracteres e `Ctrl-V` seleciona um bloco retangular de colunas. `y` copia o que está selecionado (ou espera um movimento), mas não inicia seleção.
+
+### 103.8-035 | lacuna | 2
+ref: 101:p.420
+tags: vim, swap, recuperação
+Uma queda de energia interrompeu uma sessão do vim. Ao reabrir o arquivo, o editor lista opções como (O)pen Read-Only, (E)dit anyway, (R)ecover, (D)elete it, (Q)uit e (A)bort. Qual letra descarta o arquivo de troca (swap)?
+= d
+= D
+> A opção `(D)elete it` apaga o arquivo de troca e abre o arquivo original, sem recuperar as alterações perdidas. Com `R` o vim tentaria recuperar o conteúdo a partir do swap.
+
+### 103.8-036 | unica | 2
+ref: 101:p.413
+tags: vim, ~/.vimrc, configuração
+Em qual arquivo ficam as opções e macros persistentes do vim de um usuário?
+= `~/.vimrc`
+- `~/.vi.conf`
+- `/etc/vim.conf`
+- `~/.config/vim.conf`
+> `~/.vimrc` é o arquivo de configuração do usuário no vim; ali, por exemplo, uma linha como `let @d = '...'` armazena uma macro de forma permanente. Os outros caminhos citados não são lidos pelo vim.
+
+### 103.8-037 | unica | 3
+ref: 101:p.412
+tags: vim, macro, q
+Qual sequência de teclas inicia a gravação de uma macro no registro `d` do vim?
+= `qd`
+- `@d`
+- `md`
+- `"dy`
+> `q` seguido de uma letra inicia a gravação no registro correspondente, e uma nova tecla `q` encerra. A macro é executada depois com `@d`. `md` cria uma marca chamada `d`, e `"dy` copia texto para o registro `d`.
+
+### 103.8-038 | multipla | 2
+ref: 101:p.411
+tags: vi, inserção, i, a, o
+Quais teclas do modo normal levam o vi ao modo de inserção?
+= `i`
+= `a`
+= `o`
+- `y`
+- `p`
+- `u`
+> `i` insere antes do cursor, `a` depois dele e `o` abre uma nova linha abaixo; todas deixam o vi pronto para receber texto. `y` copia, `p` cola e `u` desfaz, mas permanecem no modo normal.
+
+### 103.8-039 | lacuna | 1
+ref: 101:p.411
+tags: vi, desfazer, u
+Qual tecla do modo normal desfaz a última alteração?
+= u
+> `u` desfaz a última ação e `Ctrl-R` a refaz. No vi original só há um nível de desfazer; no vim há vários níveis.
+
+### 103.8-040 | unica | 2
+ref: 101:p.412
+tags: vi, copiar, contagem, 3yy
+Qual comando do modo normal copia a linha atual e as duas linhas seguintes, num total de três linhas?
+= `3yy`
+- `yy3`, com o número depois
+- `:3y`, no modo de comando
+- `3p`
+> Um número antes do comando o repete: `3yy` copia três linhas a partir da atual, e depois `p` ou `P` cola o bloco. As demais formas não servem: `yy3` não repete o `yy`, `:3y` copia apenas a linha de número 3 do arquivo, e `3p` cola o conteúdo três vezes, sem copiar nada.

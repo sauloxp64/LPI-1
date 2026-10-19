@@ -1,0 +1,29 @@
+{
+  "id": "f108-3-aliases-forward",
+  "obj": "108.3",
+  "titulo": "Aliases de e-mail e redirecionamento com .forward",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "alias": { "escolha": ["suporte", "comercial", "cobranca", "financeiro"] },
+    "u1": { "escolha": ["rafael", "simone", "tadeu", "ursula", "valter"] },
+    "u2": { "escolha": ["rafael", "simone", "tadeu", "ursula", "valter"] },
+    "dono": { "escolha": ["wilson", "xavier", "yara", "zilda"] },
+    "ext": { "escolha": ["ana.paula@filial.example.com", "plantao@parceiro.example.org", "ti@terceirizada.example.net"] }
+  },
+  "distintos": [["u1", "u2"]],
+  "enunciado": "O servidor de e-mail usa o arquivo `/etc/aliases` (neste laboratório não há MTA instalado, então você edita o arquivo como em um Postfix/Sendmail, mas nada é entregue de verdade). Ele já tem vários aliases padrão. Com `sudo`, faça:\n\n1. Crie o alias **`{alias}`** que entrega a mensagem a **três destinos**: os usuários locais `{u1}` e `{u2}` e o endereço externo `{ext}`.\n2. O alias existente **`postmaster`** hoje aponta para `root`; faça-o apontar para **`{u1}`** (altere a linha existente, não crie uma segunda definição) e **não apague** os demais aliases do arquivo.\n3. O usuário **`{dono}`** quer que suas mensagens sejam **redirecionadas** para `{ext}`, **mantendo também uma cópia local** na caixa dele (cuidado com loop de entrega). Crie o arquivo de redirecionamento correto na pasta pessoal dele (`/home/{dono}`); o arquivo deve ser **dele** (dono) e **não** pode ser gravável por outros.\n4. Grave em `~/lab/mta/recarregar.txt` (uma linha) o **comando** que o administrador deve rodar depois de alterar o `/etc/aliases` para reconstruir o banco de dados de aliases (aqui ele não existe, então só registre o comando).",
+  "verifica": [
+    "`/etc/aliases` tem uma única definição de `{alias}` com os destinos `{u1}`, `{u2}` e `{ext}`",
+    "`postmaster` tem uma única definição, apontando só para `{u1}`; os aliases padrão continuam lá",
+    "`/home/{dono}/.forward` pertence a `{dono}`, não é gravável por grupo/outros e contém `\\{dono}` (cópia local) e `{ext}`",
+    "`~/lab/mta/recarregar.txt` contém o comando que reconstrói o banco de aliases"
+  ],
+  "dicas": [
+    "Formato do `/etc/aliases`: `nome: destino1, destino2, ...`, um alias por linha; linhas que começam com espaço continuam a anterior; `#` inicia comentário.",
+    "O redirecionamento por usuário fica em `~/.forward`: os endereços separados por vírgula. Para continuar entregando uma cópia local sem entrar em loop, escreva o nome do próprio usuário precedido de barra invertida.",
+    "O arquivo `.forward` deve ser do próprio usuário (o MTA ignora arquivos de outros ou graváveis por todos): use `sudo -u USUARIO tee ...` ou ajuste com `chown`/`chmod` depois.",
+    "O comando que gera o `/etc/aliases.db` a partir do arquivo texto junta as palavras `new` e `aliases`."
+  ],
+  "solucao": "```\n# 1 e 2: edite /etc/aliases (sudo vim /etc/aliases ou sed/tee)\n{alias}: {u1}, {u2}, {ext}\npostmaster: {u1}          # altere a linha existente\n\n# 3: .forward do usuário, pertencente a ele\necho '\\{dono}, {ext}' | sudo -u {dono} tee /home/{dono}/.forward\nsudo chmod 644 /home/{dono}/.forward\n\n# 4:\necho newaliases > ~/lab/mta/recarregar.txt\n```\nO `/etc/aliases` é texto; MTAs como Postfix/Sendmail usam uma versão indexada (`/etc/aliases.db`), por isso depois de editar é obrigatório rodar `newaliases` (equivalente a `postalias /etc/aliases` no Postfix ou `sendmail -bi`). Uma segunda linha `postmaster:` seria ambígua/ignorada, então altere a existente. No `~/.forward`, a barra invertida (`\\usuario`) entrega na caixa local **sem** reaplicar o alias/forward do próprio usuário, evitando loop. O MTA ignora um `.forward` que não pertença ao usuário ou seja gravável por outros (segurança)."
+}

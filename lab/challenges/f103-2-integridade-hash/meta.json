@@ -1,0 +1,28 @@
+{
+  "id": "f103-2-integridade-hash",
+  "obj": "103.2",
+  "titulo": "Conferir integridade com somas de verificação",
+  "nivel": 1,
+  "minutos": 5,
+  "params": {
+    "alg": {
+      "escolha": [
+        "md5",
+        "sha256",
+        "sha512"
+      ]
+    }
+  },
+  "enunciado": "Você recebeu a pasta `~/lab/f103-2-integridade-hash/entrega/` com vários arquivos e a lista oficial de hashes `lista.{alg}` (algoritmo **{alg}**, no formato `hash  nome`, o mesmo que o utilitário de soma gera). No caminho, alguns arquivos foram adulterados e algum **sumiu**. Há também um arquivo extra que não consta da lista.\n\nGrave em `~/lab/f103-2-integridade-hash/falhas.txt` o nome de cada arquivo da lista que **não confere** (adulterado **ou** ausente), **um por linha, só o nome do arquivo** (alguns nomes têm espaço). A ordem não importa.\n\nNão altere os arquivos nem a lista.",
+  "verifica": [
+    "`lista.{alg}` continua a original",
+    "`falhas.txt` lista exatamente os arquivos que não conferem (alterados ou ausentes), um nome por linha"
+  ],
+  "dicas": [
+    "Os utilitários da família `md5sum` sabem **verificar** uma lista de hashes, não só gerá-los. Veja a opção de checagem no `man`.",
+    "A verificação imprime uma linha por arquivo no estilo `nome: resultado`. As mensagens são traduzidas conforme o idioma do sistema (no laboratório, português: `SUCESSO`/`FALHOU`; em inglês: `OK`/`FAILED`) — por isso filtrar pelo texto do resultado é frágil.",
+    "Há uma opção que imprime **somente** os arquivos com problema (inclusive os ausentes, com outra mensagem). Depois, o que sobra é cortar a mensagem do fim da linha com `sed` ou `cut`.",
+    "Execute dentro da pasta `entrega/`, porque os nomes na lista são relativos. Avisos saem no erro padrão (`2>/dev/null` silencia). Cuidado com nomes que têm espaço: `cut -d' ' -f1` os quebraria."
+  ],
+  "solucao": "```\ncd ~/lab/f103-2-integridade-hash/entrega\n{alg}sum -c --quiet lista.{alg} 2>/dev/null | sed 's/: .*$//' > ../falhas.txt\n```\n`{alg}sum -c lista.{alg}` relê cada arquivo, recalcula o hash e compara com o da lista, imprimindo `nome: resultado` (e uma mensagem diferente quando o arquivo não existe). `--quiet` omite os que passaram, sobrando só as falhas, sem depender de procurar a palavra `FAILED`/`FALHOU` (que muda com o idioma; `LC_ALL=C` forçaria o inglês). O `sed 's/: .*$//'` apaga tudo a partir do primeiro `: `, deixando só o nome — mesmo com espaços; `cut -d: -f1` também serviria, `awk '{print $1}'` não. Lembre: o hash só detecta **mudança**, não diz o que mudou, e o `md5` é fraco contra adulteração maliciosa; para isso prefira `sha256sum`/`sha512sum`."
+}

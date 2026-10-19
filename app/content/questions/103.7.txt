@@ -1,0 +1,463 @@
+### 103.7-001 | lacuna | 1
+ref: 101:p.391
+tags: grep, -v
+Qual opção do `grep` inverte a seleção, exibindo somente as linhas que **não** contêm correspondência? `grep ____ '^#' /etc/services`
+= -v
+= --invert-match
+> `-v` (`--invert-match`) mostra todas as linhas exceto as que casam com o padrão. No exemplo, `grep -v '^#' /etc/services` lista o arquivo sem as linhas de comentário.
+
+### 103.7-002 | lacuna | 1
+ref: 101:p.392
+tags: egrep, grep -E, ERE
+O comando `egrep` é equivalente a `grep` com qual opção, que habilita as expressões regulares estendidas? `grep ____ 'a|b' arquivo`
+= -E
+= --extended-regexp
+> `egrep` equivale a `grep -E` (ERE). O `fgrep` equivale a `grep -F` (cadeias literais) e o `grep` puro usa ER básicas (`-G`, o padrão). As formas `egrep` e `fgrep` são consideradas obsoletas, mas continuam cobradas.
+
+### 103.7-003 | unica | 2
+ref: 101:p.381
+tags: BRE, ERE, quantificadores
+O arquivo `cores.txt` contém as três linhas abaixo:
+
+```
+color
+colour
+colou?r
+```
+
+Qual é a saída do comando `grep 'colou?r' cores.txt` no GNU grep, sem a opção `-E`?
+= Somente a linha `colou?r`
+- As linhas `color` e `colour`
+- As três linhas do arquivo
+- Nenhuma linha, porque `?` é inválido em ER básica
+> Em ER **básica**, `?` sem barra invertida é um caractere literal, então o padrão procura exatamente a sequência `colou?r`. Com `grep -E 'colou?r'` (ou `grep 'colou\?r'`, extensão do GNU) o `?` viraria quantificador e casaria `color` e `colour`. Nenhum erro de sintaxe ocorre: o `?` apenas é tratado como texto comum.
+
+### 103.7-004 | multipla | 2
+ref: 101:p.393
+tags: fgrep, grep -F, literal
+O arquivo `ac.txt` contém as linhas `abc`, `a.c` e `aXc`. Quais comandos exibem **somente** a linha `a.c`?
+= `fgrep 'a.c' ac.txt`
+= `grep -F 'a.c' ac.txt`
+= `grep 'a\.c' ac.txt`
+- `grep 'a.c' ac.txt`
+- `egrep 'a.c' ac.txt`
+> `fgrep` e `grep -F` tratam o padrão como texto literal, sem interpretar o ponto como curinga. `grep 'a\.c'` consegue o mesmo escapando o ponto. Já `grep 'a.c'` e `egrep 'a.c'` usam o ponto como "qualquer caractere" e devolvem as três linhas.
+
+### 103.7-005 | unica | 2
+ref: 101:p.390
+tags: grep, -c, contagem
+O arquivo `c.txt` tem três linhas:
+
+```
+ab ab
+cd
+ab
+```
+
+Qual é a saída de `grep -c ab c.txt`?
+= 2
+- 3, pois conta cada ocorrência de `ab`
+- 1, pois para na primeira linha que casa
+- 4, pois soma as linhas e as ocorrências
+> `-c` conta **linhas** que contêm correspondência, e não ocorrências. A linha `ab ab` conta apenas uma vez; somadas à terceira linha, resultam 2. Para contar ocorrências seria preciso algo como `grep -o ab c.txt | wc -l`, que daria 3.
+
+### 103.7-006 | multipla | 2
+ref: 101:p.382, 101:p.392
+tags: alternância, BRE, ERE, grep
+O arquivo `log.txt` contém:
+
+```
+error: disco cheio
+warn: cpu alta
+info: servico ativo
+```
+
+Quais comandos exibem as linhas `error` e `warn` e omitem a linha `info`?
+= `grep -E 'error|warn' log.txt`
+= `grep 'error\|warn' log.txt`
+= `egrep 'error|warn' log.txt`
+- `grep 'error|warn' log.txt`
+- `fgrep 'error|warn' log.txt`
+> Em ER estendida, `|` separa alternativas, e `egrep` equivale a `grep -E`. No GNU grep, a ER básica aceita a alternância escrita como `\|`. Sem `-E`, o `|` é literal (a busca é pela cadeia `error|warn`), e o `fgrep` também procura a cadeia literal; nenhum dos dois acha linha alguma neste arquivo.
+
+### 103.7-007 | unica | 3
+ref: 101:p.381-382
+tags: BRE, chaves, intervalos
+O arquivo `tel.txt` contém:
+
+```
+555-1234
+5555-1234
+555-12345
+55-1234
+```
+
+Qual comando, **sem** a opção `-E`, exibe apenas a linha `555-1234`?
+= `grep '^[0-9]\{3\}-[0-9]\{4\}$' tel.txt`
+- `grep '^[0-9]{3}-[0-9]{4}$' tel.txt`
+- `grep '^[0-9]\(3\)-[0-9]\(4\)$' tel.txt`
+- `grep '^[[:digit:]]\+-[[:digit:]]\+$' tel.txt`
+> Em ER básica, as chaves de intervalo precisam de barra invertida: `\{3\}`. Com `{3}` puro as chaves são literais e nada casa. Os parênteses `\( \)` servem para agrupar, não para contar repetições. Já `[[:digit:]]\+` aceita um ou mais dígitos, então casaria as quatro linhas do arquivo. Em ERE a forma seria `grep -E '^[0-9]{3}-[0-9]{4}$'`.
+
+### 103.7-008 | unica | 2
+ref: 101:p.387
+tags: grep, -v, âncoras, comentários
+O arquivo `conf.txt` tem o conteúdo a seguir:
+
+```
+# servidor
+port=80
+
+host=a # principal
+```
+
+Qual comando exibe somente as linhas úteis, sem as linhas que começam com `#` e sem as linhas vazias, mantendo `host=a # principal`?
+= `grep -Ev '^(#|$)' conf.txt`
+- `grep -E '^(#|$)' conf.txt`
+- `grep -Ev '#|^$' conf.txt`
+- `grep -v '^#|^$' conf.txt`
+> `^#` é "começa com #" e `^$` é "linha vazia"; com `-E`, `(#|$)` após `^` junta as duas alternativas e `-v` descarta o que casa. A segunda opção mostra exatamente o oposto. A terceira também remove `host=a # principal`, porque `#` sem âncora casa em qualquer posição. A quarta, sem `-E`, trata `|` como literal e não remove coisa alguma.
+
+### 103.7-009 | unica | 3
+ref: 101:p.380
+tags: classes de caracteres, colchetes, grep
+Um administrador executa o comando abaixo no GNU grep:
+
+```
+$ echo 123 | grep '[:digit:]'
+```
+
+O que acontece?
+= Erro: a classe exige colchetes duplos, e o código de saída é 2
+- O grep exibe `123`, pois `[:digit:]` é a classe dos dígitos
+- O grep não exibe nada e termina com código 1, sem correspondência
+- O grep exibe `123`, mas somente se `-E` for usado junto
+> As classes POSIX só são válidas **dentro** de uma expressão de colchetes: o correto é `[[:digit:]]`. Escrito como `[:digit:]`, o padrão seria apenas um conjunto com os caracteres `:`, `d`, `i`, `g` e `t`, e o GNU grep avisa o equívoco com "character class syntax is [[:space:]], not [:space:]" e retorna 2. A opção `-E` não muda esse comportamento.
+
+### 103.7-010 | unica | 1
+ref: 101:p.396
+tags: sed, substituição, flags
+Qual é a saída do comando abaixo?
+
+```
+$ echo banana | sed 's/a/X/2'
+```
+= banXna
+- bXnana, trocando só a primeira
+- bXnXnX, trocando todas
+- banXnX, trocando da segunda em diante
+> O sinalizador numérico `2` faz o `s` trocar apenas a **segunda** ocorrência de `a` em cada linha. Sem sinalizador seria `bXnana` (somente a primeira); com `g`, `bXnXnX` (todas); com `2g`, `banXnX` (da segunda em diante).
+
+### 103.7-011 | unica | 2
+ref: 101:p.394
+tags: sed, endereços, -n
+Qual é a saída do comando a seguir?
+
+```
+$ seq 10 | sed -n '3,5p;8p'
+```
+= Linhas 3, 4, 5 e 8
+- Linhas 1, 2, 6, 7, 9 e 10
+- Linhas 3, 4, 5, 6, 7 e 8
+- Linhas 1 a 10, com 3, 4, 5 e 8 repetidas
+> `-n` desativa a impressão automática, então só aparecem as linhas selecionadas pelo comando `p`: o intervalo `3,5` e a linha `8`. A segunda opção seria o resultado de `sed '3,5d;8d'`. Sem o `-n`, as linhas impressas por `p` apareceriam duplicadas (quarta opção).
+
+### 103.7-012 | unica | 2
+ref: 101:p.393-396
+tags: sed, -i, backup
+Considere os comandos abaixo, executados em um diretório vazio:
+
+```
+$ echo "foo foo" > f.txt
+$ sed -i.bak 's/foo/bar/' f.txt
+```
+
+Qual é o resultado?
+= `f.txt` passa a ter `bar foo` e `f.txt.bak` guarda `foo foo`
+- `f.txt` passa a ter `bar bar` e `f.txt.bak` guarda `foo foo`
+- `f.txt` continua com `foo foo` e o resultado vai para `f.txt.bak`
+- `f.txt` passa a ter `bar foo` e nenhuma cópia é criada
+> No GNU sed, `-i` edita o arquivo no lugar; com um sufixo (`-i.bak`) o original é preservado em `f.txt.bak`. Como não há o sinalizador `g`, só a primeira ocorrência de cada linha é trocada. O `-i` não é detalhado no material da LPI, mas é extremamente usado em scripts e tem comportamento padronizado no GNU sed.
+
+### 103.7-013 | unica | 2
+ref: 101:p.399
+tags: sed, grupos, referência
+Qual é a saída do comando abaixo?
+
+```
+$ echo "John Smith" | sed 's/\(.*\) \(.*\)/\2, \1/'
+```
+= Smith, John
+- John, Smith, mantendo a ordem original
+- John Smith, sem nenhuma troca
+- \2, \1, sem expandir os grupos
+> Em ER básica, `\( \)` delimitam grupos de captura. O primeiro grupo (`.*` guloso) pega `John` e o segundo pega `Smith`, separados pelo espaço. A substituição `\2, \1` reordena os grupos. A versão estendida seria `sed -E 's/(.*) (.*)/\2, \1/'`.
+
+### 103.7-014 | unica | 3
+ref: 101:p.405
+tags: sed, BRE, parênteses
+O comando `uptime -s` imprime a data de boot, como em `2019-08-05 20:13:22`. O que ocorre com o comando abaixo?
+
+```
+$ uptime -s | sed -e 's/(.*) (.*)/\1/'
+```
+= Erro: `\1` é inválido, pois não existe grupo definido
+- Imprime `2019-08-05`, a parte antes do espaço
+- Imprime `2019-08-05 20:13:22`, sem alterar a linha
+- Imprime `20:13:22`, a parte depois do espaço
+> Em ER básica do sed, os parênteses sem barra são caracteres literais, então a expressão não define nenhum grupo. Como a substituição usa `\1`, o sed reclama de "invalid reference \1 on s command's RHS". Para funcionar, é preciso escrever `\(.*\) \(.*\)` ou usar `sed -E` / `sed -r`.
+
+### 103.7-015 | unica | 3
+ref: 101:p.395, 101:p.406
+tags: sed, endereços, intervalo
+O arquivo `pagina.html` contém:
+
+```
+<html>
+<head>
+<title>News</title>
+</head>
+<body>
+<h1>Headline</h1>
+</body>
+</html>
+```
+
+Qual comando exibe somente de `<body>` até `</body>`, inclusive?
+= `sed -n '/<body>/,/<\/body>/p' pagina.html`
+- `sed '/<body>/,/<\/body>/p' pagina.html`
+- `sed '/<body>/,/<\/body>/d' pagina.html`
+- `sed -n '/<body>/p;/<\/body>/p' pagina.html`
+> Um endereço `/ER1/,/ER2/` seleciona do primeiro casamento até o próximo casamento da segunda ER; a barra de `</body>` precisa ser escapada. `-n` com `p` imprime só o intervalo. Sem `-n`, as linhas do intervalo saem duplicadas. Com `d`, ocorre o inverso (tudo menos o body). A última opção imprime apenas as duas linhas das tags, sem o conteúdo entre elas.
+
+### 103.7-016 | unica | 2
+ref: 101:p.395-396
+tags: sed, delimitador, substituição
+Qual é a saída do comando abaixo?
+
+```
+$ echo "/usr/local/bin" | sed 's|/usr/local|/opt|'
+```
+= /opt/bin
+- /usr/local/bin
+- |/opt|/bin
+- Erro: unknown option to `s'
+> No `s`, o primeiro caractere depois do `s` define o delimitador, e pode ser qualquer um (`|`, `#`, `:`...). Isso evita escapar as barras de caminhos. Aqui a parte `/usr/local` é trocada por `/opt`. O erro "unknown option to `s'" apareceria se tivéssemos usado `/` como delimitador sem escapar as barras do padrão.
+
+### 103.7-017 | unica | 3
+ref: 101:p.382, 101:p.406
+tags: sed, ganância, HTML
+Qual é a saída do comando abaixo?
+
+```
+$ echo '<b>negrito</b>fim' | sed 's/<.*>//g'
+```
+= fim
+- negritofim
+- negrito</b>fim
+- <b>negrito</b>fim
+> Os quantificadores são **gulosos**: se mais de uma subcadeia começando no mesmo ponto casa, vale a mais longa. O padrão `<.*>` começa em `<b>` e vai até o último `>` da linha, apagando `<b>negrito</b>` inteiro e deixando `fim`. Para remover só as tags usa-se `s/<[^>]*>//g`, que resulta em `negritofim`.
+
+### 103.7-018 | multipla | 2
+ref: 101:p.381
+tags: quantificadores, BRE, ERE
+O arquivo `p.txt` contém `ac`, `abc`, `abbc` e `ab+c`. Quais comandos exibem exatamente as mesmas linhas que `grep -E 'ab+c' p.txt`?
+= `grep 'ab\+c' p.txt`
+= `egrep 'ab+c' p.txt`
+= `grep 'abb*c' p.txt`
+- `grep 'ab+c' p.txt`
+- `grep -F 'ab+c' p.txt`
+> `grep -E 'ab+c'` devolve `abc` e `abbc`. Em ER básica do GNU, `\+` é o quantificador "uma ou mais vezes", e `abb*c` também expressa "pelo menos um b". Já `grep 'ab+c'` e `grep -F 'ab+c'` tratam o `+` como literal e só acham a linha `ab+c`.
+
+### 103.7-019 | unica | 3
+ref: 101:p.383
+tags: find, -regex, regextype
+Qual comando lista, a partir do diretório atual, os arquivos cujo caminho termina em `.log` ou `.txt`, usando ER estendida?
+= `find . -regextype posix-extended -regex '.*\.(log|txt)$'`
+- `find . -regex '.*\.(log|txt)$'`
+- `find . -regextype posix-extended -regex '\.(log|txt)$' -type f`
+- `find . -name '.*\.(log|txt)$'`
+> O `-regex` do `find` testa o **caminho completo** (por isso o `.*` inicial é obrigatório) e, por padrão, usa um dialeto parecido com a ER básica, em que `( )` e `|` são literais; `-regextype posix-extended` (ou `egrep`) habilita a ERE. Sem o `.*`, a ER não casa o caminho inteiro. E `-name` aceita apenas padrões glob, não ER.
+
+### 103.7-020 | unica | 2
+ref: 101:p.383, 101:p.388
+tags: less, filtro, busca
+Dentro do `less`, o que acontece ao digitar `&` seguido de uma expressão regular e Enter?
+= Passa a exibir só as linhas que casam com a ER
+- Inicia uma busca para frente, a partir da posição atual, pela ER
+- Inicia uma busca para trás, a partir da posição atual, pela ER
+- Executa o texto digitado como um comando do shell
+> `&padrão` filtra a exibição: as linhas que não casam ficam ocultas. A busca para frente é feita com `/` e para trás com `?`; o prefixo `!` executa um comando do shell. Também vale lembrar que `Ctrl+K` no prompt de busca destaca as ocorrências sem mover a posição atual do texto.
+
+### 103.7-021 | unica | 3
+ref: 101:p.392-393, 101:p.405
+tags: grep, -o, ERE, IPv4
+Qual é a saída do comando abaixo?
+
+```
+$ echo "IP 192.168.15.1 e 10.0.0.254 fim" | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}'
+```
+= Duas linhas: `192.168.15.1` e `10.0.0.254`
+- A linha original inteira, uma única vez
+- Uma única linha: `192.168.15.1`
+- Oito linhas, uma para cada grupo de dígitos
+> `-o` imprime apenas a parte da linha que casou, **uma por linha de saída** e para todas as ocorrências. A ER pede um a três dígitos seguidos de três repetições de "ponto e um a três dígitos", ou seja, um IPv4 pontilhado, e há dois na linha. Sem `-o` a linha seria impressa inteira.
+
+### 103.7-022 | unica | 2
+ref: 101:p.391-392
+tags: grep, contexto, -A, -n
+O arquivo `ctx.txt` tem as linhas `a`, `b`, `c`, `d` e `e`, nessa ordem. Qual é a saída de `grep -n -A1 b ctx.txt`?
+= `2:b` e `3-c`
+- `2:b` e `3:c`, ambas como casamento
+- `b` e `c`, sem prefixo de linha
+- `1-a` e `2:b`, uma linha antes
+> `-A1` acrescenta uma linha de contexto **depois** (After) de cada casamento, e `-n` prefixa o número da linha. Na saída, `:` marca a linha que casou e `-` marca as linhas de contexto. A última opção seria a saída de `-B1` (Before). Para contexto nos dois lados, use `-C 1` (ou `-1`).
+
+### 103.7-023 | unica | 2
+ref: 101:p.379
+tags: colchetes, negação, âncoras
+O arquivo `exemplo.txt` tem cinco linhas:
+
+```
+# c
+port=1
+
+  x
+#y
+```
+
+(a terceira está vazia e a quarta começa com dois espaços). Quais linhas o comando `grep -n '^[^#]' exemplo.txt` exibe?
+= As linhas 2 e 4: não vazias e que não começam com `#`
+- As linhas 2, 3 e 4: todas que não começam com `#`, inclusive a vazia
+- As linhas 1 e 5: as que começam com `#`
+- As linhas 1, 2, 4 e 5: as que contêm algum caractere diferente de `#`
+> O primeiro `^` é âncora de início de linha; o `^` logo após `[` nega o conjunto. Assim, `^[^#]` exige **um primeiro caractere** que não seja `#`. A linha vazia não tem primeiro caractere, então não casa (por isso a segunda opção está errada). Sem a âncora, `[^#]` casaria qualquer linha com algum caractere diferente de `#`, ou seja, as linhas 1, 2, 4 e 5.
+
+### 103.7-024 | unica | 2
+ref: 101:p.379
+tags: ponto, literal, grep
+O arquivo `ip.txt` contém:
+
+```
+10.0.0.1
+10x0y0z1
+10.0.0.10
+```
+
+Qual é a saída de `grep -c '10.0.0.1' ip.txt`?
+= 3
+- 2, pois o ponto casa somente o caractere `.`
+- 1, pois o padrão exige o final da linha
+- 0, pois o ponto é inválido sem a opção `-E`
+> O ponto casa qualquer caractere, então `10.0.0.1` também casa `10x0y0z1`; e a linha `10.0.0.10` contém `10.0.0.1` como prefixo. Resultado: 3 linhas. Com `grep -cF` seriam 2 (só as linhas com pontos literais) e com `grep -c '10\.0\.0\.1$'` apenas 1.
+
+### 103.7-025 | unica | 3
+ref: 101:p.395-396
+tags: sed, "&", substituição
+Qual é a saída do comando abaixo?
+
+```
+$ echo "a1b22" | sed 's/[0-9]\+/(&)/g'
+```
+= a(1)b(22)
+- a(&)b(&)
+- a(1)b(2)(2)
+- Erro de sintaxe: `&` não é válido na substituição
+> Na parte de substituição do `s`, o caractere `&` representa todo o trecho que casou. `[0-9]\+` casa sequências de um ou mais dígitos (`1` e `22`), que são envolvidas por parênteses. Para escrever um `&` literal, seria preciso usar `\&`. A saída `a(1)b(2)(2)` ocorreria se o quantificador `\+` fosse omitido.
+
+### 103.7-026 | unica | 2
+ref: 101:p.395
+tags: sed, a, i, c, r
+O arquivo de entrada tem as linhas `a`, `b` e `c`. Qual comando produz a saída `a`, `b`, `NOVA`, `c`, nessa ordem?
+= `sed '2a NOVA'`
+- `sed '/b/i NOVA'`
+- `sed '2c NOVA'`
+- `sed '2r NOVA'`
+> `a TEXTO` (append) acrescenta o texto numa nova linha **depois** da linha endereçada. `i` insere **antes** da linha endereçada (com `/b/i NOVA` o resultado seria `a`, `NOVA`, `b`, `c`); `c` **substitui** a linha (resultado: `a`, `NOVA`, `c`); `r ARQUIVO` não recebe texto, mas o conteúdo de um arquivo: aqui tentaria ler um arquivo chamado `NOVA` e, se ele não existir, nada é acrescentado.
+
+### 103.7-027 | multipla | 2
+ref: 101:p.381-382
+tags: BRE, ERE, caracteres especiais
+Em uma ER **básica** (BRE) do POSIX, quais caracteres, escritos sem barra invertida, são tratados como literais e só se tornam operadores na ER estendida?
+= `+`
+= `|`
+= `(`
+- `*`
+- `.`
+- `[`
+> Em BRE, `+`, `?`, `|`, `{`, `}`, `(` e `)` são comuns; para ativá-los no GNU é preciso precedê-los de `\` (`\+`, `\|`, `\(`...). Já `*`, `.` e `[` têm significado especial tanto em BRE quanto em ERE (repetição, qualquer caractere e início de lista de caracteres).
+
+### 103.7-028 | unica | 3
+ref: 101:p.382, 101:p.387
+tags: egrep, alternância, domínios
+O arquivo `dominios.txt` contém:
+
+```
+site.org
+myorg
+a.com
+xcom
+site.org.br
+```
+
+Qual comando lista **somente** `site.org` e `a.com`?
+= `grep -E '\.(org|com)$' dominios.txt`
+- `grep -E '.org$|.com$' dominios.txt`
+- `grep -E '\.org|com$' dominios.txt`
+- `grep '\.(org|com)$' dominios.txt`
+> `\.` casa o ponto literal, `(org|com)` é a alternância agrupada e `$` exige o fim da linha. A segunda opção deixa o ponto sem escape e também lista `myorg` e `xcom`. A terceira não ancora `.org` ao fim da linha nem exige o ponto antes de `com`, listando também `xcom` e `site.org.br`. A quarta, sem `-E`, usa `( )` e `|` como literais e não acha nada.
+
+### 103.7-029 | lacuna | 1
+ref: 101:p.381
+tags: ERE, chaves, quantificadores
+Complete a ER estendida para selecionar linhas com exatamente três dígitos: `grep -E '^[0-9]____$' arquivo`
+= {3}
+> Em ER estendida, `{i}` repete o átomo exatamente `i` vezes. Em ER básica seria `\{3\}`.
+
+### 103.7-030 | lacuna | 3
+ref: 101:p.406
+tags: sed, HTML, colchetes
+Complete a expressão do `sed` para remover todas as tags HTML de cada linha, mantendo só o texto: `sed 's/<____>//g' pagina.html`
+= [^>]*
+= [^<>]*
+= [^>]\+
+= [^<>]\+
+> `[^>]*` (ou `[^>]\+`, que exige ao menos um caractere) casa "qualquer quantidade de caracteres que não sejam `>`", o que impede a ganância de engolir várias tags de uma vez. Com `.*` no lugar, apagaria tudo desde o primeiro `<` até o último `>` da linha.
+
+### 103.7-031 | lacuna | 1
+ref: 101:p.395
+tags: sed, d, comentários
+Complete o comando `sed` que mostra `/etc/services` sem as linhas de comentário (iniciadas por `#`): `sed '/^#/____' /etc/services`
+= d
+> `d` (delete) apaga as linhas selecionadas pelo endereço, aqui as que casam `^#`. O equivalente com `grep` é `grep -v '^#'`.
+
+### 103.7-032 | lacuna | 2
+ref: 101:p.391, 101:p.405
+tags: grep, -z, find, print0
+Complete a opção de `grep` necessária para processar a saída de `find -print0`, em que os nomes são separados por caractere nulo: `find . -print0 | grep ____ 'log$'`
+= -z
+= --null-data
+> `-z` (`--null-data`) faz o grep tratar a entrada e a saída como registros terminados por NUL em vez de newline, que é exatamente o formato gerado por `find -print0`.
+
+### 103.7-033 | lacuna | 1
+ref: 101:p.377
+tags: regex, man
+Complete o comando que abre a página de manual que descreve as expressões regulares POSIX (`regex(7)`): `man ____ regex`
+= 7
+> `regex(7)` está na seção 7 (miscelânea) do manual, que documenta as ERs "modernas" (estendidas) e as "obsoletas" (básicas) do POSIX.
+
+### 103.7-034 | lacuna | 1
+ref: 101:p.391
+tags: grep, -l, -r
+Qual opção faz o `grep` listar somente os nomes dos arquivos que contêm correspondência, e não as linhas? `grep -r ____ PermitRootLogin /etc/ssh`
+= -l
+= --files-with-matches
+> `-l` (`--files-with-matches`) imprime apenas o nome de cada arquivo com ao menos um casamento. Seu oposto é `-L`, que lista os arquivos sem casamento. O `-r` percorre o diretório recursivamente.
+
+### 103.7-035 | lacuna | 2
+ref: 101:p.391
+tags: grep, -H, nome do arquivo
+Ao rodar `grep` com `find -exec`, cada arquivo é passado individualmente, e o `grep` não mostra o nome dele. Qual opção, em maiúscula, força a exibição do nome do arquivo antes de cada linha? `find . -type f -exec grep -i ____ 'erro' {} \;`
+= -H
+= --with-filename
+> Por padrão, o grep só mostra o nome do arquivo quando recebe vários arquivos de entrada. Com `-H` (`--with-filename`) o nome é sempre impresso, o que é essencial quando o `find` chama o grep uma vez por arquivo.

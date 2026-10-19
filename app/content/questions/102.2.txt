@@ -1,0 +1,293 @@
+### 102.2-001 | unica | 1
+ref: 101:p.83
+tags: GRUB 2, grub.cfg
+Em um sistema Debian/Ubuntu com GRUB 2, qual é o local padrão do arquivo de configuração gerado, que contém as entradas do menu?
+= /boot/grub/grub.cfg
+- /boot/grub/menu.lst
+- /etc/default/grub
+- /etc/grub.d/grub.cfg
+> O arquivo de configuração do GRUB 2 é `/boot/grub/grub.cfg`; ele é gerado automaticamente e não deve ser editado à mão. `menu.lst` é o do GRUB Legacy, `/etc/default/grub` guarda apenas as variáveis usadas na geração, e `/etc/grub.d/` contém scripts (não um `grub.cfg`). (Em RHEL/Fedora e derivados, o `grub.cfg` fica em `/boot/grub2/` ou na ESP, em `/boot/efi/EFI/<distribuição>/`.)
+
+### 102.2-002 | unica | 2
+ref: 101:p.83, 101:p.95
+tags: GRUB 2, /etc/default/grub, update-grub
+Qual é o procedimento correto para alterar as configurações do GRUB 2 (como o tempo de espera do menu) em um sistema Debian?
+= Editar /etc/default/grub e executar update-grub para regenerar o grub.cfg
+- Editar diretamente o /boot/grub/grub.cfg e salvar o arquivo
+- Editar /etc/default/grub e executar grub-install /dev/sda1
+- Editar os scripts de /etc/grub.d e reiniciar sem executar mais nada
+> As variáveis (`GRUB_TIMEOUT`, `GRUB_DEFAULT` etc.) ficam em `/etc/default/grub`, e o `update-grub` (atalho para `grub-mkconfig -o /boot/grub/grub.cfg`) gera de novo o `grub.cfg`. Edições manuais no `grub.cfg` são perdidas na próxima geração. O `grub-install` instala o carregador (e não aplica configurações), e os scripts de `/etc/grub.d` só têm efeito quando o `grub.cfg` é regenerado.
+
+### 102.2-003 | lacuna | 1
+ref: 101:p.83, 101:p.97
+tags: GRUB_TIMEOUT, /etc/default/grub
+Para que o GRUB 2 aguarde 10 segundos antes de iniciar a entrada de menu padrão, qual valor deve ser atribuído em `/etc/default/grub`? `GRUB_TIMEOUT=____`
+= 10
+> `GRUB_TIMEOUT` define o tempo limite, em segundos. Depois de alterar o arquivo, é preciso executar `update-grub` (ou `grub-mkconfig -o /boot/grub/grub.cfg`).
+
+### 102.2-004 | unica | 2
+ref: 101:p.83
+tags: GRUB_TIMEOUT, -1, menu
+O que o valor `GRUB_TIMEOUT=-1` provoca no GRUB 2?
+= O menu espera até que o usuário escolha uma entrada
+- O sistema inicia a entrada padrão imediatamente, sem exibir o menu
+- O sistema usa o tempo padrão de 5 segundos definido no GRUB
+- O GRUB ignora o menu e só entra no shell de comandos
+> Com `GRUB_TIMEOUT=-1` o GRUB aguarda sem limite. Com `0`, ele inicia a entrada padrão sem mostrar o menu, e valores positivos indicam o número de segundos antes de inicializar a entrada padrão.
+
+### 102.2-005 | unica | 2
+ref: 101:p.83-84
+tags: GRUB_CMDLINE_LINUX_DEFAULT, GRUB_CMDLINE_LINUX
+Um administrador deseja que o parâmetro `nomodeset` seja passado ao kernel apenas na entrada de menu **padrão**, e não na entrada de recuperação (recovery). Em qual variável de `/etc/default/grub` ele deve ser colocado?
+= GRUB_CMDLINE_LINUX_DEFAULT
+- GRUB_CMDLINE_LINUX
+- GRUB_CMDLINE_LINUX_RECOVERY
+- GRUB_SAVEDEFAULT
+> `GRUB_CMDLINE_LINUX_DEFAULT` recebe parâmetros adicionais apenas para a entrada padrão, enquanto `GRUB_CMDLINE_LINUX` vale para todas as entradas do kernel (inclusive a de recuperação). `GRUB_CMDLINE_LINUX_RECOVERY` não existe, e `GRUB_SAVEDEFAULT` controla se a última escolha é lembrada.
+
+### 102.2-006 | unica | 3
+ref: 101:p.83
+tags: GRUB_DEFAULT, saved, GRUB_SAVEDEFAULT
+Qual combinação de variáveis em `/etc/default/grub` faz o GRUB 2 inicializar sempre a última entrada escolhida no menu?
+= GRUB_DEFAULT=saved e GRUB_SAVEDEFAULT=true
+- GRUB_DEFAULT=0 e GRUB_SAVEDEFAULT=true
+- GRUB_DEFAULT=latest e GRUB_SAVEDEFAULT=true
+- GRUB_DEFAULT=saved e GRUB_TIMEOUT=0
+> Com `GRUB_DEFAULT=saved`, o padrão é lido do ambiente salvo, e `GRUB_SAVEDEFAULT=true` grava a cada escolha a entrada selecionada. Com `GRUB_DEFAULT=0` o padrão é sempre a primeira entrada (as entradas começam em zero). `latest` não é um valor válido, e `GRUB_TIMEOUT` só controla o tempo de espera.
+
+### 102.2-007 | unica | 2
+ref: 101:p.84, 101:p.95
+tags: /etc/grub.d, 40_custom, menuentry
+Em qual arquivo o administrador deve acrescentar entradas de menu personalizadas ao GRUB 2?
+= /etc/grub.d/40_custom
+- /etc/grub.d/00_header
+- /boot/grub/custom.menu
+- /etc/default/grub.custom
+> Os scripts de `/etc/grub.d/` são processados em ordem numérica pelo `update-grub`, e as entradas manuais costumam ser acrescentadas ao `40_custom`. O `00_header` gera o cabeçalho do `grub.cfg` (e não é para entradas do usuário) e os outros caminhos citados não existem na configuração padrão.
+
+### 102.2-008 | multipla | 3
+ref: 101:p.84
+tags: /etc/grub.d, scripts, update-grub
+Quais afirmações sobre os arquivos em `/etc/grub.d/` estão corretas?
+= Os arquivos precisam ser executáveis para serem usados na geração do grub.cfg
+= Eles são processados em ordem numérica pelo update-grub (05_debian_theme antes de 10_linux)
+- O GRUB os lê diretamente a cada boot, sem necessidade de regenerar o grub.cfg
+- São usados apenas pelo GRUB Legacy, em substituição ao menu.lst
+- Têm efeito imediato, sem precisar executar o update-grub
+> `update-grub` (`grub-mkconfig`) executa os scripts executáveis de `/etc/grub.d/` em ordem numérica e junta a saída no `grub.cfg`. O GRUB não lê esses scripts no boot (só o `grub.cfg` gerado), eles pertencem ao GRUB 2 (o Legacy usa `menu.lst`) e as alterações só valem depois de regenerar o arquivo.
+
+### 102.2-009 | unica | 2
+ref: 101:p.84
+tags: GRUB 2, numeração, set root
+Em uma entrada do GRUB 2, a linha `set root=(hd1,2)` representa qual dispositivo?
+= A segunda partição do segundo disco
+- A terceira partição do segundo disco
+- A segunda partição do primeiro disco
+- A primeira partição do terceiro disco
+> No GRUB 2 os discos são numerados a partir de **zero** (`hd0` é o primeiro, `hd1` o segundo) e as partições a partir de **um**. Assim `(hd1,2)` é a segunda partição do segundo disco. A terceira partição do segundo disco seria `(hd1,3)` no GRUB 2 e `(hd1,2)` no GRUB Legacy.
+
+### 102.2-010 | unica | 2
+ref: 101:p.89, 101:p.96
+tags: GRUB Legacy, numeração, root
+No GRUB Legacy, qual comando indica a **segunda** partição do **primeiro** disco como dispositivo de boot?
+= root (hd0,1)
+- root (hd0,2)
+- root (hd1,1)
+- root (hd1,2) e makeactive
+> No GRUB Legacy, tanto discos quanto partições são numerados a partir de zero; portanto, `(hd0,1)` é a segunda partição do primeiro disco. `(hd0,2)` seria a terceira partição, e `(hd1,x)` refere-se ao segundo disco. Essa é a diferença para o GRUB 2, no qual as partições começam em 1.
+
+### 102.2-011 | unica | 2
+ref: 101:p.85, 101:p.96
+tags: search, fs-uuid, GRUB 2
+Qual linha, dentro de uma `menuentry` do GRUB 2, localiza o sistema de arquivos raiz pelo UUID `5dda0af3-c995-481a-a6f3-46dcd3b6998d` em vez de usar disco e partição fixos?
+= search --set=root --fs-uuid 5dda0af3-c995-481a-a6f3-46dcd3b6998d
+- set root=UUID=5dda0af3-c995-481a-a6f3-46dcd3b6998d
+- root (UUID=5dda0af3-c995-481a-a6f3-46dcd3b6998d)
+- search --no-floppy --set=root --label 5dda0af3-c995-481a-a6f3-46dcd3b6998d
+> O comando `search --set=root --fs-uuid <UUID>` procura o sistema de arquivos pelo UUID e define a variável `root` do GRUB. O UUID pode ser consultado com `ls -l /dev/disk/by-uuid/` (ou `blkid`). A forma `root (...)` é do GRUB Legacy e não aceita UUID, `set root=UUID=...` não é sintaxe válida do GRUB e `--label` busca por **rótulo**, e não UUID.
+
+### 102.2-012 | unica | 2
+ref: 101:p.89
+tags: GRUB Legacy, menu.lst, title, kernel
+Quais diretivas formam uma entrada mínima de menu no `menu.lst` do GRUB Legacy?
+= title, root e kernel
+- menuentry, set root e linux
+- title, set root e linux
+- label, root e image
+> Uma entrada do GRUB Legacy tem ao menos `title` (texto exibido no menu), `root` (dispositivo/partição de boot) e `kernel` (caminho do kernel mais os parâmetros), geralmente seguidos de `initrd`. `menuentry`, `set root` e `linux` são do GRUB 2, e `label` e `image` são diretivas do LILO (`lilo.conf`).
+
+### 102.2-013 | unica | 3
+ref: 101:p.82-83
+tags: grub-install, --boot-directory, recuperação
+Após iniciar a partir de um Live CD, o administrador montou a partição `/boot` do sistema em `/mnt/tmp` e quer reinstalar o GRUB 2 no MBR do primeiro disco. Qual comando é o correto?
+= grub-install --boot-directory=/mnt/tmp /dev/sda
+- grub-install --boot-directory=/mnt/tmp /dev/sda1
+- grub-install --boot-directory=/dev/sda /mnt/tmp
+- grub-mkconfig --boot-directory=/mnt/tmp /dev/sda
+> O `grub-install` recebe o **dispositivo** (o disco `/dev/sda`, e não a partição `/dev/sda1`) e, com `--boot-directory=`, o diretório onde está montada a partição de boot (os arquivos vão para `<diretório>/grub`). Os argumentos invertidos da terceira opção não fazem sentido, e o `grub-mkconfig` apenas gera o `grub.cfg`; não instala o carregador nem aceita `--boot-directory`.
+
+### 102.2-014 | lacuna | 2
+ref: 101:p.89
+tags: GRUB Legacy, shell, setup
+No shell do GRUB Legacy, depois de selecionar a partição de boot com `root (hd0,0)`, qual comando instala o GRUB no MBR do primeiro disco? `grub> ____ (hd0)`
+= setup
+> Dentro do shell do GRUB Legacy, `root (hd0,0)` define onde está o `/boot` e `setup (hd0)` instala o carregador no MBR do primeiro disco, copiando os arquivos necessários. O `find /boot/grub/stage1` ajuda a descobrir qual partição contém o diretório `/boot`.
+
+### 102.2-015 | lacuna | 1
+ref: 101:p.86, 101:p.95
+tags: GRUB shell, tecla c
+Qual tecla, pressionada no menu do GRUB (2 ou Legacy), abre a linha de comando (shell) do GRUB?
+= c
+= C
+> No menu do GRUB, a tecla `c` abre o shell (prompt `grub>`); a tecla `e` edita a entrada selecionada. No GRUB 2, também é possível abrir o shell a partir da janela de edição com Ctrl+C.
+
+### 102.2-016 | multipla | 2
+ref: 101:p.86
+tags: GRUB 2, edição, Ctrl+X, F10
+Depois de editar temporariamente uma entrada no editor do GRUB 2 (tecla `e`), quais teclas iniciam o boot com as alterações?
+= Ctrl+X
+= F10
+- Esc
+- Tab
+- Ctrl+C
+> `Ctrl+X` ou `F10` inicializam a entrada editada (a edição vale só para essa inicialização e não altera o `grub.cfg`). `Esc` descarta a edição e volta ao menu, e `Ctrl+C` abre o shell do GRUB (prompt `grub>`). A tecla `Tab` não inicia o boot (no shell, é usada para completar nomes).
+
+### 102.2-017 | unica | 3
+ref: 101:p.86-87
+tags: GRUB shell, boot manual, linux, initrd
+No shell `grub>` do GRUB 2, qual sequência de comandos inicializa manualmente um Linux cuja raiz está em `/dev/sda1`, com o kernel e o initrd no diretório raiz dessa partição?
+= set root=(hd0,msdos1), linux /vmlinuz root=/dev/sda1, initrd /initrd.img, boot
+- set root=(hd0,msdos1), initrd /initrd.img, linux /vmlinuz root=/dev/sda1, boot
+- root (hd0,0), kernel /vmlinuz root=/dev/sda1, initrd /initrd.img, boot
+- set root=(hd0,msdos1), linux /vmlinuz, initrd /initrd.img, mount /dev/sda1
+> No GRUB 2: `set root=` indica a partição com os arquivos, `linux <kernel> root=<dispositivo>` carrega o kernel e informa a raiz ao kernel, `initrd <arquivo>` carrega o disco RAM inicial (depois do kernel) e `boot` inicia o sistema. A terceira sequência usa a sintaxe do GRUB Legacy (`root (hd0,0)` e `kernel`), e o `mount` não existe no shell do GRUB.
+
+### 102.2-018 | lacuna | 2
+ref: 101:p.88
+tags: grub rescue, insmod, normal
+No prompt `grub rescue>`, depois de ajustar o `prefix`, qual comando carrega os módulos `normal` e `linux` do GRUB? ____ normal
+= insmod
+> No shell de resgate o GRUB está simplificado e é preciso carregar os módulos com `insmod`: primeiro `normal` e depois `linux`. Em seguida, define-se `root`, carrega-se o kernel (`linux`) e o initrd e usa-se `boot`.
+
+### 102.2-019 | unica | 2
+ref: 101:p.80
+tags: UEFI, grubx64.efi, ESP
+Em um sistema UEFI de 64 bits, qual arquivo é carregado pelo firmware a partir da ESP para iniciar o GRUB?
+= grubx64.efi
+- grubia32.efi
+- grub.cfg
+- stage1
+> Em UEFI o GRUB é carregado pelo firmware a partir de `grubx64.efi` (64 bits) ou `grubia32.efi` (32 bits) na partição ESP. O `grub.cfg` é apenas a configuração lida depois que o GRUB já está em execução, e `stage1` é do GRUB Legacy em máquinas com BIOS.
+
+### 102.2-020 | unica | 3
+ref: 101:p.80
+tags: GPT, BIOS, partição de boot da BIOS
+Em um disco particionado em GPT usado em uma máquina com BIOS tradicional, onde o GRUB 2 guarda a segunda parte do seu código (a imagem "núcleo")?
+= Em uma partição especial de inicialização da BIOS
+- Na ESP, em um arquivo grubx64.efi
+- No espaço de 32 KB entre o MBR e a primeira partição
+- Dentro do arquivo /boot/grub/grub.cfg
+> O GPT não tem o espaço livre entre o MBR e a primeira partição como discos MBR; por isso, em máquinas com BIOS, a segunda parte do GRUB é armazenada em uma partição reservada para a BIOS (tipo "BIOS boot"). O espaço de 32 KB é o usado em discos MBR. A ESP e o `grubx64.efi` são do boot UEFI, e o `grub.cfg` é só configuração.
+
+### 102.2-021 | unica | 2
+ref: 101:p.77, 101:p.89
+tags: GRUB Legacy, grub.conf, menu.lst
+Qual arquivo guarda a configuração e as entradas de menu do GRUB Legacy (o RHEL/CentOS antigos o chamam de `grub.conf`, com `menu.lst` como link)?
+= /boot/grub/menu.lst (ou grub.conf)
+- /boot/grub/grub.cfg
+- /etc/default/grub
+- /boot/grub2/grub.cfg
+> O GRUB Legacy usa `/boot/grub/menu.lst`; em distribuições Red Hat antigas o arquivo real é `/boot/grub/grub.conf`, e `menu.lst` aponta para ele. O `grub.cfg` (em `/boot/grub/` ou `/boot/grub2/`) é do GRUB 2, e `/etc/default/grub` é o arquivo de variáveis do GRUB 2.
+
+### 102.2-022 | unica | 3
+ref: 101:p.91
+tags: GRUB Legacy, chainloader, Windows
+Em uma entrada do GRUB Legacy para carregar o Windows em outra partição, qual diretiva faz o GRUB carregar o primeiro setor dessa partição e passar o controle ao gerenciador de boot do outro sistema?
+= chainloader +1
+- kernel +1
+- module +1
+- initrd +1
+> O carregamento em cadeia (chainloading) usa `chainloader +1` (o `+1` indica o primeiro setor da partição), geralmente depois de `root (hdX,Y)` e `makeactive`, e finalizado com `boot`. As diretivas `kernel`, `module` e `initrd` servem para carregar o kernel, módulos e o disco RAM, e não setores de boot. (O material da LPI escreve `chainload +1`, mas o comando do GRUB Legacy é `chainloader`.)
+
+### 102.2-023 | unica | 3
+ref: 101:p.79
+tags: MBR, backup, dd
+Qual comando grava em um arquivo uma cópia de segurança do MBR (o primeiro setor de 512 bytes) do disco `/dev/sda`?
+= dd if=/dev/sda of=mbr.bak bs=512 count=1
+- dd if=mbr.bak of=/dev/sda bs=512 count=1
+- dd if=/dev/sda1 of=mbr.bak bs=512 count=1
+- dd if=/dev/sda of=mbr.bak bs=512
+> O MBR é o primeiro setor de 512 bytes do **disco**: `dd if=/dev/sda of=mbr.bak bs=512 count=1` copia apenas esse setor (testado: gera arquivo de 512 bytes). A segunda opção inverte origem e destino e sobrescreveria o MBR com o arquivo; a terceira copia o primeiro setor da partição `/dev/sda1`, e a quarta (sem `count=1`) copiaria o disco inteiro.
+
+### 102.2-024 | unica | 2
+ref: 101:p.82
+tags: recuperação, Live CD, grub-install
+O sistema não inicializa porque o carregador do GRUB 2 foi danificado. Qual é o procedimento descrito no material para recuperar o boot?
+= Iniciar por um Live CD, montar a partição de boot e executar o grub-install
+- Executar update-grub no próprio sistema que não inicia, a partir da BIOS
+- Editar o /boot/grub/menu.lst no disco para apontar para o novo kernel
+- Reinstalar a BIOS/UEFI para que ela recrie o carregador de boot
+> Quando o sistema não inicia, usa-se uma mídia de recuperação (Live CD) para identificar a partição de boot (por exemplo, com `fdisk -l`), montá-la e executar `grub-install` apontando para o disco. O sistema com problema não pode executar comandos por si só, `menu.lst` é do GRUB Legacy e o firmware não recria o carregador do Linux.
+
+### 102.2-025 | lacuna | 2
+ref: 101:p.83
+tags: update-grub, grub-mkconfig, grub.cfg
+O comando `update-grub` é um atalho para `grub-mkconfig -o ____`. Qual caminho completo completa o comando?
+= /boot/grub/grub.cfg
+> `update-grub` executa `grub-mkconfig -o /boot/grub/grub.cfg`, gerando o arquivo de configuração a partir de `/etc/default/grub` e dos scripts de `/etc/grub.d`. Em distribuições RHEL/Fedora usa-se `grub2-mkconfig -o /boot/grub2/grub.cfg` (não há `update-grub`).
+
+### 102.2-026 | unica | 3
+ref: 101:p.84-85
+tags: GRUB 2, menuentry, root
+Na entrada abaixo do GRUB 2, qual é a diferença entre `set root=(hd0,1)` e `root=/dev/sda1`?
+
+```
+menuentry "Default OS" {
+    set root=(hd0,1)
+    linux /vmlinuz root=/dev/sda1 ro quiet splash
+    initrd /initrd.img
+}
+```
+
+= O primeiro diz ao GRUB onde estão o kernel e o initrd; o segundo informa ao kernel qual é a raiz
+- O primeiro é um parâmetro do kernel; o segundo é um comando do GRUB que localiza o initrd na partição
+- Ambos são comandos do GRUB, e o segundo substitui o primeiro quando existe um initrd
+- Ambos são parâmetros do kernel e precisam apontar para a mesma partição
+> `set root=(hd0,1)` é comando do GRUB (notação do GRUB: disco `hd0`, partição `1`) e indica onde procurar `vmlinuz` e `initrd.img`. Já `root=/dev/sda1`, depois de `linux /vmlinuz`, é um **parâmetro do kernel** Linux, que informa onde está o sistema de arquivos raiz (e `ro`, `quiet` e `splash` são outros parâmetros). Os dois podem apontar para a mesma partição, mas pertencem a níveis diferentes.
+
+### 102.2-027 | lacuna | 1
+ref: 101:p.84
+tags: GRUB 2, menuentry, linux
+Dentro de uma `menuentry` do GRUB 2, qual comando carrega a imagem do kernel e passa parâmetros a ele? ____ /vmlinuz root=/dev/sda1 ro quiet
+= linux
+> No GRUB 2 o kernel Linux é carregado com `linux` (o GRUB Legacy usa `kernel`), e o disco RAM inicial com `initrd`. A entrada termina com `}`.
+
+### 102.2-028 | unica | 1
+ref: 101:p.79
+tags: GRUB Legacy, GRUB 2, diferenças
+Qual das características abaixo é uma vantagem do GRUB 2 em relação ao GRUB Legacy?
+= Arquivo de configuração mais flexível, com instruções condicionais semelhantes a uma linguagem de script
+- Uso de um único arquivo, o menu.lst, editado à mão
+- Desenvolvimento ativo concentrado na versão 0.97
+- Impossibilidade de usar UUIDs para identificar partições
+> O GRUB 2 é uma remodelagem do GRUB com configuração mais flexível (comandos e instruções condicionais), design modular, suporte a temas, a UUIDs, melhor localização e suporte a outras arquiteturas, além de boot de ISOs. O GRUB Legacy usa `menu.lst` e está parado na versão 0.97 (2005).
+
+### 102.2-029 | lacuna | 1
+ref: 101:p.89
+tags: GRUB Legacy, menu.lst
+Qual é o caminho completo do arquivo onde ficam as entradas e configurações do menu do GRUB Legacy? ____
+= /boot/grub/menu.lst
+= /boot/grub/grub.conf
+> No GRUB Legacy, as entradas de menu e configurações ficam em `/boot/grub/menu.lst`, um arquivo de texto simples (linhas iniciadas por `#` são comentários). Nas distribuições Red Hat antigas, o arquivo real é `grub.conf` e `menu.lst` é um link para ele.
+
+### 102.2-030 | multipla | 2
+ref: 101:p.84-85, 101:p.89
+tags: GRUB 2, GRUB Legacy, sintaxe
+Quais diretivas pertencem à sintaxe das entradas de menu do **GRUB 2** (grub.cfg), e não à do GRUB Legacy?
+= linux
+= set root
+= search
+- title
+- kernel
+- makeactive
+> No GRUB 2 uma `menuentry` usa `linux` (kernel), `initrd`, `set root=` e `search` (por exemplo, `search --set=root --fs-uuid`). `title`, `kernel` e `makeactive` são diretivas do GRUB Legacy (`menu.lst`), no qual as entradas começam com `title`.

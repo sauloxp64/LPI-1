@@ -1,0 +1,673 @@
+### 103.5-001 | lacuna | 1
+ref: 101:p.309-310
+tags: segundo plano, &
+Qual caractere, colocado ao final da linha de comando, inicia o processo em segundo plano?
+
+`sleep 100 ____`
+= &
+> O `&` ao final da linha faz o shell iniciar o comando em segundo plano e devolver o prompt imediatamente. O shell mostra o número do job e o PID, por exemplo `[2] 970`.
+
+### 103.5-002 | unica | 1
+ref: 101:p.307
+tags: ctrl+z, jobs, suspender
+O que acontece quando o usuário pressiona `Ctrl+Z` enquanto um comando está em execução em primeiro plano?
+= Suspende o processo; ele fica como job `Stopped`
+- Encerra o processo definitivamente com SIGTERM
+- Manda o processo para o segundo plano em execução
+- Desvincula o processo do terminal e do logout
+> `Ctrl+Z` suspende (pausa) o processo em primeiro plano e devolve o prompt; o job aparece como `Stopped` em `jobs`. Para encerrá-lo seria `Ctrl+C`. Para que continue rodando em segundo plano é preciso usar `bg` em seguida, e para sobreviver ao logout, `nohup`.
+
+### 103.5-003 | unica | 2
+ref: 101:p.307, 101:p.310
+tags: jobs, fg, job atual
+Considere a saída de `jobs` abaixo. Qual job é trazido ao primeiro plano ao executar `fg` sem argumentos?
+
+```
+$ jobs
+[1]   Running                 sleep 600 &
+[2]-  Stopped                 vim notas.txt
+[3]+  Stopped                 less /var/log/syslog
+```
+= O job 3 (`less`), marcado com `+`
+- O job 1 (`sleep`), o primeiro da lista
+- O job 2 (`vim`), marcado com `-`
+- Nenhum: `fg` exige o número do job
+> O sinal `+` marca o job atual (o último suspenso ou enviado ao segundo plano), e `-` marca o job anterior. Sem argumento, `fg` e `bg` agem sobre o job atual. Já o `kill` sempre exige uma especificação de job ou PID.
+
+### 103.5-004 | unica | 2
+ref: 101:p.309
+tags: bg, jobs, controle de jobs
+Na saída de `jobs`, o job 2 aparece como `[2]+ Stopped tar czf backup.tgz /home`. Qual comando o retoma em segundo plano?
+= `bg %2`
+- `fg %2`
+- `kill -CONT 2`
+- `nohup %2`
+> `bg %2` retoma o job suspenso e o mantém em segundo plano; o shell exibe algo como `[2]+ tar czf backup.tgz /home &`. `fg %2` o traria para o primeiro plano. Em `kill -CONT 2` o `2` é um PID, não um número de job (falta o `%`). `nohup` não opera sobre jobs existentes.
+
+### 103.5-005 | multipla | 3
+ref: 101:p.308-309
+tags: jobspec, jobs
+Observe os jobs abaixo. Quais especificações de job (jobspec) se referem ao job 1?
+
+```
+$ jobs
+[1]-  Running                 sleep 600 &
+[2]+  Running                 tail -f /var/log/syslog &
+```
+= `%1`
+= `%sl`
+= `%-`
+- `%+`
+- `%?tail`
+- `%%`
+> `%n` seleciona pelo número, `%str` pelo início da linha de comando (`sl` começa `sleep`) e `%-` pelo job anterior, que aqui é o 1. Já `%+` e `%%` indicam o job atual (o 2), e `%?tail` seleciona o job cuja linha de comando contém `tail`, também o 2.
+
+### 103.5-006 | lacuna | 2
+ref: 101:p.308
+tags: jobs, opções
+Complete o comando para listar apenas os jobs em execução (`Running`), omitindo os parados:
+
+`jobs ____`
+= -r
+> `jobs -r` lista só os jobs em execução e `jobs -s` só os suspensos. Outras opções: `-l` mostra também o PID, `-p` mostra somente os PIDs e `-n` lista os jobs cujo estado mudou desde a última notificação.
+
+### 103.5-007 | unica | 2
+ref: 101:p.310
+tags: kill, jobs, jobspec
+Qual comando envia o sinal padrão (SIGTERM) ao job de número 2 da sessão atual do shell?
+= `kill %2`
+- `kill 2`
+- `kill -2 %2`
+- `kill -s KILL %2`
+> O `%` indica que o argumento é um número de job. `kill 2` atingiria o processo de PID 2, e não o job 2. `kill -2 %2` envia SIGINT (sinal 2), e `kill -s KILL %2` envia SIGKILL: ambos agem sobre o job, mas com sinais diferentes de SIGTERM.
+
+### 103.5-008 | unica | 2
+ref: 101:p.310-311
+tags: nohup, SIGHUP, logout
+Qual comando inicia `backup.sh` em segundo plano ignorando o sinal SIGHUP, de modo que ele não seja encerrado quando o terminal for fechado?
+= `nohup ./backup.sh &`
+- `./backup.sh &`
+- `bg ./backup.sh`
+- `nice -n 5 ./backup.sh &`
+> `nohup` ("no hangup") faz o processo ignorar o SIGHUP enviado quando a sessão ou o terminal é fechado. Sem ele, o job em segundo plano recebe o SIGHUP e termina. `bg` só atua em jobs já existentes, e `nice` altera apenas a prioridade.
+
+### 103.5-009 | unica | 1
+ref: 101:p.311
+tags: nohup, nohup.out
+Quando a saída padrão do comando é um terminal, para onde o `nohup` envia a saída por padrão?
+= Para o arquivo `nohup.out`
+- Para o dispositivo `/dev/null`
+- Para o arquivo `/var/log/nohup.log`
+- Para o arquivo oculto `~/.nohup`
+> O `nohup` avisa `appending output to 'nohup.out'` e acrescenta a saída ao arquivo `nohup.out` do diretório atual (ou ao do diretório pessoal, se o atual não for gravável). Para usar outro destino, redirecione explicitamente a saída.
+
+### 103.5-010 | unica | 3
+ref: 101:p.311
+tags: nohup, redirecionamento
+Qual é o efeito do comando abaixo?
+
+```
+$ nohup ./coleta.sh > coleta.log 2>&1 &
+```
+= A saída vai para `coleta.log`; `nohup.out` não é criado
+- A saída vai para `nohup.out` e `coleta.log` fica vazio
+- A saída vai para `coleta.log`, mas o script morre no logout
+- O `nohup` recusa o comando por causa do redirecionamento
+> O `nohup` só cria `nohup.out` quando a saída padrão ainda aponta para um terminal. Como o shell já redirecionou stdout e stderr para `coleta.log`, o `nohup` não cria outro arquivo, mas continua protegendo o processo contra o SIGHUP.
+
+### 103.5-011 | lacuna | 1
+ref: 101:p.311
+tags: watch, intervalo
+Por padrão, a cada quantos segundos o `watch` executa novamente o comando observado?
+= 2
+> O `watch` repete o comando a cada 2 segundos, e o cabeçalho mostra `Every 2.0s: comando`. O intervalo é alterado com `-n` (ou `--interval`).
+
+### 103.5-012 | lacuna | 2
+ref: 101:p.312
+tags: watch, intervalo
+Complete o comando para executar `free` a cada 5 segundos com o `watch`:
+
+`watch ____ 5 free`
+= -n
+= --interval
+> `-n segundos` (ou `--interval segundos`) define o intervalo entre as execuções. Para interromper o `watch`, usa-se `Ctrl+C`.
+
+### 103.5-013 | unica | 3
+ref: 101:p.333
+tags: watch, pipe, aspas
+Qual comando executa repetidamente, a cada 2 segundos, todo o pipeline `ps aux | grep sshd`?
+= `watch 'ps aux | grep sshd'`
+- `watch ps aux | grep sshd`
+- `watch -n ps aux | grep sshd`
+- `watch "ps aux" | grep sshd`
+> As aspas em volta de todo o pipeline fazem a linha chegar inteira ao `watch`, que a executa a cada ciclo. Sem aspas (`watch ps aux | grep sshd`) ou com aspas só em `ps aux`, o shell interpreta o `|` antes: é o `watch ps aux` que seria canalizado para o `grep`, e o `grep` filtraria a tela do `watch`, em vez de o `watch` repetir o pipeline. Em `watch -n ps ...` o `ps` seria lido como valor do intervalo. (Na prática, escapar o pipe com `\|` também funcionaria, porque o `watch` junta os argumentos e os entrega a `sh -c`, mas a forma recomendada é usar aspas.)
+
+### 103.5-014 | unica | 2
+ref: 101:p.312
+tags: uptime, load average
+Na saída abaixo, o que representam os três números após `load average:`?
+
+```
+$ uptime
+ 10:15:42 up 3 days,  2:07,  2 users,  load average: 0.52, 0.80, 1.10
+```
+= A carga média do sistema em 1, 5 e 15 minutos
+- Uso de CPU por usuário, sistema e ociosidade
+- Número de processos em execução, dormindo e zumbis
+- Uso de CPU, de memória RAM e de swap
+> O `uptime` exibe a hora, o tempo de atividade (`up 3 days, 2:07`), o número de usuários e a carga média (processos em execução ou aguardando CPU) em janelas de 1, 5 e 15 minutos. A divisão em `us/sy/id` pertence ao `top`, e os totais de zumbis ao cabeçalho `Tasks` do `top`.
+
+### 103.5-015 | unica | 3
+ref: 101:p.312
+tags: free, memória, available
+Observe a saída de `free -m`. Qual coluna informa a memória que pode ser usada por novos programas sem recorrer ao swap?
+
+```
+$ free -m
+               total        used        free      shared  buff/cache   available
+Mem:            1992         412         901          12         678        1385
+Swap:           1023           0        1023
+```
+= `available`
+- `free`
+- `buff/cache`
+- `shared`
+> `available` é a estimativa de memória disponível para iniciar novas aplicações sem usar swap; ela inclui a parte do cache que pode ser liberada. `free` mostra apenas a memória totalmente ociosa, que costuma ser bem menor que a disponível. `buff/cache` é a memória usada como buffer e cache de disco.
+
+### 103.5-016 | lacuna | 1
+ref: 101:p.312
+tags: free, unidades
+Complete o comando para exibir os valores de memória em unidades legíveis, escolhidas automaticamente (Ki, Mi, Gi):
+
+`free ____`
+= -h
+= --human
+> `free -h` (ou `--human`) converte cada valor para a unidade mais adequada. As opções `-k`, `-m` e `-g` fixam a unidade em KiB, MiB e GiB, e `-b` mostra em bytes.
+
+### 103.5-017 | lacuna | 2
+ref: 101:p.312
+tags: free, intervalo
+Complete o comando para que o `free` repita a exibição a cada 5 segundos, sem usar o `watch`:
+
+`free ____ 5`
+= -s
+= --seconds
+> `free -s N` (ou `--seconds N`) imprime a saída continuamente a cada N segundos. Combinado com `-c N` limita o número de repetições. O `watch free` também funciona, mas é outro programa.
+
+### 103.5-018 | unica | 2
+ref: 101:p.319
+tags: ps, processos, tty
+O que o comando `ps`, executado sem nenhuma opção, lista?
+= Processos do usuário atual no terminal atual
+- Todos os processos de todos os usuários do sistema
+- Todos os processos do usuário atual, em qualquer terminal
+- Somente os jobs em segundo plano da sessão atual
+> Sem opções, o `ps` seleciona os processos que têm o mesmo usuário efetivo e o mesmo terminal do `ps` (em geral, o shell e o próprio `ps`). Para ver mais, usam-se opções como `-e`, `ax` ou `aux`.
+
+### 103.5-019 | unica | 2
+ref: 101:p.320
+tags: ps, aux, bsd
+No comando `ps aux` (estilo BSD), qual é a função da letra `x`?
+= Incluir processos sem terminal de controle
+- Exibir o formato estendido, com todas as colunas
+- Mostrar os processos em forma de árvore
+- Excluir os processos pertencentes ao root
+> `a` mostra processos de todos os usuários ligados a um terminal, `u` usa o formato orientado ao usuário (USER, %CPU, %MEM, VSZ, RSS...) e `x` inclui os processos sem terminal (daemons, que aparecem com `?` em TTY). A árvore é exibida com `f` (ou `--forest`).
+
+### 103.5-020 | multipla | 3
+ref: 101:p.320
+tags: ps, usuário, sintaxe
+Quais comandos listam os processos do usuário `carol`?
+= `ps U carol`
+= `ps -u carol`
+= `ps --user carol`
+- `ps -p carol`
+- `ps -C carol`
+- `ps -t carol`
+> O `ps` aceita três estilos de opções: BSD (`U carol`), UNIX (`-u carol`) e GNU (`--user carol`), todos selecionando por usuário. `-p` seleciona por PID (e `carol` não é um número), `-C` por nome do comando e `-t` por terminal.
+
+### 103.5-021 | unica | 2
+ref: 101:p.321
+tags: ps, STAT, estados
+O que significa o estado `T` na coluna `STAT` do `ps`?
+= Parado por um sinal de controle, como `Ctrl+Z`
+- Em suspensão interrompível, aguardando um evento
+- Em suspensão ininterrupta, em geral aguardando E/S
+- Terminado, aguardando a remoção da tabela de processos
+> `T` significa parado (stopped), por exemplo após `Ctrl+Z` ou `SIGSTOP`; o processo só volta a executar com `SIGCONT` (ou `fg`/`bg`). `S` é suspensão interrompível, `D` é suspensão ininterrupta (geralmente aguardando E/S) e `Z` é zumbi, que é o processo terminado cujo pai ainda não coletou o status. `R` indica em execução ou pronto para executar.
+
+### 103.5-022 | unica | 3
+ref: 101:p.321
+tags: ps, STAT, nice
+Um processo aparece no `ps` com `STAT` igual a `SN`. O que a letra `N` indica?
+= Prioridade menor que a normal (nice positivo)
+- Prioridade maior que a convencional (nice negativo)
+- Processo pertencente ao grupo em primeiro plano
+- Processo recém-criado que ainda não foi escalonado
+> Os modificadores do `STAT` são: `<` (prioridade maior que a normal), `N` (prioridade menor que a normal) e `+` (grupo de processos em primeiro plano). O estado `SN` ocorre, por exemplo, em um processo iniciado com `nice -n 5`.
+
+### 103.5-023 | unica | 2
+ref: 101:p.316
+tags: top, zumbi, Tasks
+No cabeçalho do `top` aparece a linha abaixo. O que é o processo contado em `1 zombie`?
+
+```
+Tasks: 214 total,   2 running, 211 sleeping,   0 stopped,   1 zombie
+```
+= Um que terminou, mas o pai ainda não o removeu da tabela
+- Um que está parado aguardando operações de E/S no disco
+- Um suspenso pelo usuário com `Ctrl+Z`
+- Um sem terminal de controle, executado por daemon
+> Um zumbi (estado `Z`) é um processo filho que concluiu a execução, mas continua na tabela de processos porque o pai ainda não coletou seu status. Não consome CPU nem memória relevante. Processos suspensos aparecem em `stopped`.
+
+### 103.5-024 | lacuna | 1
+ref: 101:p.315
+tags: top, ordenação, memória
+Dentro do `top`, qual tecla (maiúscula) ordena a lista de processos pelo uso de memória?
+= M
+> Por padrão o `top` ordena por %CPU (tecla `P`). `M` ordena por uso de memória, `N` pelo PID e `T` pelo tempo de execução acumulado. A tecla `R` inverte a ordem de classificação.
+
+### 103.5-025 | multipla | 2
+ref: 101:p.315-316
+tags: top, teclas
+Quais teclas do `top` alteram a ordenação da lista de processos?
+= `M`
+= `P`
+= `T`
+- `k`
+- `u`
+- `V`
+> `M` (memória), `P` (CPU) e `T` (tempo) ordenam a lista. `k` envia um sinal a um processo (pede PID e sinal), `u` filtra por usuário e `V` alterna a visão hierárquica (floresta) dos processos.
+
+### 103.5-026 | unica | 2
+ref: 101:p.315
+tags: top, kill, sinal
+O que faz a tecla `k` dentro do `top`?
+= Pede o PID e o sinal (padrão: SIGTERM) a enviar a um processo
+- Pede o PID e o novo valor nice de um processo (renice)
+- Pede o nome de um usuário para filtrar a lista de processos
+- Alterna a exibição entre o nome e o caminho completo do comando
+> `k` ("kill") solicita o PID e o sinal; o padrão é 15 (SIGTERM). `r` ("renice") é que muda o valor nice, `u` filtra os processos de um usuário e `c` alterna entre o nome do comando e a linha de comando completa (mostrando os processos do kernel entre colchetes).
+
+### 103.5-027 | unica | 2
+ref: 101:p.316
+tags: top, floresta, hierarquia
+O que faz a tecla `V` (maiúscula) dentro do `top`?
+= Alterna a visão hierárquica (floresta) dos processos
+- Mostra o caminho completo dos programas
+- Alterna entre ordem crescente e decrescente
+- Salva a configuração atual em um arquivo
+> `V` alterna a visão em floresta, que mostra a relação entre pais e filhos. `c` mostra o caminho/linha de comando completa e diferencia processos do kernel (entre colchetes), `R` inverte a ordem de classificação e `W` grava a configuração (por exemplo, em `~/.toprc`).
+
+### 103.5-028 | lacuna | 2
+ref: 101:p.317
+tags: top, CPU, wa
+Na linha `%Cpu(s)` do `top`, qual é a abreviação do campo que indica o tempo de CPU gasto aguardando a conclusão de operações de E/S (entrada e saída)?
+= wa
+> `wa` ("wait") é o tempo de CPU ocioso esperando por E/S. Os demais campos são `us` (processos de usuário), `sy` (kernel), `ni` (processos com nice alterado), `id` (ocioso), `hi` e `si` (interrupções de hardware e software) e `st` (tempo roubado por virtualização).
+
+### 103.5-029 | lacuna | 2
+ref: 101:p.314
+tags: top, batch, script
+Complete o comando para executar o `top` em modo não interativo (batch), adequado para redirecionar uma única iteração para um arquivo:
+
+`top ____ -n 1 > processos.txt`
+= -b
+= --batch-mode
+> `top -b` (`--batch-mode`) imprime o resultado como texto simples, sem tela interativa, e `-n 1` limita a uma iteração. Sem `-b`, o `top` precisa de um terminal e sua saída redirecionada não ficaria legível.
+
+### 103.5-030 | unica | 2
+ref: 101:p.333
+tags: top, -o, ordenação
+Qual comando inicia o `top` já ordenado pelo uso de memória?
+= `top -o %MEM`
+- `top -m`
+- `top -M`
+- `top --sort=%mem`
+> A opção `-o campo` (`--sort-override`) força a ordenação por um campo do `top`, como `%MEM`. `-m` e `-M` não existem como opções de ordenação, e `--sort=` é a sintaxe do `ps`, não do `top`. Já dentro do `top`, a tecla `M` produz o mesmo efeito.
+
+### 103.5-031 | multipla | 1
+ref: 101:p.312-313
+tags: pgrep, pidof, PID
+Quais comandos exibem o PID dos processos chamados `sleep` sem encerrá-los?
+= `pgrep sleep`
+= `pidof sleep`
+- `pkill sleep`
+- `killall sleep`
+- `kill sleep`
+> `pgrep` e `pidof` apenas procuram o PID de processos pelo nome. `pkill` e `killall` enviam sinais (por padrão SIGTERM) aos processos encontrados, encerrando-os. `kill sleep` falha, pois `kill` só aceita PIDs ou jobspecs.
+
+### 103.5-032 | unica | 3
+ref: 101:p.313
+tags: pkill, killall, nome do processo
+Três processos `sleep` estão em execução. O que acontece ao executar, em sequência, `killall sle` e `pkill sle`?
+= `killall` não acha o processo; `pkill` encerra os três
+- `killall` encerra os três; `pkill` não acha processo algum
+- Ambos encerram os três processos `sleep` sem aviso
+- Nenhum dos dois encontra processos com esse nome
+> O `killall` compara o nome inteiro do processo (`sle` não é igual a `sleep`) e responde `no process found`. O `pkill` (como o `pgrep`) trata o argumento como padrão e casa com qualquer parte do nome, então `sle` atinge os `sleep`. Por isso, `pkill` exige cuidado ao usar padrões curtos; `-x` exige o nome exato.
+
+### 103.5-033 | unica | 1
+ref: 101:p.313
+tags: kill, SIGTERM, sinal padrão
+Qual sinal é enviado por `kill`, `pkill` e `killall` quando nenhum sinal é especificado?
+= SIGTERM (15)
+- SIGKILL (9), que não pode ser ignorado
+- SIGHUP (1)
+- SIGINT (2)
+> O sinal padrão é SIGTERM, que pede ao processo que termine de forma ordenada e pode ser tratado ou ignorado por ele. O SIGKILL precisa ser pedido explicitamente (`-9`).
+
+### 103.5-034 | lacuna | 1
+ref: 101:p.314
+tags: kill, SIGKILL
+Qual é o número do sinal SIGKILL, usado para eliminar processos que ignoram os demais sinais?
+
+`kill -____ PID`
+= 9
+> `kill -9 PID` (ou `-KILL`, `-s KILL`) envia SIGKILL, que não pode ser capturado nem ignorado pelo processo. Por isso é o último recurso, pois o processo não tem chance de liberar recursos.
+
+### 103.5-035 | unica | 2
+ref: 101:p.314
+tags: kill, SIGKILL, processo rebelde
+O processo de PID 4321 ignora o comando `kill 4321` e continua em execução. Qual comando o encerra de forma que ele não possa interceptar o sinal?
+= `kill -9 4321`
+- `kill -1 4321`
+- `kill -15 4321`
+- `kill -18 4321`
+> SIGKILL (9) é tratado diretamente pelo kernel e não pode ser capturado nem ignorado. `kill 4321` já envia o SIGTERM (15), logo `kill -15` não resolve. O SIGHUP (1) pode ser ignorado e costuma servir para reler configuração, e o 18 é SIGCONT, que continua um processo parado.
+
+### 103.5-036 | multipla | 2
+ref: 101:p.313
+tags: kill, SIGHUP, sintaxe
+Quais comandos enviam o sinal SIGHUP ao processo de PID 1247?
+= `kill -SIGHUP 1247`
+= `kill -1 1247`
+= `kill -s SIGHUP 1247`
+- `kill -2 1247`
+- `kill -9 1247`
+- `kill SIGHUP 1247`
+> Um sinal pode ser indicado pelo nome (`-SIGHUP`), pelo número (`-1`) ou com a opção `-s`. `-2` é SIGINT e `-9` é SIGKILL. Em `kill SIGHUP 1247` falta o hífen, e o shell reclama que `SIGHUP` deveria ser um PID ou jobspec.
+
+### 103.5-037 | lacuna | 1
+ref: 101:p.314
+tags: kill, lista de sinais
+Qual opção do `kill` exibe a lista de todos os sinais disponíveis e seus números?
+
+`kill ____`
+= -l
+> `kill -l` lista os sinais (1 SIGHUP, 2 SIGINT, 9 SIGKILL, 15 SIGTERM etc.). Com um número ou nome, converte um no outro: `kill -l 15` mostra `TERM`.
+
+### 103.5-038 | multipla | 3
+ref: 101:p.307, 101:p.309
+tags: sinais, teclado, ctrl
+Quais associações entre combinação de teclas e sinal enviado ao processo em primeiro plano estão corretas?
+= `Ctrl+C` envia SIGINT
+= `Ctrl+Z` envia SIGTSTP
+= `Ctrl+\` envia SIGQUIT
+- `Ctrl+C` envia SIGKILL
+- `Ctrl+Z` envia SIGSTOP
+- `Ctrl+D` envia SIGTERM
+> O terminal traduz `Ctrl+C` em SIGINT, `Ctrl+Z` em SIGTSTP (suspensão pelo terminal) e `Ctrl+\` em SIGQUIT. SIGKILL e SIGSTOP não podem ser capturados e não estão ligados a teclas padrão. `Ctrl+D` não é sinal: indica fim de arquivo (EOF) na entrada.
+
+### 103.5-039 | unica | 2
+ref: 101:p.332
+tags: SIGHUP, daemon, configuração
+Em daemons como o Apache HTTPD, qual sinal costuma ser enviado ao processo pai para que ele releia a configuração e reabra os logs sem ser encerrado?
+= SIGHUP
+- SIGSTOP
+- SIGKILL
+- SIGTSTP
+> Para muitos daemons, o SIGHUP significa "recarregue a configuração". No Apache, o pai relê os arquivos, reabre os logs e gera novos processos filhos. SIGSTOP e SIGTSTP apenas pausam o processo, e SIGKILL o elimina.
+
+### 103.5-040 | unica | 2
+ref: 101:p.313-314
+tags: kill, SIGCONT, SIGSTOP
+O processo de PID 900 está parado (estado `T`), por exemplo depois de um `Ctrl+Z` ou de um SIGSTOP. Qual comando o faz continuar a execução?
+= `kill -CONT 900`
+- `kill -STOP 900`
+- `kill -HUP 900`
+- `kill -SIGTERM 900`
+> SIGCONT (18) retoma um processo parado. SIGSTOP o pausa, SIGHUP costuma provocar recarga de configuração ou término, e SIGTERM pede o encerramento do processo.
+
+### 103.5-041 | unica | 1
+ref: 101:p.337, 101:p.344
+tags: screen, tmux, prefixo
+Qual é a tecla de prefixo de comando padrão do `tmux` e do GNU Screen, respectivamente?
+= `Ctrl+b` e `Ctrl+a`
+- `Ctrl+a` e `Ctrl+b`
+- `Ctrl+b` para os dois programas
+- `Ctrl+x` e `Ctrl+a`
+> O prefixo do tmux é `Ctrl+b`, e o do screen é `Ctrl+a`. Os comandos de ambos consistem no prefixo seguido de outra tecla, como `Ctrl+b c` no tmux e `Ctrl+a c` no screen para criar uma janela.
+
+### 103.5-042 | lacuna | 2
+ref: 101:p.337
+tags: screen, janelas
+No GNU Screen, qual tecla deve ser pressionada logo após o prefixo `Ctrl+a` para criar uma nova janela na sessão atual?
+= c
+> `Ctrl+a c` cria uma janela. `Ctrl+a n` vai para a próxima, `Ctrl+a w` lista as janelas na parte inferior da tela e `Ctrl+a k` elimina a janela atual (após confirmação).
+
+### 103.5-043 | unica | 2
+ref: 101:p.340
+tags: screen, detach
+Dentro de uma sessão do GNU Screen, qual sequência a desanexa do terminal, mantendo os programas em execução?
+= `Ctrl+a` e depois `d`
+- `Ctrl+a` e depois `k`
+- `Ctrl+a` e depois `x`
+- `exit`, no shell da janela
+> `Ctrl+a d` desanexa a sessão, que continua ativa (aparece como `Detached` em `screen -ls`) e pode ser retomada depois. `Ctrl+a k` e `exit` encerram a janela e seus programas.
+
+### 103.5-044 | unica | 2
+ref: 101:p.341
+tags: screen, reattach
+Existe apenas uma sessão do GNU Screen e ela está desanexada. Qual comando a reanexa?
+= `screen -r`
+- `screen -ls`
+- `screen -dmS`
+- `screen -X quit`
+> `screen -r` reanexa a sessão desanexada; com mais de uma, é preciso informar o PID ou o nome. `-ls` apenas lista as sessões, `-dmS` cria uma nova sessão já desanexada e `-X quit` encerra uma sessão.
+
+### 103.5-045 | lacuna | 1
+ref: 101:p.339
+tags: screen, sessões
+Complete o comando para listar as sessões do GNU Screen existentes:
+
+`screen ____`
+= -ls
+= -list
+> `screen -ls` (ou `screen -list`) mostra o PID, o nome e o estado (`Attached` ou `Detached`) de cada sessão, além do diretório de sockets (`/run/screen/S-usuario`).
+
+### 103.5-046 | unica | 2
+ref: 101:p.339
+tags: screen, sessão nomeada
+Qual comando cria uma nova sessão do GNU Screen chamada `monitor`?
+= `screen -S monitor`
+- `screen -t monitor`
+- `screen -r monitor`
+- `screen -ls monitor`
+> `-S nome` define o nome da sessão. `-t` dá título à janela criada, `-r` reanexa uma sessão já existente e `-ls` apenas lista sessões, mostrando as que contenham o texto indicado.
+
+### 103.5-047 | lacuna | 3
+ref: 101:p.340
+tags: screen, encerrar sessão
+Uma sessão do GNU Screen tem PID 1037. Complete o comando com a opção que envia a ela o comando `quit`, encerrando-a sem precisar entrar na sessão:
+
+`screen -S 1037 ____ quit`
+= -X
+> `-S` identifica a sessão (por PID ou nome) e `-X` envia um comando a ela; `quit` encerra todas as janelas e a sessão. Já `-d` apenas desanexa a sessão, `-ls` só a lista e `-r` a reanexa ao terminal atual, sem encerrá-la.
+
+### 103.5-048 | lacuna | 1
+ref: 101:p.342
+tags: screen, configuração
+Qual é o caminho do arquivo de configuração global do GNU Screen?
+= /etc/screenrc
+> O screen lê `/etc/screenrc` para todo o sistema e `~/.screenrc` no nível do usuário. Neles ficam as configurações gerais, os atalhos (`bind`), as configurações de terminal e os comandos de inicialização.
+
+### 103.5-049 | unica | 3
+ref: 101:p.339
+tags: screen, regiões, janelas
+No GNU Screen, a tela foi dividida em duas regiões e cada uma exibe uma janela. O que acontece com a janela exibida na região atual quando ela é fechada com `Ctrl+a X`?
+= A janela continua existindo, só deixa de ser exibida
+- A janela é encerrada junto com os programas que executa
+- A sessão inteira é desanexada do terminal atual
+- A janela é movida automaticamente para uma nova sessão
+> Regiões são apenas áreas de exibição. `Ctrl+a X` remove a região, mas a janela e os programas que ela executa continuam ativos e podem ser exibidos de novo. No tmux é diferente: eliminar um painel (`Ctrl+b x`) encerra o pseudoterminal e os programas dele.
+
+### 103.5-050 | unica | 2
+ref: 101:p.338
+tags: screen, regiões, divisão
+Qual atalho do GNU Screen divide a tela em duas regiões lado a lado (divisão vertical)?
+= `Ctrl+a` e depois `|`
+- `Ctrl+a` e depois `S`
+- `Ctrl+a` e depois `Tab`
+- `Ctrl+a` e depois `Q`
+> No screen, `Ctrl+a |` divide em regiões lado a lado e `Ctrl+a S` as divide uma acima da outra. `Ctrl+a Tab` apenas muda o foco para a próxima região e `Ctrl+a Q` fecha todas as regiões, menos a atual. (Os atalhos `%` e `"` são do tmux.)
+
+### 103.5-051 | lacuna | 2
+ref: 101:p.344
+tags: tmux, sessão nomeada
+Complete o comando para criar uma sessão do `tmux` chamada `lab`:
+
+`tmux new ____ lab`
+= -s
+> `tmux new -s nome` cria uma sessão com o nome indicado; `-n` define o nome da primeira janela. Sem `-s`, o tmux nomeia as sessões com números (0, 1, 2...).
+
+### 103.5-052 | lacuna | 1
+ref: 101:p.348
+tags: tmux, sessões
+Qual subcomando do `tmux` lista as sessões existentes?
+
+`tmux ____`
+= ls
+= list-sessions
+> `tmux ls` (forma abreviada de `list-sessions`) mostra cada sessão, o número de janelas e se está anexada (`attached`).
+
+### 103.5-053 | unica | 2
+ref: 101:p.349
+tags: tmux, attach
+Qual comando reanexa a sessão do `tmux` chamada `lab`?
+= `tmux attach -t lab`
+- `tmux attach lab`
+- `tmux attach-client lab`
+- `tmux attach-session lab`
+> O alvo da sessão é indicado com `-t`. `attach` pode ser abreviado como `at` ou `a`, e com apenas uma sessão o nome é opcional. As demais formas não existem ou têm a sintaxe incorreta.
+
+### 103.5-054 | unica | 1
+ref: 101:p.349
+tags: tmux, detach
+No `tmux`, qual sequência desanexa a sessão atual, mantendo seus programas em execução?
+= `Ctrl+b` e depois `d`
+- `Ctrl+a` e depois `d`
+- `Ctrl+b` e depois `Ctrl+d`
+- `Ctrl+b` e depois `&`
+> `Ctrl+b d` desanexa a sessão do tmux. `Ctrl+a d` é o atalho do screen. No tmux, `Ctrl+b x` elimina o painel e `Ctrl+b &` elimina a janela atual (ambos pedem confirmação).
+
+### 103.5-055 | unica | 2
+ref: 101:p.349
+tags: tmux, kill-session
+Qual comando encerra a sessão do `tmux` chamada `lab`, incluindo suas janelas e painéis?
+= `tmux kill-session -t lab`
+- `tmux kill-window -t lab`
+- `tmux detach-client -s lab`
+- `tmux close-session lab`
+> `kill-session -t nome` destrói a sessão e tudo que está nela. `kill-window` elimina somente uma janela, `detach-client -s` apenas desanexa os clientes da sessão, que segue ativa em segundo plano, e `close-session` não é um comando do tmux.
+
+### 103.5-056 | lacuna | 2
+ref: 101:p.346
+tags: tmux, painéis, divisão
+No `tmux`, qual caractere deve ser digitado após o prefixo `Ctrl+b` para dividir a janela atual em dois painéis lado a lado?
+= %
+> No tmux, `Ctrl+b %` cria painéis lado a lado e `Ctrl+b "` cria painéis um acima do outro. As teclas `|` e `-` são mapeamentos populares em arquivos de configuração personalizados, mas não são padrão.
+
+### 103.5-057 | unica | 2
+ref: 101:p.347
+tags: tmux, painéis, eliminar
+No `tmux`, qual atalho elimina o painel atual, encerrando o pseudoterminal e os programas que rodam nele?
+= `Ctrl+b` e depois `x`
+- `Ctrl+b` e depois `&`
+- `Ctrl+b` e depois `z`
+- `Ctrl+b` e depois `Ctrl+x`
+> `Ctrl+b x` elimina o painel (com confirmação). `Ctrl+b &` elimina a janela inteira, `Ctrl+b z` apenas amplia ou reduz o painel (zoom) e `Ctrl+b Ctrl+x` não é um atalho padrão do tmux. Para desanexar a sessão usa-se `Ctrl+b d`.
+
+### 103.5-058 | lacuna | 2
+ref: 101:p.350
+tags: tmux, configuração
+Complete o comando para iniciar o `tmux` usando o arquivo de configuração alternativo `~/teste.conf`:
+
+`tmux ____ ~/teste.conf`
+= -f
+> Por padrão, o tmux lê `/etc/tmux.conf` e `~/.tmux.conf`, se existirem. A opção `-f arquivo` faz com que ele use um arquivo de configuração alternativo.
+
+### 103.5-059 | unica | 3
+ref: 101:p.350
+tags: tmux, prefixo, configuração
+Qual conjunto de linhas, no arquivo `~/.tmux.conf`, troca o prefixo do `tmux` de `Ctrl+b` para `Ctrl+a`?
+= `set -g prefix C-a`, `unbind C-b` e `bind C-a send-prefix`
+- `escape ^Aa`, `unbind ^B` e `bind ^A send-prefix`
+- `prefix = Ctrl+a`, `unprefix Ctrl+b` e `bind send-prefix`
+- `set -g leader C-a`, `unbind C-b` e `bind C-a send-leader`
+> A mudança no tmux usa `set -g prefix C-a` (define o novo prefixo), `unbind C-b` (libera o antigo) e `bind C-a send-prefix` (permite enviar o prefixo ao programa interno). A diretiva `escape ^Aa` pertence ao screen (em `~/.screenrc`). As outras sintaxes não existem.
+
+### 103.5-060 | multipla | 3
+ref: 101:p.339, 101:p.343, 101:p.345
+tags: tmux, screen, comparação
+Quais afirmações comparando o GNU Screen e o `tmux` estão corretas?
+= No tmux, eliminar um painel encerra o pseudoterminal e os programas dele
+= No screen, eliminar uma região não elimina a janela associada a ela
+= Ambos permitem desanexar sessões e reanexá-las depois
+- O prefixo padrão do tmux é `Ctrl+a`
+- No screen, cada região é um pseudoterminal completo
+- O tmux só permite uma janela por sessão
+> No tmux, cada painel é um pseudoterminal completo, então eliminá-lo encerra seus programas; no screen, regiões são só áreas de exibição de janelas. A possibilidade de desanexar sessões é comum aos dois. O prefixo padrão do tmux é `Ctrl+b`, e as sessões do tmux podem ter várias janelas.
+
+### 103.5-061 | unica | 2
+ref: 101:p.336
+tags: tmux, screen, desanexar, ssh
+Um administrador executa uma tarefa demorada dentro de uma sessão do `tmux` em um servidor remoto, via SSH, e a conexão cai. O que acontece com a tarefa?
+= Continua em execução; basta reanexar a sessão depois
+- É encerrada, porque o terminal remoto foi perdido
+- Fica parada (`Stopped`) até o `Ctrl+Q` ser pressionado
+- Continua, mas sua saída é perdida e a sessão é destruída
+> Os multiplexadores mantêm as sessões no servidor, independentes do terminal. Se a conexão cai, a sessão passa a constar como desanexada e a tarefa continua; depois, o administrador conecta de novo e usa `tmux attach` (ou `screen -r`). Essa é uma das principais vantagens do uso de multiplexadores.
+
+### 103.5-062 | multipla | 2
+ref: 101:p.337-338, 101:p.340
+tags: screen, atalhos
+Quais associações entre atalho (digitado após o prefixo `Ctrl+a`) e função no GNU Screen estão corretas?
+= `c` cria uma nova janela
+= `d` desanexa a sessão
+= `n` vai para a próxima janela
+- `k` desanexa a sessão
+- `w` encerra a janela atual
+- `p` cola o texto copiado
+> No screen, `c` cria janela, `d` desanexa a sessão, `n` e `p` navegam para a próxima e a anterior, `w` lista as janelas e `k` elimina a janela atual (com confirmação). A colagem é feita com `Ctrl+a ]`.
+
+### 103.5-063 | multipla | 2
+ref: 101:p.344-345, 101:p.347-349
+tags: tmux, atalhos
+Quais associações entre atalho (digitado após o prefixo `Ctrl+b`) e função no `tmux` estão corretas?
+= `c` cria uma nova janela
+= `,` renomeia a janela atual
+= `d` desanexa a sessão
+- `x` encerra a janela atual
+- `s` renomeia a sessão atual
+- `n` volta à janela anterior
+> No tmux, `c` cria janela, `,` a renomeia e `d` desanexa a sessão. O `x` elimina o painel atual (a janela é eliminada com `&`), o `s` lista as sessões para seleção (renomear a sessão é `$`) e o `n` avança para a próxima janela (`p` volta para a anterior).
+
+### 103.5-064 | unica | 3
+ref: 101:p.326, 101:p.333
+tags: ps, ordenação, --sort, -o
+Qual comando lista todos os processos do sistema com PID, %CPU e nome do comando, do maior para o menor consumo de CPU?
+= `ps -eo pid,%cpu,comm --sort=-%cpu`
+- `ps -eo pid,%cpu,comm --sort=%cpu`
+- `ps -eo pid,%cpu,comm --sort=-pid`
+- `ps -eo pid,%cpu,comm | sort -k2`
+> Em `--sort`, o sinal `-` inverte a ordem para decrescente, e o campo (`%cpu` ou `pcpu`) define o critério. Sem o sinal, a ordem é crescente (os processos ociosos vêm primeiro). `--sort=-pid` ordena pelo PID, e `sort -k2` faz uma ordenação textual (não numérica) e sem inverter, que ainda embaralha o cabeçalho.
+
+### 103.5-065 | lacuna | 2
+ref: 101:p.333-334
+tags: ps, -o, colunas
+Qual opção do `ps` permite escolher as colunas exibidas, como em `ps ____ pid,user,comm`?
+= -o
+= o
+= --format
+> A opção `-o` (estilo UNIX), `o` (BSD) ou `--format` (GNU) define o formato de saída, com a lista de campos separados por vírgula, como `pid`, `user`, `%mem`, `%cpu`, `comm` (só o nome) e `cmd` (linha de comando).

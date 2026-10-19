@@ -1,0 +1,44 @@
+{
+  "id": "f103-7-sed-mascarar-ip",
+  "obj": "103.7",
+  "titulo": "sed: anonimizar um log com expressões regulares",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "campo": {
+      "escolha": [
+        "user",
+        "usuario",
+        "login"
+      ]
+    },
+    "mascara": {
+      "escolha": [
+        "XXXX",
+        "OCULTO",
+        "anon",
+        "REMOVIDO"
+      ]
+    },
+    "ult": {
+      "escolha": [
+        "0",
+        "xxx"
+      ]
+    }
+  },
+  "enunciado": "O arquivo `~/lab/f103-7-sed-mascarar-ip/acessos.log` é um log de auditoria (campos `chave=valor` separados por espaço) que será enviado a um fornecedor, e antes disso precisa ser anonimizado. Gere `anonimo.log` (na mesma pasta), **sem alterar o original**, com estas transformações:\n\n1. em **todo endereço IPv4** de cada linha (pode haver mais de um por linha: `origem=` e `destino=`), troque o **último octeto** por `{ult}` (ex.: `192.168.4.77` vira `192.168.4.{ult}`);\n2. troque o valor do campo `{campo}=...` por `{campo}={mascara}`;\n3. **remova** as linhas de comentário (as que começam com `#`) e as **linhas em branco**.\n\nNada mais deve mudar: números como `versao=2.4.1` e `tempo=1.35s` precisam permanecer iguais.",
+  "verifica": [
+    "todo IPv4 teve o último octeto trocado por `{ult}`",
+    "o valor de `{campo}=` virou `{mascara}` em todas as linhas",
+    "não há comentários nem linhas em branco",
+    "o resto do conteúdo ficou igual ao original, e `acessos.log` não foi alterado"
+  ],
+  "dicas": [
+    "O `sed` aplica o comando `s/padrão/troca/` a cada linha; a flag `g` troca todas as ocorrências da linha, não só a primeira. Para apagar linhas inteiras existe o comando `d` com um endereço (`/padrão/d`).",
+    "Use regex estendida (`sed -E`): `[0-9]+` casa dígitos e um ponto literal precisa de barra (`\\.`). Parênteses **capturam** um trecho que você reaproveita na troca com `\\1`.",
+    "Um IP são quatro números separados por pontos; capture os três primeiros com o ponto final e troque só o quarto. Assim, `versao=2.4.1` (só três números) não casa.",
+    "Várias operações no mesmo `sed`: repita `-e` ou separe com `;`. Redirecione a saída para `anonimo.log` (não use `-i` no original)."
+  ],
+  "solucao": "```\ncd ~/lab/f103-7-sed-mascarar-ip\nsed -E -e '/^#/d' -e '/^$/d' \\\n       -e 's/([0-9]+\\.[0-9]+\\.[0-9]+)\\.[0-9]+/\\1.{ult}/g' \\\n       -e 's/{campo}=[^ ]+/{campo}={mascara}/g' acessos.log > anonimo.log\n```\n`/^#/d` apaga linhas que começam com `#` e `/^$/d` as vazias (`^` e `$` são âncoras de início e fim de linha). Na troca do IP, `([0-9]+\\.[0-9]+\\.[0-9]+)` captura os três primeiros octetos e `\\1` os devolve; o `\\.` escapa o ponto (sem a barra, `.` casa qualquer caractere) e a flag `g` trata `origem` e `destino` na mesma linha. `[^ ]+` casa \"tudo até o próximo espaço\". Com `-E` (regex estendida) não é preciso escapar `(`, `)`, `+`; na regex básica seria `\\(`, `\\)`, `\\+`. Pegadinha: sem `g`, só o primeiro IP da linha é trocado."
+}

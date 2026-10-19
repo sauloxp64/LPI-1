@@ -1,0 +1,42 @@
+{
+  "id": "f103-3-find-criterios",
+  "obj": "103.3",
+  "titulo": "Localizar arquivos por tipo, tamanho e data",
+  "nivel": 2,
+  "minutos": 7,
+  "params": {
+    "ext": {
+      "escolha": [
+        "log",
+        "bak",
+        "tmp",
+        "dat"
+      ]
+    },
+    "kb": {
+      "faixa": [
+        50,
+        300
+      ]
+    },
+    "dias": {
+      "faixa": [
+        10,
+        40
+      ]
+    }
+  },
+  "enunciado": "O disco do servidor está enchendo. Na árvore `~/lab/f103-3-find-criterios/projeto/` (vários subdiretórios) você precisa encontrar candidatos à limpeza: arquivos que atendam a **todos** estes critérios:\n\n* **arquivos regulares** (não diretórios nem links) cujo nome **termina em `.{ext}`** (minúsculas);\n* com **mais de {kb} KiB** (`{kb}k`);\n* **modificados há mais de {dias} dias**.\n\nFaça, a partir da pasta `~/lab/f103-3-find-criterios/`:\n\n1. Grave em `lista.txt` os caminhos encontrados (um por linha; pode ser caminho absoluto ou relativo, qualquer ordem);\n2. Grave em `quantos.txt` a quantidade de arquivos encontrados (só o número).\n\n**Não apague nem altere nada** em `projeto/`.",
+  "verifica": [
+    "a árvore `projeto/` não foi alterada",
+    "`lista.txt` traz exatamente os arquivos regulares `*.{ext}` com mais de {kb}k e mais de {dias} dias",
+    "`quantos.txt` traz a quantidade correta"
+  ],
+  "dicas": [
+    "Um único `find` resolve, combinando testes: tipo, nome, tamanho e data de modificação. Testes seguidos significam \"E\".",
+    "Testes úteis: `-type f`, `-name '*.ext'`, `-size +NNk` e `-mtime +N`. Aspas no padrão do `-name` evitam que o shell o expanda antes do `find`.",
+    "No `-size`, o sinal `+` quer dizer \"maior que\"; no `-mtime`, `+N` quer dizer \"mais de N dias atrás\" (dias completos de 24 h).",
+    "Para contar as linhas de um arquivo: `wc -l < lista.txt`."
+  ],
+  "solucao": "```\ncd ~/lab/f103-3-find-criterios/projeto\nfind . -type f -name '*.{ext}' -size +{kb}k -mtime +{dias} > ../lista.txt\nwc -l < ../lista.txt > ../quantos.txt\n```\nOs testes do `find` são combinados com **E** implícito. `-type f` descarta diretórios e links simbólicos cujo nome termina em `.{ext}`; `-name` é sensível a maiúsculas/minúsculas (`-iname` não é) e deve ir **entre aspas** para o shell não expandir o curinga; `-size +{kb}k` = mais de {kb} KiB; `-mtime +{dias}` = modificado há **mais de** {dias} dias completos (a fronteira `+N`, `N` e `-N` é fonte clássica de erro na prova). Para depois agir sobre o resultado, `find ... -delete` ou `-exec rm {} +` (com cuidado!)."
+}

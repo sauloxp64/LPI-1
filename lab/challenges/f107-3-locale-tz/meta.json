@@ -1,0 +1,29 @@
+{
+  "id": "f107-3-locale-tz",
+  "obj": "107.3",
+  "titulo": "Idioma e fuso horário no perfil de um usuário",
+  "nivel": 1,
+  "minutos": 8,
+  "params": {
+    "usuario": { "escolha": ["viajante-ana", "viajante-bia", "viajante-caio", "viajante-dora"] },
+    "lang": { "escolha": ["en_US.UTF-8", "pt_BR.UTF-8"] },
+    "lc_time": { "escolha": ["pt_BR.UTF-8", "en_US.UTF-8", "C.UTF-8"] },
+    "tz": { "escolha": ["Asia/Tokyo", "Europe/Lisbon", "America/New_York", "Australia/Sydney", "America/Sao_Paulo"] },
+    "tz2": { "escolha": ["Asia/Kolkata", "Europe/Berlin", "America/Los_Angeles", "Africa/Cairo", "Pacific/Auckland"] },
+    "epoch": { "faixa": [1700000000, 1790000000] }
+  },
+  "distintos": [["lang", "lc_time"]],
+  "enunciado": "O usuário `{usuario}` (já criado, com home em `/home/{usuario}`) trabalha com um escritório em outro país e precisa de um ambiente diferente do resto do servidor. Use `sudo` para editar o arquivo de perfil **dele** (sem alterar nada do sistema nem dos outros usuários), de modo que, em um login normal de `{usuario}`:\n\n* o idioma geral (`LANG`) seja `{lang}`;\n* o formato de data/hora (`LC_TIME`) seja `{lc_time}`;\n* o fuso horário (`TZ`) seja `{tz}`;\n* **não** exista a variável `LC_ALL` definida (ela anularia as demais).\n\nAs variáveis devem ser **exportadas** para os programas que o usuário executar.\n\nDepois, no seu próprio usuário, crie o arquivo `~/lab/locale/horas.txt` com **duas linhas**, ambas no formato `AAAA-MM-DD HH:MM:SS ZONA` (como `date '+%F %T %Z'`), mostrando o instante com *epoch* `{epoch}` (segundos desde 1970-01-01 UTC) em:\n\n1. linha 1: o fuso `{tz}`;\n2. linha 2: o fuso `{tz2}`.\n\nUse o próprio `date` para gerar as linhas (não calcule na mão).",
+  "verifica": [
+    "no login interativo de `{usuario}`: `LANG={lang}`, `LC_TIME={lc_time}`, `TZ={tz}` e `LC_ALL` indefinida",
+    "o login do `aluno` não foi afetado (`TZ` continua vazio): a mudança é só no perfil de `{usuario}`",
+    "`~/lab/locale/horas.txt` tem a hora do epoch `{epoch}` em `{tz}` (linha 1) e em `{tz2}` (linha 2), formato `%F %T %Z`"
+  ],
+  "dicas": [
+    "Arquivos de perfil do usuário no Debian: `~/.profile` (login) e `~/.bashrc` (shells interativos). Acrescente linhas `export VARIAVEL=valor` ao final do arquivo.",
+    "A variável `TZ` aceita nomes da base de fusos em `/usr/share/zoneinfo/` (ex.: `Continente/Cidade`). Para um único comando use `TZ=Zona date ...`.",
+    "`date -d @SEGUNDOS` interpreta um epoch; `'+%F %T %Z'` imprime data, hora e a abreviação do fuso. Teste o perfil com `sudo su - {usuario}` e depois `locale` e `date`.",
+    "`TZ={tz} date -d @{epoch} '+%F %T %Z' > ~/lab/locale/horas.txt` para a linha 1; a linha 2 usa `>>` com `{tz2}`."
+  ],
+  "solucao": "```\nsudo tee -a /home/{usuario}/.profile <<'X'\nexport LANG={lang}\nexport LC_TIME={lc_time}\nexport TZ={tz}\nX\n\nsudo su - {usuario}      # confira: locale ; date ; echo $TZ ; exit\n\nTZ={tz}  date -d @{epoch} '+%F %T %Z'  >  ~/lab/locale/horas.txt\nTZ={tz2} date -d @{epoch} '+%F %T %Z'  >> ~/lab/locale/horas.txt\n```\n`LANG` é o valor padrão de todas as categorias (`LC_*`); `LC_TIME` sobrescreve só a categoria de data/hora; `LC_ALL` tem prioridade sobre todas (por isso não deve ficar definida no perfil) — e em scripts `LC_ALL=C` dá saída previsível, sem depender do idioma do usuário. `TZ` muda o fuso apenas dos processos que a herdarem (`export`); o fuso do sistema fica em `/etc/localtime` e `/etc/timezone`. Colocar as variáveis no perfil do usuário afeta só ele; editar `/etc/profile` ou `/etc/environment` afetaria todos. A verificação usa um login interativo, então valeria também `~/.bashrc`, mas shells de login não interativos (como `ssh host comando`) só leem `~/.profile`/`~/.bash_profile`."
+}

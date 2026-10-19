@@ -1,0 +1,15 @@
+{
+  "nome": "Preparatório para Certificação LPIC-1",
+  "plataforma": "Linux Sem Fronteiras",
+  "url": "https://cursos.linuxsemfronteiras.com.br/courses/preparatorio-para-certificacao-lpic-1",
+  "obs": "Aulas listadas conforme a página pública do curso (visíveis hoje: tópico 103). Para os demais objetivos, use apenas o marcador de status por objetivo; se quiser, acrescente aqui as aulas deles no mesmo formato.",
+  "aulas": {
+    "103.1": ["shell, bash, echo, type, PATH", "Variáveis de ambiente", "Comandos sequenciais, history, man", "uname, alias", "which", "Quoting (aspas)", "Exercícios"],
+    "103.2": ["cat, head, tail, sort, less, wc", "uniq, od, paste, split", "tr, cut, sed", "xzcat, bzcat e zcat", "checksums", "Exercícios"],
+    "103.3": ["cd, ls, file", "touch, cp, mv", "rm, mkdir, rmdir, find", "tar, gzip, bzip2, xz", "cpio, dd", "Exercícios"],
+    "103.4": ["Redirecionamento de entrada/saída/erro e pipe (|)", "tee, xargs, subcomandos", "Outros redirecionadores", "Exercícios"],
+    "103.5": ["processos, ps, pstree, pgrep", "top", "kill, killall, pkill", "uptime, free, screen", "jobs, bg, fg, nohup", "watch, tmux", "Exercícios"],
+    "103.6": ["nice e renice", "Exercícios"],
+    "103.7": ["grep, introdução a regex", "regex, sed", "Regex", "Exercícios"]
+  }
+}

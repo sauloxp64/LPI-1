@@ -1,0 +1,282 @@
+{
+  "fonte": "https://www.lpi.org/pt-br/exam-101-102-objectives/ (LPIC-1, objetivos versão 5.0, exames 101-500 e 102-500)",
+  "prova": {
+    "questoes": 60,
+    "minutos": 90,
+    "nota_aprovacao": 500,
+    "escala": [200, 800],
+    "tipos": ["múltipla escolha (uma resposta)", "múltipla escolha (várias respostas)", "preencher lacuna"],
+    "obs": "Dados de formato conforme divulgados pela LPI/Pearson VUE (60 questões, 90 min, 500 de 800). A LPI usa nota escalonada e não publica a fórmula; confirme sempre no site oficial antes de agendar."
+  },
+  "exames": {
+    "101": { "codigo": "101-500", "titulo": "Exame 101", "topicos": ["101", "102", "103", "104"], "peso": 60 },
+    "102": { "codigo": "102-500", "titulo": "Exame 102", "topicos": ["105", "106", "107", "108", "109", "110"], "peso": 60 }
+  },
+  "topicos": {
+    "101": { "titulo": "Arquitetura de Sistema", "peso": 8, "exame": "101" },
+    "102": { "titulo": "Instalação do Linux e administração de pacotes", "peso": 12, "exame": "101" },
+    "103": { "titulo": "Comandos GNU e Unix", "peso": 26, "exame": "101" },
+    "104": { "titulo": "Dispositivos, sistemas de arquivos Linux e FHS", "peso": 14, "exame": "101" },
+    "105": { "titulo": "Shells e scripts do shell", "peso": 8, "exame": "102" },
+    "106": { "titulo": "Interfaces de usuário e desktops", "peso": 4, "exame": "102" },
+    "107": { "titulo": "Tarefas administrativas", "peso": 12, "exame": "102" },
+    "108": { "titulo": "Serviços essenciais do sistema", "peso": 12, "exame": "102" },
+    "109": { "titulo": "Fundamentos de rede", "peso": 14, "exame": "102" },
+    "110": { "titulo": "Segurança", "peso": 10, "exame": "102" }
+  },
+  "objetivos": [
+    {
+      "code": "101.1", "topico": "101", "peso": 2,
+      "titulo": "Identificar e editar configurações de hardware",
+      "areas": ["Habilitar e desabilitar periféricos integrados", "Diferenciar tipos de dispositivos de armazenamento", "Determinar recursos de hardware dos dispositivos", "Ferramentas para listar informações de hardware e manipular dispositivos USB", "Conceitos de sysfs, udev e dbus"],
+      "utils": ["/sys/", "/proc/", "/dev/", "modprobe", "lsmod", "lspci", "lsusb"]
+    },
+    {
+      "code": "101.2", "topico": "101", "peso": 3,
+      "titulo": "Início (boot) do sistema",
+      "areas": ["Opções comuns do gerenciador de inicialização e do kernel durante o boot", "Sequência de inicialização, da BIOS/UEFI até o fim", "Conceitos de SysVinit e systemd", "Noções de Upstart", "Consulta aos logs de inicialização"],
+      "utils": ["dmesg", "journalctl", "BIOS", "UEFI", "bootloader", "kernel", "initramfs", "init", "SysVinit", "systemd"]
+    },
+    {
+      "code": "101.3", "topico": "101", "peso": 3,
+      "titulo": "Alternar runlevels/boot targets, desligar e reiniciar o sistema",
+      "areas": ["Definir o runlevel padrão (SysVinit) e o target padrão (systemd)", "Alternar entre runlevels/targets, incluindo o modo single user", "Desligar e reiniciar pela linha de comando", "Avisar usuários antes de mudanças significativas e encerrar processos corretamente", "Noções de acpid"],
+      "utils": ["/etc/inittab", "shutdown", "init", "/etc/init.d/", "telinit", "systemd", "systemctl", "/etc/systemd/", "/usr/lib/systemd/", "wall"]
+    },
+    {
+      "code": "102.1", "topico": "102", "peso": 2,
+      "titulo": "Dimensionar partições de disco",
+      "areas": ["Distribuir sistemas de arquivos e swap em partições ou discos separados", "Adequar o projeto ao uso pretendido", "Garantir que /boot atenda aos requisitos de boot da arquitetura", "Características básicas do LVM"],
+      "utils": ["/", "/var", "/home", "/boot", "partição EFI (ESP)", "swap", "pontos de montagem", "partições"]
+    },
+    {
+      "code": "102.2", "topico": "102", "peso": 2,
+      "titulo": "Instalar o gerenciador de inicialização",
+      "areas": ["Locais alternativos de boot e backup das opções de boot", "Instalar e configurar um gerenciador como o GRUB Legacy", "Alterar a configuração básica do GRUB 2", "Interagir com o carregador de boot"],
+      "utils": ["menu.lst", "grub.cfg", "grub.conf", "grub-install", "grub-mkconfig", "MBR"]
+    },
+    {
+      "code": "102.3", "topico": "102", "peso": 1,
+      "titulo": "Controle de bibliotecas compartilhadas",
+      "areas": ["Identificar bibliotecas compartilhadas das quais os executáveis dependem", "Saber onde elas costumam ficar", "Carregar bibliotecas compartilhadas"],
+      "utils": ["ldd", "ldconfig", "/etc/ld.so.conf", "LD_LIBRARY_PATH"]
+    },
+    {
+      "code": "102.4", "topico": "102", "peso": 3,
+      "titulo": "Utilização do sistema de pacotes Debian",
+      "areas": ["Instalar, atualizar e remover pacotes binários Debian", "Encontrar pacotes que contenham um arquivo ou biblioteca específica", "Obter informações de pacotes: versão, conteúdo, dependências, integridade e status de instalação", "Noções de apt"],
+      "utils": ["/etc/apt/sources.list", "dpkg", "dpkg-reconfigure", "apt-get", "apt-cache"]
+    },
+    {
+      "code": "102.5", "topico": "102", "peso": 3,
+      "titulo": "Utilização do sistema de pacotes RPM e YUM",
+      "areas": ["Instalar, reinstalar, atualizar e remover pacotes com RPM, YUM e Zypper", "Obter informações de pacotes RPM: versão, status, dependências, integridade e assinaturas", "Descobrir quais arquivos um pacote fornece e de qual pacote vem um arquivo", "Noções de dnf"],
+      "utils": ["rpm", "rpm2cpio", "/etc/yum.conf", "/etc/yum.repos.d/", "yum", "zypper"]
+    },
+    {
+      "code": "102.6", "topico": "102", "peso": 1,
+      "titulo": "Linux virtualizado",
+      "areas": ["Conceitos gerais de máquinas virtuais e contêineres", "Elementos de nuvem IaaS: instâncias, armazenamento em bloco e rede", "Propriedades únicas de um sistema Linux que mudam ao clonar ou usar como template", "Uso de imagens de sistema para VMs, instâncias de nuvem e contêineres", "Extensões que integram Linux a soluções de virtualização", "Noções de cloud-init"],
+      "utils": ["máquina virtual", "contêiner Linux", "contêiner de aplicação", "drivers de convidado", "chaves SSH do host", "ID de máquina D-Bus"]
+    },
+    {
+      "code": "103.1", "topico": "103", "peso": 4,
+      "titulo": "Trabalhar na linha de comando",
+      "areas": ["Comandos simples e sequências de uma linha para tarefas básicas (assume o Bash)", "Definir, referenciar e exportar variáveis de ambiente", "Usar e editar o histórico de comandos", "Invocar comandos dentro e fora do PATH"],
+      "utils": ["bash", "echo", "env", "export", "pwd", "set", "unset", "type", "which", "man", "uname", "history", ".bash_history", "uso de aspas"]
+    },
+    {
+      "code": "103.2", "topico": "103", "peso": 2,
+      "titulo": "Processar fluxos de texto usando filtros",
+      "areas": ["Aplicar filtros a arquivos e saídas usando utilitários do pacote GNU textutils"],
+      "utils": ["bzcat", "cat", "cut", "head", "less", "md5sum", "nl", "od", "paste", "sed", "sha256sum", "sha512sum", "sort", "split", "tail", "tr", "uniq", "wc", "xzcat", "zcat"]
+    },
+    {
+      "code": "103.3", "topico": "103", "peso": 4,
+      "titulo": "Gerenciamento básico de arquivos",
+      "areas": ["Copiar, mover e remover arquivos e diretórios, individual ou recursivamente", "Uso simples e avançado de curingas (globbing)", "Localizar e tratar arquivos por tipo, tamanho ou data com find", "Usar tar, cpio e dd"],
+      "utils": ["cp", "find", "mkdir", "mv", "ls", "rm", "rmdir", "touch", "tar", "cpio", "dd", "file", "gzip", "gunzip", "bzip2", "bunzip2", "xz", "unxz", "file globbing"]
+    },
+    {
+      "code": "103.4", "topico": "103", "peso": 4,
+      "titulo": "Fluxos, pipes e redirecionamentos de saída",
+      "areas": ["Redirecionar entrada padrão, saída padrão e erro padrão", "Encadear a saída de um comando na entrada de outro (pipes)", "Usar a saída de um comando como argumento de outro", "Enviar a saída simultaneamente para a tela e para um arquivo"],
+      "utils": ["tee", "xargs"]
+    },
+    {
+      "code": "103.5", "topico": "103", "peso": 4,
+      "titulo": "Criar, monitorar e finalizar processos",
+      "areas": ["Executar processos em primeiro e segundo plano", "Manter um programa rodando após o logout", "Monitorar processos ativos", "Selecionar e ordenar processos exibidos", "Enviar sinais a processos"],
+      "utils": ["&", "bg", "fg", "jobs", "kill", "nohup", "ps", "top", "free", "uptime", "pgrep", "pkill", "killall", "watch", "screen", "tmux"]
+    },
+    {
+      "code": "103.6", "topico": "103", "peso": 2,
+      "titulo": "Modificar a prioridade de execução de um processo",
+      "areas": ["Saber a prioridade padrão de um processo novo", "Executar um programa com prioridade maior ou menor que a padrão", "Alterar a prioridade de um processo em execução"],
+      "utils": ["nice", "ps", "renice", "top"]
+    },
+    {
+      "code": "103.7", "topico": "103", "peso": 3,
+      "titulo": "Procurar em arquivos de texto usando expressões regulares",
+      "areas": ["Criar expressões regulares com vários elementos", "Diferença entre expressões regulares básicas e estendidas", "Caracteres especiais, classes, quantificadores e âncoras", "Pesquisar no sistema de arquivos ou no conteúdo de arquivos", "Usar regex para apagar, alterar e substituir texto"],
+      "utils": ["grep", "egrep", "fgrep", "sed", "regex(7)"]
+    },
+    {
+      "code": "103.8", "topico": "103", "peso": 3,
+      "titulo": "Edição básica de arquivos com o vi",
+      "areas": ["Navegar no documento", "Usar os modos básicos", "Inserir, editar, apagar, copiar e buscar texto", "Noções de Emacs, nano e vim", "Configurar o editor padrão"],
+      "utils": ["vi", "/", "?", "h", "j", "k", "l", "i", "o", "a", "d", "p", "y", "dd", "yy", "ZZ", ":w!", ":q!", "EDITOR"]
+    },
+    {
+      "code": "104.1", "topico": "104", "peso": 2,
+      "titulo": "Criar partições e sistemas de arquivos",
+      "areas": ["Gerenciar tabelas de partição MBR e GPT", "Criar sistemas de arquivos com comandos mkfs: ext2/ext3/ext4, XFS, VFAT, exFAT", "Conhecimento básico de Btrfs: múltiplos dispositivos, compressão e subvolumes"],
+      "utils": ["fdisk", "gdisk", "parted", "mkfs", "mkswap"]
+    },
+    {
+      "code": "104.2", "topico": "104", "peso": 2,
+      "titulo": "Manutenção da integridade de sistemas de arquivos",
+      "areas": ["Verificar a integridade dos sistemas de arquivos", "Monitorar espaço livre e inodes", "Reparar problemas simples"],
+      "utils": ["du", "df", "fsck", "e2fsck", "mke2fs", "tune2fs", "xfs_repair", "xfs_fsr", "xfs_db"]
+    },
+    {
+      "code": "104.3", "topico": "104", "peso": 3,
+      "titulo": "Controle da montagem e desmontagem de sistemas de arquivos",
+      "areas": ["Montar e desmontar manualmente", "Configurar montagens no boot", "Configurar mídias removíveis e montáveis por usuário", "Usar labels e UUIDs para identificar e montar", "Noções de unidades de montagem do systemd"],
+      "utils": ["/etc/fstab", "/media/", "mount", "umount", "blkid", "lsblk"]
+    },
+    {
+      "code": "104.5", "topico": "104", "peso": 3,
+      "titulo": "Controlar permissões e propriedades de arquivos",
+      "areas": ["Permissões de arquivos comuns, especiais e de diretórios", "Usar suid, sgid e sticky bit", "Alterar a máscara de criação (umask)", "Usar o grupo para conceder acesso a equipes"],
+      "utils": ["chmod", "umask", "chown", "chgrp"]
+    },
+    {
+      "code": "104.6", "topico": "104", "peso": 2,
+      "titulo": "Criar e alterar links simbólicos e hardlinks",
+      "areas": ["Criar links", "Identificar links simbólicos e hardlinks", "Diferenciar cópia de arquivo e criação de link", "Usar links em tarefas de administração"],
+      "utils": ["ln", "ls"]
+    },
+    {
+      "code": "104.7", "topico": "104", "peso": 2,
+      "titulo": "Encontrar arquivos de sistema e conhecer sua localização correta",
+      "areas": ["Localização correta dos arquivos segundo o FHS", "Encontrar arquivos e comandos no sistema", "Localização e finalidade de arquivos e diretórios importantes do FHS"],
+      "utils": ["find", "locate", "updatedb", "whereis", "which", "type", "/etc/updatedb.conf"]
+    },
+    {
+      "code": "105.1", "topico": "105", "peso": 4,
+      "titulo": "Personalizar e trabalhar no ambiente shell",
+      "areas": ["Definir variáveis de ambiente (ex.: PATH) no login ou em um novo shell", "Escrever funções Bash para sequências de comandos frequentes", "Manter o diretório skeleton para novas contas", "Configurar caminhos de busca de comandos"],
+      "utils": [".", "source", "/etc/bash.bashrc", "/etc/profile", "env", "export", "set", "unset", "~/.bash_profile", "~/.bash_login", "~/.profile", "~/.bashrc", "~/.bash_logout", "function", "alias"]
+    },
+    {
+      "code": "105.2", "topico": "105", "peso": 4,
+      "titulo": "Editar e escrever scripts simples",
+      "areas": ["Sintaxe sh padrão: repetição e testes", "Substituição de comandos", "Usar código de retorno de sucesso ou falha de comandos", "Encadear comandos", "Enviar mensagens ao superusuário", "Escolher o interpretador pela linha shebang (#!)", "Gerenciar localização, propriedade, permissão e suid dos scripts"],
+      "utils": ["for", "while", "test", "if", "read", "seq", "exec", "||", "&&"]
+    },
+    {
+      "code": "106.1", "topico": "106", "peso": 2,
+      "titulo": "Instalar e configurar o X11",
+      "areas": ["Arquitetura do X11", "Arquivo de configuração do X Window", "Sobrescrever aspectos da configuração do Xorg, como layout de teclado", "Componentes de desktop: gerenciadores de display e de janelas", "Controlar acesso ao servidor X e exibir aplicativos em servidores remotos", "Noções de Wayland"],
+      "utils": ["/etc/X11/xorg.conf", "/etc/X11/xorg.conf.d/", "~/.xsession-errors", "xhost", "xauth", "DISPLAY", "X"]
+    },
+    {
+      "code": "106.2", "topico": "106", "peso": 1,
+      "titulo": "Desktops gráficos",
+      "areas": ["Noções dos principais ambientes de desktop", "Protocolos de acesso remoto a desktops"],
+      "utils": ["KDE", "Gnome", "Xfce", "X11", "XDMCP", "VNC", "Spice", "RDP"]
+    },
+    {
+      "code": "106.3", "topico": "106", "peso": 1,
+      "titulo": "Acessibilidade",
+      "areas": ["Configurações visuais e temas básicos", "Tecnologias assistivas básicas"],
+      "utils": ["alto contraste e texto grande", "leitor de tela", "display Braille", "lupa", "teclado virtual", "teclas de aderência e repetição", "teclas de alternância", "teclas no mouse", "gestos", "reconhecimento de fala"]
+    },
+    {
+      "code": "107.1", "topico": "107", "peso": 5,
+      "titulo": "Administrar contas de usuário, grupos e arquivos de sistema relacionados",
+      "areas": ["Adicionar, modificar e remover usuários e grupos", "Gerenciar informações nos bancos de senhas e grupos", "Criar contas especiais e contas limitadas"],
+      "utils": ["/etc/passwd", "/etc/shadow", "/etc/group", "/etc/skel/", "chage", "getent", "groupadd", "groupdel", "groupmod", "passwd", "useradd", "userdel", "usermod"]
+    },
+    {
+      "code": "107.2", "topico": "107", "peso": 4,
+      "titulo": "Automatizar e agendar tarefas administrativas de sistema",
+      "areas": ["Gerenciar tarefas com cron e at", "Configurar acesso de usuários aos serviços cron e at", "Entender timers do systemd"],
+      "utils": ["/etc/cron.{d,daily,hourly,monthly,weekly}/", "/etc/at.deny", "/etc/at.allow", "/etc/crontab", "/etc/cron.allow", "/etc/cron.deny", "/var/spool/cron/", "crontab", "at", "atq", "atrm", "systemctl", "systemd-run"]
+    },
+    {
+      "code": "107.3", "topico": "107", "peso": 3,
+      "titulo": "Localização e internacionalização",
+      "areas": ["Configurar idioma e variáveis de ambiente", "Configurar fuso horário e variáveis de ambiente", "Entender por que LANG=C é útil em scripts"],
+      "utils": ["/etc/timezone", "/etc/localtime", "/usr/share/zoneinfo/", "LC_*", "LC_ALL", "LANG", "TZ", "locale", "tzselect", "timedatectl", "date", "iconv", "UTF-8", "ISO-8859", "ASCII", "Unicode"]
+    },
+    {
+      "code": "108.1", "topico": "108", "peso": 3,
+      "titulo": "Manutenção da data e hora do sistema",
+      "areas": ["Definir data e hora do sistema", "Definir o relógio de hardware em UTC", "Configurar o fuso horário correto", "Configuração básica de NTP com ntpd e chrony", "Usar o serviço pool.ntp.org", "Noções de ntpq"],
+      "utils": ["/usr/share/zoneinfo/", "/etc/timezone", "/etc/localtime", "/etc/ntp.conf", "/etc/chrony.conf", "date", "hwclock", "timedatectl", "ntpd", "ntpdate", "chronyc", "pool.ntp.org"]
+    },
+    {
+      "code": "108.2", "topico": "108", "peso": 4,
+      "titulo": "Log do sistema",
+      "areas": ["Configuração básica do rsyslog", "Facilities, priorities e ações padrão", "Consultar o journal do systemd", "Filtrar o journal por data, serviço ou prioridade", "Apagar registros antigos do journal", "Recuperar o journal de um sistema em manutenção ou de uma cópia do sistema de arquivos", "Interação entre rsyslog e systemd-journald", "Configuração do logrotate", "Noções de syslog e syslog-ng"],
+      "utils": ["/etc/rsyslog.conf", "/var/log/", "logger", "logrotate", "/etc/logrotate.conf", "/etc/logrotate.d/", "journalctl", "systemd-cat", "/etc/systemd/journald.conf", "/var/log/journal/"]
+    },
+    {
+      "code": "108.3", "topico": "108", "peso": 3,
+      "titulo": "Fundamentos de MTA (Mail Transfer Agent)",
+      "areas": ["Conhecer MTAs comuns", "Criar aliases de e-mail em /etc/aliases", "Configurar redirecionamento com ~/.forward", "Conhecer postfix, sendmail, qmail e exim (sem cobrança de configuração avançada)"],
+      "utils": ["~/.forward", "comandos que simulam o sendmail", "newaliases", "mail", "mailq", "postfix", "sendmail", "exim"]
+    },
+    {
+      "code": "108.4", "topico": "108", "peso": 2,
+      "titulo": "Configurar impressoras e impressão",
+      "areas": ["Configuração básica do CUPS para impressoras locais e remotas", "Gerenciar a fila de impressão do usuário", "Resolver problemas gerais de impressão", "Adicionar e remover trabalhos da fila"],
+      "utils": ["arquivos e ferramentas do CUPS", "/etc/cups/", "lpr", "lprm", "lpq", "lpstat", "lpadmin"]
+    },
+    {
+      "code": "109.1", "topico": "109", "peso": 4,
+      "titulo": "Fundamentos de protocolos de internet",
+      "areas": ["Máscaras de rede e notação CIDR", "Diferença entre IPs públicos e privados reservados (notação decimal pontuada)", "Portas e serviços TCP/UDP comuns: 20, 21, 22, 23, 25, 53, 80, 110, 123, 139, 143, 161, 162, 389, 443, 465, 514, 636, 993, 995", "Diferenças e características de UDP, TCP e ICMP", "Principais diferenças entre IPv4 e IPv6 e características básicas do IPv6"],
+      "utils": ["/etc/services", "IPv4", "IPv6", "sub-redes", "TCP", "UDP", "ICMP"]
+    },
+    {
+      "code": "109.2", "topico": "109", "peso": 4,
+      "titulo": "Configuração persistente de rede",
+      "areas": ["Configuração básica de um host TCP/IP", "Configurar Ethernet e Wi-Fi com NetworkManager", "Noções de systemd-networkd"],
+      "utils": ["/etc/hostname", "/etc/hosts", "/etc/nsswitch.conf", "/etc/resolv.conf", "nmcli", "hostnamectl", "ifup", "ifdown"]
+    },
+    {
+      "code": "109.3", "topico": "109", "peso": 4,
+      "titulo": "Soluções para problemas simples de rede",
+      "areas": ["Configuração manual de interfaces com iproute2", "Configuração manual de tabelas de rotas e rota padrão com iproute2", "Resolver problemas de configuração de rede", "Noções dos comandos legados do net-tools"],
+      "utils": ["ip", "hostname", "ss", "ping", "ping6", "traceroute", "traceroute6", "tracepath", "tracepath6", "netcat", "ifconfig", "netstat", "route"]
+    },
+    {
+      "code": "109.4", "topico": "109", "peso": 2,
+      "titulo": "Configurar DNS cliente",
+      "areas": ["Consultar servidores DNS remotos", "Configurar resolução local e uso de servidores remotos", "Alterar a ordem de resolução de nomes", "Identificar erros de resolução", "Noções de systemd-resolved"],
+      "utils": ["/etc/hosts", "/etc/resolv.conf", "/etc/nsswitch.conf", "host", "dig", "getent"]
+    },
+    {
+      "code": "110.1", "topico": "110", "peso": 3,
+      "titulo": "Tarefas administrativas de segurança",
+      "areas": ["Auditar arquivos com bits suid/sgid", "Definir ou alterar senhas e informações de expiração", "Usar nmap e netstat para descobrir portas abertas", "Definir limites de login, processos e memória", "Descobrir quem está ou esteve conectado", "Uso e configuração básica do sudo"],
+      "utils": ["find", "passwd", "fuser", "lsof", "nmap", "chage", "netstat", "sudo", "/etc/sudoers", "su", "usermod", "ulimit", "who", "w", "last"]
+    },
+    {
+      "code": "110.2", "topico": "110", "peso": 3,
+      "titulo": "Configurar a segurança do host",
+      "areas": ["Senhas shadow e seu funcionamento", "Desativar serviços de rede não utilizados", "Função do TCP wrappers"],
+      "utils": ["/etc/nologin", "/etc/passwd", "/etc/shadow", "/etc/xinetd.d/", "/etc/xinetd.conf", "systemd.socket", "/etc/inittab", "/etc/init.d/", "/etc/hosts.allow", "/etc/hosts.deny"]
+    },
+    {
+      "code": "110.3", "topico": "110", "peso": 4,
+      "titulo": "Proteção de dados com criptografia",
+      "areas": ["Uso e configuração básica do cliente OpenSSH", "Finalidade das chaves de servidor no OpenSSH", "Configuração básica, uso e revogação do GnuPG", "Criptografar, descriptografar e verificar arquivos com GPG", "Túneis de porta SSH, incluindo túneis X11"],
+      "utils": ["ssh", "ssh-keygen", "ssh-agent", "ssh-add", "~/.ssh/id_*", "~/.ssh/id_*.pub", "/etc/ssh/ssh_host_*", "~/.ssh/authorized_keys", "ssh_known_hosts", "gpg", "gpg-agent", "~/.gnupg/"]
+    }
+  ],
+  "mudancas_futuras": ["Remoção de ifup/ifdown e dos comandos legados do net-tools", "Remoção do TCP wrappers"]
+}

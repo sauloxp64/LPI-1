@@ -1,0 +1,29 @@
+{
+  "id": "f108-4-cups-comandos",
+  "obj": "108.4",
+  "titulo": "Comandos de impressão do cliente CUPS",
+  "nivel": 1,
+  "minutos": 8,
+  "params": {
+    "impressora": { "escolha": ["laser-rh", "hp-recepcao", "epson-financeiro", "brother-ti"] },
+    "arquivo": { "escolha": ["contrato.pdf", "orcamento.pdf", "manual.txt", "escala.pdf"] },
+    "copias": { "faixa": [2, 9] },
+    "opcao": { "escolha": ["duplex", "a4", "paisagem", "ajustar"] },
+    "documento": { "escolha": ["balancete.pdf", "proposta.pdf", "pauta.txt", "cronograma.pdf"] },
+    "job": { "faixa": [101, 499] }
+  },
+  "enunciado": "Este laboratório não tem servidor de impressão (o `cupsd` não está rodando), então os comandos do cliente CUPS não conseguem imprimir de verdade. O que você precisa mostrar é que **sabe montar os comandos certos**.\n\nA fila da impressora `{impressora}` foi salva em `~/lab/impressao/fila.txt` (saída no estilo do `lpq`). Crie o arquivo **`~/lab/impressao/comandos.txt`** com **quatro linhas**, uma por comando completo (como você digitaria no terminal), **nesta ordem**:\n\n1. imprimir o arquivo `~/lab/impressao/{arquivo}` na impressora `{impressora}`, em **`{copias}` cópias** e com a opção de impressão **`{opcao}`** (`duplex` = frente e verso pela borda longa; `a4` = papel A4; `paisagem` = orientação paisagem; `ajustar` = ajustar à página);\n2. **cancelar** o trabalho do usuário `aluno` que imprime **`{documento}`** (veja o número do trabalho em `fila.txt`; **não** cancele os outros trabalhos);\n3. **listar a fila** da impressora `{impressora}`;\n4. definir `{impressora}` como a **impressora padrão** do usuário (para os próximos comandos sem destino explícito).\n\nVocê pode usar a família System V (`lp`, `cancel`, `lpstat`) ou a BSD (`lpr`, `lprm`, `lpq`); consulte as páginas de manual (`man lp`, `man lpr`, `man lprm`, `man lpoptions`...).",
+  "verifica": [
+    "linha 1: `lp -d {impressora} -n {copias} -o <opção> {arquivo}` (ou `lpr -P {impressora} -# {copias} -o <opção> {arquivo}`), em qualquer ordem de opções",
+    "linha 2: cancela somente o trabalho de número correto (o de `{documento}` do `aluno`), com `lprm` ou `cancel`",
+    "linha 3: lista a fila de `{impressora}` (`lpq -P ...` ou `lpstat -o ...`)",
+    "linha 4: define a padrão com `lpoptions -d {impressora}` (ou `lpadmin -d {impressora}`)"
+  ],
+  "dicas": [
+    "Imprimir: `lp -d IMPRESSORA` seleciona o destino, `-n N` o número de cópias e `-o chave=valor` as opções de impressão. No estilo BSD: `lpr -P IMPRESSORA -# N -o chave=valor arquivo`.",
+    "Opções úteis do `-o`: `sides=two-sided-long-edge`, `media=A4`, `landscape`, `fit-to-page`. Consulte `man lp` (seção Options).",
+    "Cancelar: `lprm -P IMPRESSORA NUMERO` ou `cancel NUMERO`. O número do trabalho aparece na coluna **Job** de `fila.txt`: escolha a linha do `aluno` com o arquivo pedido. Listar a fila: `lpq -P IMPRESSORA`. Padrão do usuário: `lpoptions -d IMPRESSORA` (grava em `~/.cups/lpoptions`).",
+    "Os quatro comandos podem ser, por exemplo: `lp -d IMP -n N -o OPCAO arquivo`; `lprm -P IMP JOB`; `lpq -P IMP`; `lpoptions -d IMP`."
+  ],
+  "solucao": "```\n# comandos.txt (4 linhas); abaixo, <opção> = a opção -o correspondente a {opcao}\nlp -d {impressora} -n {copias} -o <opção> ~/lab/impressao/{arquivo}\nlprm -P {impressora} {job}\nlpq -P {impressora}\nlpoptions -d {impressora}\n```\nOpções `-o`: `duplex` → `sides=two-sided-long-edge`; `a4` → `media=A4`; `paisagem` → `landscape`; `ajustar` → `fit-to-page`. `lp`/`lpr` enviam o arquivo ao spooler do CUPS (`-d`/`-P` escolhe a impressora; `-n`/`-#` as cópias); `lpq` e `lpstat -o` listam a fila; `lprm`/`cancel` removem trabalhos pelo número (a pegadinha aqui era o outro trabalho do `aluno`, que está imprimindo, e os de outros usuários, que um usuário comum não pode cancelar); `lpoptions -d` grava o destino padrão do usuário em `~/.cups/lpoptions` e `lpadmin -d` (como root) o padrão do sistema. Num servidor real, a configuração fica em `/etc/cups/` (`cupsd.conf`, `printers.conf`, `ppd/`) e as impressoras são criadas com `lpadmin -p NOME -v URI -m DRIVER -E`; `lpstat -t` mostra tudo; `cupsenable`/`cupsaccept` ativam impressora e fila."
+}

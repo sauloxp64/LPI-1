@@ -1,0 +1,176 @@
+### 102.3-001 | unica | 1
+ref: 101:p.100
+tags: biblioteca estática, .a, .so
+Uma distribuição fornece a biblioteca `libpthread` nas formas compartilhada e estática. Qual nome de arquivo corresponde à versão **estática**?
+= libpthread.a
+- libpthread.so.0
+- libpthread.o
+- libpthread.ko
+> Bibliotecas estáticas terminam em `.a` (archive) e são copiadas para dentro do executável no momento da vinculação (link). Bibliotecas compartilhadas usam `.so` seguido do número de versão (`libpthread.so.0`). `.o` é um arquivo-objeto intermediário gerado pelo compilador e `.ko` é um módulo do kernel, que nada tem a ver com bibliotecas de espaço de usuário.
+
+### 102.3-002 | unica | 1
+ref: 101:p.100
+tags: soname, nomenclatura
+No nome `libc.so.6`, o que representa o número `6` no final?
+= O número de versão da biblioteca compartilhada
+- O número do runlevel em que a biblioteca é carregada
+- A quantidade de programas que usam a biblioteca
+- A prioridade com que o linker dinâmico a procura
+> O nome de uma biblioteca compartilhada (soname) segue o padrão nome da biblioteca (normalmente com prefixo `lib`) + `.so` (shared object) + número de versão. Em `libc.so.6`, `libc` é o nome, `so` indica objeto compartilhado e `6` é a versão. Os demais itens não fazem parte da convenção de nomes.
+
+### 102.3-003 | lacuna | 1
+ref: 101:p.104
+tags: ldd
+Qual comando lista as bibliotecas compartilhadas das quais o executável `/bin/ls` depende? ____ /bin/ls
+= ldd
+> `ldd` (print shared object dependencies) mostra cada biblioteca necessária ao executável, o caminho em que o linker dinâmico a encontrou e o endereço de memória em que seria carregada.
+
+### 102.3-004 | multipla | 1
+ref: 101:p.101
+tags: diretórios, /lib, /usr/lib
+Quais destes diretórios são locais comuns de bibliotecas compartilhadas em um sistema Linux?
+= /lib64
+= /usr/lib
+= /usr/local/lib
+- /usr/bin
+- /sbin
+- /boot
+> `/lib`, `/lib32`, `/lib64`, `/usr/lib` e `/usr/local/lib` são os locais tradicionais de bibliotecas compartilhadas (em sistemas com a "usr merge", como o Debian 12, `/lib` e `/lib64` são links para `/usr/lib` e `/usr/lib64`). `/usr/bin` e `/sbin` guardam executáveis, e `/boot` guarda kernel, initramfs e arquivos do gerenciador de boot.
+
+### 102.3-005 | multipla | 2
+ref: 101:p.100
+tags: biblioteca compartilhada, vantagens
+Quais afirmações descrevem vantagens das bibliotecas compartilhadas (dinâmicas) em relação às estáticas?
+= Os arquivos executáveis ficam menores, pois o código da biblioteca não é copiado para dentro deles
+= Apenas uma cópia da biblioteca precisa ser carregada na memória, mesmo usada por vários programas
+- O programa deixa de depender da biblioteca em tempo de execução
+- A biblioteca precisa estar presente apenas na hora da compilação
+- O linker incorpora o código da biblioteca ao executável
+> Na vinculação dinâmica o linker apenas registra a referência à biblioteca; o código não é copiado. Isso reduz o tamanho dos executáveis e permite compartilhar uma única cópia na RAM. As três últimas opções descrevem a vinculação **estática**: o código é incorporado ao programa, que então não depende da biblioteca em tempo de execução. Com bibliotecas compartilhadas, ela é necessária em tempo de execução.
+
+### 102.3-006 | unica | 2
+ref: 101:p.101-102
+tags: ld.so.conf.d, configuração
+O administrador quer que o linker dinâmico passe a procurar bibliotecas em `/opt/lib/mylib`. Qual deve ser o conteúdo do arquivo `/etc/ld.so.conf.d/mylib.conf`?
+= Uma linha contendo o caminho absoluto: `/opt/lib/mylib`
+- Uma linha `LD_LIBRARY_PATH=/opt/lib/mylib`
+- Uma linha `export /opt/lib/mylib`
+- Uma linha `path=/opt/lib/mylib`
+> Os arquivos `*.conf` em `/etc/ld.so.conf.d/` (incluídos por `/etc/ld.so.conf`) contêm apenas caminhos absolutos de diretórios de bibliotecas, um por linha. Atribuições de variável e `export` pertencem ao shell, não a esses arquivos; `LD_LIBRARY_PATH` é uma variável de ambiente, e não uma diretiva do `ld.so.conf`.
+
+### 102.3-007 | lacuna | 2
+ref: 101:p.102, 101:p.110
+tags: ldconfig
+Depois de criar `/etc/ld.so.conf.d/mylib.conf` com um novo diretório de bibliotecas, qual comando deve ser executado como root para que a alteração passe a valer?
+= ldconfig
+= /sbin/ldconfig
+= sudo ldconfig
+= ldconfig -v
+> O `ldconfig` lê `/etc/ld.so.conf` e os arquivos de `/etc/ld.so.conf.d/`, cria os links simbólicos de soname e reconstrói o cache `/etc/ld.so.cache`, que é o que o linker dinâmico realmente consulta. Ele precisa ser executado sempre que os arquivos de configuração mudam. (`ldconfig -v` faz o mesmo e ainda lista o que foi feito.)
+
+### 102.3-008 | unica | 3
+ref: 101:p.102-103
+tags: ldconfig, ld.so.cache, diagnóstico
+Um administrador criou `/etc/ld.so.conf.d/mylib.conf` com o conteúdo `/opt/lib/mylib`. O diretório contém `libfoo.so.1`, mas ao executar o programa aparece:
+
+```
+useapp: error while loading shared libraries: libfoo.so.1: cannot open shared object file: No such file or directory
+```
+
+Qual é a causa mais provável?
+= O cache /etc/ld.so.cache não foi atualizado, porque o ldconfig não foi executado
+- O arquivo mylib.conf deveria estar em /etc/ld.so.conf, e não em /etc/ld.so.conf.d
+- O programa precisa ser recompilado cada vez que um diretório é adicionado ao ld.so.conf.d
+- O ldd precisa ser executado uma vez para registrar o novo diretório
+> O linker dinâmico consulta o cache binário `/etc/ld.so.cache`, que só é regenerado pelo `ldconfig`. Editar `/etc/ld.so.conf.d/*.conf` sem rodar `ldconfig` não tem efeito imediato (testado: o erro persiste até o `ldconfig` ser executado). O diretório `ld.so.conf.d` está correto, não é preciso recompilar, e o `ldd` apenas **exibe** dependências, sem registrar nada.
+
+### 102.3-009 | lacuna | 2
+ref: 101:p.102-103
+tags: ldconfig, cache
+Qual opção do `ldconfig` imprime a lista de bibliotecas armazenadas no cache atual, como em: `ldconfig ____ | grep libfoo`
+= -p
+= --print-cache
+> `ldconfig -p` (`--print-cache`) mostra as bibliotecas do cache `/etc/ld.so.cache` no formato `soname (formato) => caminho`. A opção `-v` (verbose) mostra os diretórios processados e os links criados durante a execução, em vez de listar o cache.
+
+### 102.3-010 | unica | 3
+ref: 101:p.103-104
+tags: LD_LIBRARY_PATH, export
+Um usuário comum executa os comandos abaixo, mas o programa continua sem encontrar `libfoo.so.1`, que está em `/opt/lib/mylib`:
+
+```
+$ LD_LIBRARY_PATH=/opt/lib/mylib
+$ useapp
+useapp: error while loading shared libraries: libfoo.so.1: cannot open shared object file: No such file or directory
+```
+
+Por que o ajuste não funcionou?
+= A variável foi definida apenas no shell, sem export, e por isso não é herdada pelo processo useapp
+- LD_LIBRARY_PATH só tem efeito depois que o ldconfig é executado como root
+- LD_LIBRARY_PATH só pode ser definida no arquivo /etc/ld.so.conf
+- O valor deveria terminar com uma barra: /opt/lib/mylib/
+> Sem `export`, a atribuição cria uma variável apenas do shell, que não entra no ambiente do processo filho (testado: `useapp` falha; depois de `export LD_LIBRARY_PATH=/opt/lib/mylib` ele funciona). `LD_LIBRARY_PATH` é lida diretamente pelo linker dinâmico, não depende do `ldconfig` nem do `ld.so.conf`, e a barra final é irrelevante.
+
+### 102.3-011 | unica | 1
+ref: 101:p.103
+tags: LD_LIBRARY_PATH
+Como são separados os vários diretórios dentro do valor de `LD_LIBRARY_PATH`?
+= Por dois-pontos (:)
+- Por ponto e vírgula (;)
+- Por vírgula (,)
+- Por espaço em branco
+> `LD_LIBRARY_PATH` funciona como a variável `PATH`: é uma lista de diretórios separados por dois-pontos, por exemplo `/opt/lib/a:/opt/lib/b`. Ela adiciona caminhos de forma temporária (na sessão ou no processo), diferentemente de `ld.so.conf`, que é permanente.
+
+### 102.3-012 | unica | 2
+ref: 101:p.104-105
+tags: ldd, not found
+Ao executar `ldd /usr/local/bin/useapp`, a saída inclui a linha `libfoo.so.1 => not found`. O que isso significa?
+= O linker dinâmico não encontrou a libfoo.so.1 nos diretórios de busca, e o programa falhará ao iniciar
+- A libfoo.so.1 é uma biblioteca estática, já embutida no programa
+- A libfoo.so.1 existe, mas ainda não foi carregada na memória
+- A libfoo.so.1 não é necessária ao programa e pode ser ignorada
+> `not found` indica uma dependência (NEEDED) que não pôde ser resolvida pelo caminho de busca (LD_LIBRARY_PATH, cache do ldconfig e diretórios padrão). Ao executar o programa ocorre "error while loading shared libraries" e o código de saída é 127. Bibliotecas estáticas não aparecem na saída do `ldd`, pois estão dentro do executável.
+
+### 102.3-013 | unica | 2
+ref: 101:p.104-105
+tags: ldd, executável estático
+Qual é a saída do `ldd` quando aplicado a um executável vinculado **estaticamente**?
+= not a dynamic executable
+- statically linked: 0 dependencies
+- linux-vdso.so.1 (0x00007ffd...)
+- error while loading shared libraries
+> O `ldd` só tem o que mostrar para executáveis dinâmicos; para um binário estático ele informa `not a dynamic executable` (testado com um programa compilado com `gcc -static`). A mensagem "error while loading shared libraries" aparece ao **executar** um programa dinâmico cuja biblioteca falta, e não como saída do `ldd`.
+
+### 102.3-014 | lacuna | 2
+ref: 101:p.111
+tags: objdump, NEEDED, ELF
+Para listar as bibliotecas das quais o Bash depende sem usar o `ldd`, pode-se filtrar o cabeçalho ELF com: `objdump -p /bin/bash | grep ____`
+= NEEDED
+> Na saída de `objdump -p` (`--private-headers`), cada dependência de biblioteca aparece em uma linha `NEEDED`, por exemplo `NEEDED libc.so.6`. A linha `SONAME` mostra o nome que a própria biblioteca declara, não suas dependências. O `readelf -d` mostra a mesma informação.
+
+### 102.3-015 | unica | 2
+ref: 101:p.101
+tags: ld.so, vinculador dinâmico
+Qual componente resolve, em tempo de execução, as referências a bibliotecas compartilhadas de um programa vinculado dinamicamente?
+= O vinculador dinâmico (ld.so ou ld-linux.so)
+- O comando ldd
+- O compilador, durante a geração do código-objeto
+- O comando ldconfig, a cada execução do programa
+> As referências são resolvidas quando o programa é executado pelo vinculador dinâmico (`ld.so`, ou `ld-linux.so`, como `/lib64/ld-linux-x86-64.so.2`), que procura as bibliotecas pelo caminho de busca. O `ldconfig` apenas prepara links e cache **antes**, e o `ldd` só mostra o que seria resolvido, sem participar da execução.
+
+### 102.3-016 | lacuna | 3
+ref: 101:p.105
+tags: ldd, -u
+Qual opção do `ldd` imprime as dependências diretas que estão registradas como NEEDED mas **não são utilizadas** pelo programa? `ldd ____ /usr/bin/git`
+= -u
+= --unused
+> A opção `-u` (`--unused`) do `ldd` lista dependências diretas não utilizadas, que existem porque o linker as marcou como NEEDED ao gerar o binário. Já `-v` mostra todas as informações (inclusive versões de símbolos) e `-r` processa relocações.
+
+### 102.3-017 | unica | 2
+ref: 101:p.101-102
+tags: /etc/ld.so.conf, include
+Em um sistema Debian atual, qual é o conteúdo típico do arquivo `/etc/ld.so.conf`?
+= Uma linha include que carrega os arquivos *.conf de /etc/ld.so.conf.d/
+- A lista de todas as bibliotecas compartilhadas instaladas e suas versões
+- O valor da variável LD_LIBRARY_PATH para todos os usuários
+- Os nomes dos programas autorizados a carregar bibliotecas dinâmicas
+> Normalmente o `/etc/ld.so.conf` contém só `include /etc/ld.so.conf.d/*.conf`, e os caminhos de diretório ficam nos arquivos `.conf` desse diretório (testado no Debian 12). A lista de bibliotecas conhecidas fica no cache binário `/etc/ld.so.cache`, gerado pelo `ldconfig`, e `LD_LIBRARY_PATH` é uma variável de ambiente (não é lida desse arquivo).

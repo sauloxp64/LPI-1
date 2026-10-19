@@ -1,0 +1,72 @@
+{
+  "id": "f103-8-vim-editar",
+  "obj": "103.8",
+  "titulo": "Editar um arquivo de configuração com o vi/vim",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "sistema": {
+      "escolha": [
+        "faturamento",
+        "estoque",
+        "agenda",
+        "portal",
+        "relatorios"
+      ]
+    },
+    "host_antigo": {
+      "escolha": [
+        "srv-antigo01",
+        "db-legado",
+        "cache-velho",
+        "host-b2"
+      ]
+    },
+    "host_novo": {
+      "escolha": [
+        "srv-novo07",
+        "db-prod03",
+        "cache-prod2",
+        "host-k9"
+      ]
+    },
+    "amb_novo": {
+      "escolha": [
+        "producao",
+        "contingencia",
+        "piloto"
+      ]
+    },
+    "ttl": {
+      "faixa": [
+        30,
+        600
+      ]
+    },
+    "revisor": {
+      "escolha": [
+        "ana",
+        "bruno",
+        "carla",
+        "diego",
+        "elisa"
+      ]
+    }
+  },
+  "enunciado": "O servidor **{sistema}** vai migrar de máquina e você precisa ajustar a configuração `~/lab/f103-8-vim-editar/app.conf` **usando o vi/vim** (interativo, ou o modo Ex silencioso `vim -es`; não vale outro editor). Faça **todas** estas alterações e **salve** o arquivo:\n\n1. Troque **todas** as ocorrências do host `{host_antigo}` por `{host_novo}` (ele aparece em várias linhas, em seções diferentes).\n2. Na seção `[geral]`, mude o ambiente de `homologacao` para `{amb_novo}` (a linha deve ficar `ambiente = {amb_novo}`).\n3. **Apague** a linha `debug = true`.\n4. **Apague** o bloco legado: a linha de comentário que começa com `# TODO` **e** a linha `legado = ativo` logo abaixo dela.\n5. Insira a linha `ttl = {ttl}` **imediatamente abaixo** da linha `[cache]`.\n6. Acrescente, como **última linha** do arquivo, `# revisado por {revisor}`.\n\nNada mais deve mudar no arquivo.",
+  "verifica": [
+    "todas as ocorrências de `{host_antigo}` viraram `{host_novo}`",
+    "`ambiente = {amb_novo}`",
+    "a linha `debug = true` e o bloco legado (`# TODO` + `legado = ativo`) foram removidos",
+    "`ttl = {ttl}` está logo abaixo de `[cache]`",
+    "a última linha é `# revisado por {revisor}`",
+    "o restante do arquivo ficou exatamente como estava (e foi salvo)"
+  ],
+  "dicas": [
+    "No vi há dois modos principais: **normal** (teclas são comandos) e **inserção** (teclas viram texto). `Esc` volta ao modo normal; `:` abre a linha de comandos Ex (`:w` salva, `:q` sai, `:wq` ou `ZZ` fazem os dois).",
+    "Substituição global: `:%s/velho/novo/g` (o `%` aplica a todas as linhas, `g` a todas as ocorrências de cada linha). Para chegar a uma linha: `/texto` + Enter busca para a frente; `n` repete.",
+    "`dd` apaga a linha atual (`2dd`, duas linhas); `o` abre uma linha **abaixo** e entra no modo inserção; `G` vai à última linha; `cw` troca a palavra atual.",
+    "Se preferir não abrir a tela do editor: `vim -es app.conf` lê comandos Ex da entrada padrão (um por linha) — use `a` (append) seguido do texto e de uma linha só com `.`, e termine com `wq`."
+  ],
+  "solucao": "```\ncd ~/lab/f103-8-vim-editar\nvim app.conf\n  :%s/{host_antigo}/{host_novo}/g      # 1) troca global\n  /homologacao (Enter)  cw{amb_novo} Esc   # 2) troca a palavra (ou :s/homologacao/{amb_novo}/)\n  /debug (Enter)  dd                    # 3) apaga a linha\n  /TODO  (Enter)  2dd                   # 4) apaga o TODO e a linha de baixo\n  /\\[cache\\]  (Enter)  o  ttl = {ttl}  Esc   # 5) nova linha abaixo\n  G  o  # revisado por {revisor}  Esc   # 6) última linha\n  :wq                                    # salva e sai\n```\nOu, sem tela, com o modo Ex silencioso:\n```\nvim -es app.conf <<'EOF'\n%s/{host_antigo}/{host_novo}/ge\n%s/^ambiente = homologacao$/ambiente = {amb_novo}/e\ng/^debug = true$/d\ng/^# TODO/.,+1d\n/^\\[cache\\]/a\nttl = {ttl}\n.\n$a\n# revisado por {revisor}\n.\nwq\nEOF\n```\n`%s///g` é o `s` do `sed` aplicado a todo o arquivo; `dd`/`2dd` apagam linhas (e as guardam no registrador, para `p` colar); `o` insere abaixo e `O` acima; `G` vai ao fim; `:wq` (ou `ZZ`) salva e sai, `:q!` sai **sem** salvar. Pegadinha: esquecer de salvar — o editor mostra tudo certo na tela, mas o arquivo em disco não muda até o `:w`."
+}

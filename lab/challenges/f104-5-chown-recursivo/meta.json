@@ -1,0 +1,24 @@
+{
+  "id": "f104-5-chown-recursivo",
+  "obj": "104.5",
+  "titulo": "Restauração de backup: donos e permissões",
+  "nivel": 1,
+  "minutos": 5,
+  "params": {
+    "usuario": { "escolha": ["valmir", "wanda", "xavier", "yara", "zeca"] },
+    "grupo": { "escolha": ["contab", "juridico", "logistica", "comercial"] },
+    "pasta": { "escolha": ["migracao", "restauracao", "importados"] }
+  },
+  "enunciado": "Você restaurou de um backup a pasta `~/lab/{pasta}/` (com várias subpastas e arquivos). Como a restauração foi feita pelo root, tudo ficou como `root:root`, com permissões variadas — algumas abertas demais.\n\nO responsável pelo conteúdo é o usuário **`{usuario}`**, do grupo **`{grupo}`** (ambos já existem). Ajuste **toda a árvore**, incluindo a própria pasta `{pasta}`:\n\n1. o dono deve ser `{usuario}` e o grupo `{grupo}`, em todos os itens;\n2. **nenhum item** pode dar qualquer permissão (leitura, escrita ou execução) aos **outros** usuários;\n3. as permissões de **dono e grupo** devem continuar exatamente como estão (por exemplo, os scripts que já eram executáveis continuam executáveis).\n\nUse `sudo`.",
+  "verifica": [
+    "todos os itens da árvore pertencem a `{usuario}:{grupo}`",
+    "nenhum item tem permissão alguma para \"outros\"",
+    "as permissões de dono e grupo de cada item não mudaram e nada foi apagado"
+  ],
+  "dicas": [
+    "As duas mudanças são recursivas: procure a opção do `chown` e do `chmod` que percorre diretórios.",
+    "`chown -R usuario:grupo pasta` muda dono e grupo de tudo de uma vez.",
+    "Para tirar só as permissões dos outros sem tocar nas demais, use o modo simbólico (`o-rwx`) em vez de um número fixo — um número como `750` mudaria também dono e grupo."
+  ],
+  "solucao": "```\ncd ~/lab\nsudo chown -R {usuario}:{grupo} {pasta}\nsudo chmod -R o-rwx {pasta}\nls -lR {pasta}\n```\n`-R` aplica a mudança em toda a árvore. O modo **simbólico** `o-rwx` remove somente os bits dos *outros* e deixa dono e grupo como estavam; já `chmod -R 750` (ou qualquer octal fixo) sobrescreveria tudo — tornaria arquivos de texto executáveis e tiraria a escrita do grupo onde ela existia. Pegadinha: `chown` e `chmod` recursivos como usuário comum falham em arquivos que não são seus; aqui é preciso `sudo`."
+}

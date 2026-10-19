@@ -1,0 +1,733 @@
+### 108.2-001 | unica | 1
+ref: 102:p.303
+tags: rsyslog, arquivos
+Qual é o arquivo de configuração principal do rsyslog?
+- /etc/syslog.conf
+- /etc/rsyslogd.conf
+- /etc/logrotate.conf
+= /etc/rsyslog.conf
+- /etc/systemd/journald.conf
+> O `rsyslogd` lê `/etc/rsyslog.conf` e, por meio de `$IncludeConfig /etc/rsyslog.d/*.conf`, também os arquivos do diretório `/etc/rsyslog.d/`.
+> `/etc/syslog.conf` era o arquivo do syslogd clássico; `/etc/logrotate.conf` configura a rotação de logs; `/etc/systemd/journald.conf` configura o systemd-journald; `/etc/rsyslogd.conf` não é um caminho usado pelo rsyslog.
+
+### 108.2-002 | unica | 1
+ref: 102:p.303-305
+tags: rsyslog, rules, estrutura
+Em qual seção do `/etc/rsyslog.conf` ficam as regras que ligam um seletor `facility.priority` a um destino (arquivo, host remoto, usuário)?
+= RULES
+- MODULES
+- GLOBAL DIRECTIVES
+- TEMPLATES
+> O arquivo padrão tem três seções: MODULES (módulos como `imuxsock`, `imklog`, `imudp`, `imtcp`), GLOBAL DIRECTIVES (dono, grupo e permissões dos logs, `$WorkDirectory`, `$IncludeConfig`) e RULES, que contém os seletores e as ações. O arquivo padrão do Debian não tem uma seção chamada TEMPLATES.
+
+### 108.2-003 | lacuna | 2
+ref: 102:p.303
+tags: rsyslog, socket, /dev/log
+Qual é o caminho completo do socket em /dev pelo qual os programas locais entregam suas mensagens ao rsyslogd (o kernel usa /dev/kmsg)?
+= /dev/log
+> Aplicativos e serviços gravam em sockets e buffers especiais (`/dev/log` para os programas, `/dev/kmsg` para o kernel); o `rsyslogd` lê esses pontos e, conforme as regras de `/etc/rsyslog.conf` e de `/etc/rsyslog.d/`, grava as mensagens no arquivo correspondente em `/var/log/`. Testado no laboratório: ao iniciar, o rsyslogd cria o socket `/dev/log`.
+
+### 108.2-004 | unica | 1
+ref: 102:p.298
+tags: /var/log, auth.log
+Em um sistema Debian, em qual arquivo de `/var/log/` ficam registradas as atividades de autenticação, como logins de usuários e uso do sudo?
+- /var/log/daemon.log
+- /var/log/mail.log
+= /var/log/auth.log
+- /var/log/btmp
+> No Debian e derivados, `auth.log` guarda os eventos de autenticação (logins, `sudo`, `su`, ssh). Nas distribuições da família Red Hat o equivalente é `/var/log/secure`.
+> `daemon.log` guarda mensagens de daemons; `mail.log`, as do servidor de e-mail; `btmp` é um arquivo binário com as tentativas de login malsucedidas.
+
+### 108.2-005 | multipla | 2
+ref: 102:p.301-303
+tags: /var/log, logs binários
+Quais dos arquivos abaixo são binários e, por isso, devem ser lidos com comandos específicos (como `last`, `lastlog` ou `utmpdump`) e não com `less` ou `grep`?
+= /var/log/wtmp
+- /var/log/syslog
+= /var/log/btmp
+- /var/log/auth.log
+= /var/log/lastlog
+- /var/log/kern.log
+> `wtmp` (logins bem-sucedidos), `btmp` (tentativas malsucedidas) e `lastlog` (último login de cada usuário) são arquivos binários; também é binário o `faillog`. Leem-se com `who`/`last`, `utmpdump` ou `last -f`, `lastlog` e `faillog`.
+> `syslog`, `auth.log` e `kern.log` são arquivos de texto gerados pelo rsyslog e podem ser lidos com `less`, `grep`, `tail` etc.
+
+### 108.2-006 | unica | 2
+ref: 102:p.302-303
+tags: lastlog, /var/log
+Qual comando exibe o conteúdo de `/var/log/lastlog`, isto é, a data do último login de cada usuário?
+- last
+- lastb
+- faillog -a
+= lastlog
+> O comando `lastlog` interpreta o arquivo binário `/var/log/lastlog` e mostra, por conta, porta, origem e data do último acesso (ou "Never logged in").
+> `last` lê o `wtmp` (histórico de logins e reinícios), `lastb` lê o `btmp` (tentativas malsucedidas) e `faillog -a` mostra o contador de falhas de autenticação do `/var/log/faillog`.
+
+### 108.2-007 | lacuna | 1
+ref: 102:p.300
+tags: zless, logs compactados
+Para paginar o log rotacionado e compactado `/var/log/syslog.3.gz` sem descompactá-lo antes, usa-se o comando `____ /var/log/syslog.3.gz`. Qual é o comando equivalente ao `less` para arquivos gzip?
+= zless
+= zmore
+> `zless` e `zmore` funcionam como `less` e `more`, mas abrem arquivos compactados com gzip (compactação feita pelo logrotate com a diretiva `compress`). Também existem `zcat` e `zgrep`.
+
+### 108.2-008 | unica | 1
+ref: 102:p.316
+tags: dmesg, kernel, ring buffer
+Qual comando imprime o buffer de anel (ring buffer) do kernel, onde ficam as mensagens geradas antes mesmo de o rsyslogd iniciar?
+- lastlog
+- faillog -a
+= dmesg
+- utmpdump /var/log/kern.log
+> O kernel guarda suas mensagens em um buffer de tamanho fixo na memória (as mais antigas são sobrescritas) e o `dmesg` o imprime, geralmente combinado com `grep`, por exemplo `dmesg | grep usb`. Com o systemd, `journalctl -k` mostra o mesmo conteúdo.
+
+### 108.2-009 | unica | 2
+ref: 102:p.306-307
+tags: rsyslog, seletores, auth
+O que faz a regra abaixo no `/etc/rsyslog.conf`?
+
+```
+auth,authpriv.*        /var/log/auth.log
+```
+- Grava em auth.log apenas as mensagens da facility authpriv que tenham prioridade crítica ou superior
+- Grava em auth.log todas as mensagens, exceto as das facilities auth e authpriv
+= Grava em auth.log todas as mensagens das facilities auth e authpriv, independentemente da prioridade delas
+- Envia as mensagens auth e authpriv ao usuário auth.log, e não a um arquivo
+> A vírgula junta duas facilities no mesmo seletor e o `*` após o ponto significa "qualquer prioridade". Portanto, tudo que vier de `auth` ou `authpriv` vai para `/var/log/auth.log`. Testado no laboratório: `logger -p auth.info` e `logger -p authpriv.notice` aparecem nesse arquivo.
+> Excluir uma facility é papel do sufixo `.none`; o destino que começa com `/` é um arquivo, não um usuário.
+
+### 108.2-010 | unica | 2
+ref: 102:p.306-307
+tags: rsyslog, seletores, none
+Considere a regra abaixo:
+
+```
+*.*;auth,authpriv.none        -/var/log/syslog
+```
+
+Qual afirmação descreve corretamente o seu efeito?
+- Só grava mensagens das facilities auth e authpriv, cujas gravações são adiadas pelo hífen
+= Grava mensagens de todas as facilities e prioridades, exceto as de auth e authpriv
+- Grava somente as mensagens de prioridade none, ou seja, as sem classificação
+- Grava tudo, inclusive auth e authpriv, mas ignora mensagens de debug
+> O primeiro seletor (`*.*`) pega todas as facilities e prioridades; o ponto e vírgula separa seletores e `auth,authpriv.none` os exclui. O hífen antes do caminho dispensa a sincronização do arquivo a cada mensagem (menos gravações em disco).
+> Testado: mensagens `auth.info` e `authpriv.notice` não aparecem em `/var/log/syslog`, apenas em `/var/log/auth.log`. `none` não é uma prioridade a gravar: ele exclui a facility indicada.
+
+### 108.2-011 | unica | 2
+ref: 102:p.306-308
+tags: rsyslog, prioridades, logger
+O `/etc/rsyslog.conf` contém a regra abaixo. Qual comando gera uma mensagem que será gravada em `/var/log/mail.err`?
+
+```
+mail.err        /var/log/mail.err
+```
+- logger -p mail.warning "disco cheio"
+- logger -p mail.info "disco cheio"
+= logger -p mail.crit "disco cheio"
+- logger -p daemon.err "disco cheio"
+- logger -p mail.notice "disco cheio"
+> Um seletor com prioridade casa com essa prioridade **e com as mais graves**. `mail.err` captura `err`, `crit`, `alert` e `emerg` da facility `mail`; como `crit` é mais grave que `err`, a mensagem é gravada. Testado no laboratório.
+> `warning`, `notice` e `info` são menos graves que `err`, e `daemon.err` pertence a outra facility.
+
+### 108.2-012 | unica | 3
+ref: 102:p.307-308
+tags: rsyslog, seletores, =debug
+Considere a regra abaixo (as barras invertidas de continuação foram omitidas):
+
+```
+*.=debug;auth,authpriv.none;news.none;mail.none    -/var/log/debug
+```
+
+Qual mensagem será gravada em `/var/log/debug`?
+= logger -p user.debug "teste"
+- logger -p user.info "teste"
+- logger -p auth.debug "teste"
+- logger -p mail.debug "teste"
+- logger -p daemon.emerg "teste"
+> O `=` restringe o seletor a **exatamente** a prioridade `debug`, de qualquer facility (`*`). Em seguida, `auth,authpriv.none`, `news.none` e `mail.none` excluem essas facilities. Só `user.debug` atende a todas as condições (testado no laboratório).
+> `user.info` e `daemon.emerg` não são `debug`; `auth.debug`, `mail.debug` (e `news.debug`) são `debug`, mas suas facilities foram excluídas.
+
+### 108.2-013 | lacuna | 2
+ref: 102:p.307-308, 102:p.317
+tags: rsyslog, regras, mail
+Escreva a regra do rsyslog (um único seletor `facility.prioridade`, um espaço e o caminho, sem hífen) que envia as mensagens da facility `mail` com prioridade `alert` ou mais grave para o arquivo `/var/log/mail.urgent`:
+= mail.alert /var/log/mail.urgent
+> `mail.alert` casa com `alert` e com as prioridades mais graves, ou seja, `alert` e `emerg`. Testado no laboratório: uma regra `mail.alert` gravou apenas as mensagens `mail.emerg` e `mail.alert`.
+
+### 108.2-014 | lacuna | 2
+ref: 102:p.307
+tags: rsyslog, ações, hífen
+Em regras como `*.* -/var/log/syslog`, qual caractere colocado antes do caminho do arquivo evita a gravação em disco a cada mensagem (responda com o caractere)?
+= -
+> O prefixo `-` (hífen) antes do caminho informa ao rsyslog que não precisa sincronizar o arquivo com o disco a cada mensagem, o que reduz o número de gravações. É usado nos arquivos mais volumosos, como `syslog`, `kern.log` e `mail.log`.
+
+### 108.2-015 | unica | 2
+ref: 102:p.305-306
+tags: facilities, local0
+Qual conjunto de facilities do syslog está reservado para uso local, isto é, para serviços e scripts do próprio administrador?
+- user e daemon
+- auth e authpriv
+= local0 a local7
+- uucp e news
+- kern, syslog e cron
+> As facilities `local0` a `local7` (números 16 a 23) não pertencem a nenhum subsistema do sistema e ficam livres para uso personalizado, por exemplo `logger -p local3.info "mensagem"` combinado com uma regra `local3.* /var/log/app.log`.
+> `user` (mensagens de nível de usuário), `daemon`, `auth`/`authpriv`, `uucp`, `news`, `kern` e `syslog` têm significado fixo.
+
+### 108.2-016 | unica | 2
+ref: 102:p.306
+tags: prioridades, severidade
+Qual alternativa lista as prioridades (severidades) do syslog da mais grave para a menos grave?
+- emerg, alert, crit, err, notice, warning, info, debug
+= emerg, alert, crit, err, warning, notice, info, debug
+- debug, info, notice, warning, err, crit, alert, emerg
+- emerg, crit, alert, err, warning, notice, info, debug
+- emerg, alert, crit, err, warning, notice, info, debug, trace
+> A ordem numérica é: 0 emerg, 1 alert, 2 crit, 3 err, 4 warning, 5 notice, 6 info, 7 debug. Como os seletores incluem a prioridade indicada e as mais graves, `*.warning` pega `warning`, `err`, `crit`, `alert` e `emerg`.
+> As outras opções trocam posições (`notice`/`warning`, `alert`/`crit`), invertem toda a ordem ou acrescentam um nível (`trace`) que não existe no syslog.
+
+### 108.2-017 | unica | 3
+ref: 102:p.319, 102:p.323
+tags: rsyslog, omusrmsg, emerg
+Qual regra do `/etc/rsyslog.conf` envia as mensagens de emergência de **todas** as facilities aos terminais dos usuários `root` e `carol`?
+= *.emerg :omusrmsg:root,carol
+- emerg.* :omusrmsg:root,carol
+- *.emerg -omusrmsg:root,carol
+- *.emerg @root,carol
+> O módulo `omusrmsg` entrega a mensagem ao terminal dos usuários logados listados após `:omusrmsg:` (o padrão do Debian usa `*.emerg :omusrmsg:*`, ou seja, todos os usuários). O seletor é sempre `facility.prioridade`: `*` para todas as facilities e `emerg` como prioridade.
+> `emerg.*` inverte o seletor (o rsyslog responde `unknown facility name "emerg"`); `-omusrmsg:` não é uma sintaxe válida de ação; `@` indica envio a um host remoto via UDP (aqui, um host chamado "root,carol").
+
+### 108.2-018 | unica | 2
+ref: 102:p.312, 102:p.322
+tags: rsyslog, remoto, tcp, udp
+Qual regra, colocada no `/etc/rsyslog.conf` de um cliente, envia **todas** as mensagens por **TCP** ao servidor de log 192.168.1.6, porta 514?
+- *.* @192.168.1.6:514
+= *.* @@192.168.1.6:514
+- *.* tcp:192.168.1.6:514
+- *.* 192.168.1.6:514
+> No rsyslog, `@` envia por UDP e `@@` envia por TCP. Testado no laboratório: com `@@127.0.0.1:514` a mensagem chegou ao receptor `imtcp`, e com `@127.0.0.1:515` ao receptor `imudp`.
+> `tcp:host:porta` não é sintaxe de ação (o rsyslog acusa erro) e um endereço sem prefixo seria tratado como nome de arquivo.
+
+### 108.2-019 | unica | 2
+ref: 102:p.304, 102:p.309
+tags: rsyslog, imtcp, servidor
+Qual módulo precisa ser carregado no rsyslog de um servidor central para que ele **receba**, pela rede, as mensagens enviadas por clientes via TCP?
+- imudp
+- imuxsock
+= imtcp
+- imklog
+> Com `module(load="imtcp")` e `input(type="imtcp" port="514")` (sintaxe atual; a forma antiga é `$ModLoad imtcp` e `$InputTCPServerRun 514`) o rsyslog passa a escutar na porta TCP 514. Depois é preciso reiniciar o serviço e liberar a porta no firewall.
+> `imudp` faz o mesmo para UDP; `imuxsock` recebe as mensagens dos programas locais pelo socket `/dev/log`; `imklog` lê as mensagens do kernel.
+
+### 108.2-020 | unica | 3
+ref: 102:p.310-311
+tags: rsyslog, stop, filtro
+Em um servidor de log central, o administrador usa as linhas abaixo. Qual é a função da linha `& stop`?
+
+```
+$template RemoteLogs,"/var/log/remotehosts/%HOSTNAME%/%$NOW%.%syslogseverity-text%.log"
+if $FROMHOST-IP=='192.168.1.4' then ?RemoteLogs
+& stop
+```
+- Interrompe o serviço rsyslog depois que a primeira mensagem do host 192.168.1.4 for recebida e gravada
+- Impede que o host 192.168.1.4 envie novas mensagens ao servidor depois da primeira conexão TCP
+= Encerra o processamento dessas mensagens, que não são gravadas também nos demais arquivos de log do servidor
+- Desativa o template RemoteLogs para as mensagens de severidade info vindas desse mesmo host
+> O `&` repete a condição da linha anterior e `stop` descarta a mensagem depois de executar a ação `?RemoteLogs`. Assim, os logs do cliente ficam apenas em `/var/log/remotehosts/...` e não são gravados também em `/var/log/messages` (ou `syslog`).
+> Testado no laboratório: com `if $inputname == 'imtcp' then ?RemoteLogs` seguido de `& stop`, a mensagem recebida por TCP foi gravada só no arquivo do template e não apareceu em `/var/log/syslog`.
+
+### 108.2-021 | unica | 2
+ref: 102:p.310
+tags: rsyslog, template, propriedades
+Com o template abaixo, em qual arquivo será gravada uma mensagem de severidade `info` enviada pelo host `debian` em 17/09/2019?
+
+```
+$template RemoteLogs,"/var/log/remotehosts/%HOSTNAME%/%$NOW%.%syslogseverity-text%.log"
+```
+- /var/log/remotehosts/2019-09-17/debian.info.log
+- /var/log/remotehosts/debian/syslog/2019-09-17.info.log
+= /var/log/remotehosts/debian/2019-09-17.info.log
+- /var/log/remotehosts/debian.2019-09-17.info.log
+> As palavras entre `%` são propriedades da mensagem: `%HOSTNAME%` vira o nome do host (um subdiretório), `%$NOW%` a data (AAAA-MM-DD) e `%syslogseverity-text%` a severidade em texto; o `.log` final é literal. O resultado é `remotehosts/debian/2019-09-17.info.log`. Testado no laboratório: o arquivo criado foi `.../<host>/2026-10-19.info.log`.
+
+### 108.2-022 | lacuna | 1
+ref: 102:p.312
+tags: logger, tag
+Complete o comando para enviar a mensagem ao log com a etiqueta (tag) `DEBIAN-CLIENT`: `logger ____ DEBIAN-CLIENT "Hi from client"`
+= -t
+= --tag
+> A opção `-t` (`--tag`) define a etiqueta que aparece antes dos dois-pontos na linha do log (`... DEBIAN-CLIENT: Hi from client`). Sem ela, o logger usa o nome do usuário. Testado no laboratório.
+
+### 108.2-023 | unica | 2
+ref: 102:p.308
+tags: logger, prioridade
+Qual comando registra a mensagem "backup concluido" com facility `local0` e prioridade `warning`?
+- logger -f local0 -p warning "backup concluido"
+- logger -t local0.warning "backup concluido"
+- logger -p warning.local0 "backup concluido"
+= logger -p local0.warning "backup concluido"
+> A opção `-p` recebe `facility.prioridade`. Sem `-p`, o `logger` usa `user.notice`.
+> `-f` serve para ler o texto de um arquivo; `-t` define apenas a etiqueta; inverter a ordem (`warning.local0`) é rejeitado pelo logger com `unknown facility name`, como testado no laboratório.
+
+### 108.2-024 | unica | 3
+ref: 102:p.307-308
+tags: logger, rsyslog, authpriv
+Um sistema usa apenas as regras abaixo. Em quais arquivos será gravada a mensagem gerada por `logger -p authpriv.notice "sessao aberta"`?
+
+```
+*.*;auth,authpriv.none    -/var/log/syslog
+auth,authpriv.*           /var/log/auth.log
+user.*                    -/var/log/user.log
+```
+- Em /var/log/syslog e em /var/log/auth.log
+- Em /var/log/auth.log e em /var/log/user.log
+- Somente em /var/log/syslog
+= Somente em /var/log/auth.log
+> A mensagem pertence à facility `authpriv`. A segunda regra a envia a `auth.log`; a primeira a **exclui** de `syslog` por causa de `auth,authpriv.none`; a terceira só trata a facility `user`. Esse é exatamente o comportamento verificado no laboratório com a configuração padrão do Debian.
+
+### 108.2-025 | unica | 1
+ref: 102:p.326
+tags: journald, journalctl, binário
+Por que o journal do systemd não pode ser lido diretamente com `less` ou `grep`, e qual comando se usa no lugar?
+- Porque é criptografado por padrão com a chave do host; usa-se `journalctl --decrypt`
+- Porque fica compactado com gzip em cada arquivo do diário; usa-se `zless`
+= Porque é um arquivo binário, estruturado e indexado, que só pode ser lido com o comando `journalctl`
+- Porque só o próprio processo systemd tem permissão de leitura; usa-se `systemctl log`
+> O systemd-journald grava um diário binário, estruturado e indexado (`system.journal`, `user-1000.journal`); `less` avisa que "may be a binary file". A ferramenta de consulta é o `journalctl`, executado como root ou por um usuário com permissão (por exemplo, dos grupos `systemd-journal` ou `adm`).
+> Não existe `journalctl --decrypt` nem `systemctl log`; a compactação não é gzip e `zless` não se aplica.
+
+### 108.2-026 | lacuna | 1
+ref: 102:p.327
+tags: journalctl, -f, follow
+Complete o comando que exibe as entradas mais recentes do journal e continua mostrando as novas à medida que chegam, como o `tail -f`: `journalctl ____`
+= -f
+= --follow
+> `-f` (`--follow`) acompanha o journal em tempo real. Já `-e` salta para o fim do paginador, `-r` inverte a ordem e `-n N` limita o número de linhas.
+
+### 108.2-027 | unica | 2
+ref: 102:p.327-328
+tags: journalctl, -r, -e, -n
+Qual afirmação sobre opções do `journalctl` está correta?
+- `-e` imprime somente as 10 últimas entradas do journal e termina em seguida
+- `-f` mostra apenas as mensagens do boot anterior e depois encerra o comando
+- `-n 5` exibe as 5 entradas mais antigas do journal, em ordem cronológica
+= `-r` mostra as entradas da mais recente para a mais antiga
+> `-r` (`--reverse`) inverte a ordem cronológica padrão. `-e` apenas abre o paginador já posicionado no fim do journal; `-f` acompanha novas entradas em tempo real; `-n` (`--lines`) limita a saída às N entradas **mais recentes** (padrão 10). Argumentos como `20` sem a opção correta são tratados como filtros e geram erro (`Failed to add match '20'`, testado).
+
+### 108.2-028 | lacuna | 1
+ref: 102:p.328
+tags: journalctl, kernel, dmesg
+Complete o comando para ver apenas as mensagens do kernel no journal, equivalente ao `dmesg`: `journalctl ____`
+= -k
+= --dmesg
+> `-k` (ou `--dmesg`) filtra as mensagens do kernel (transporte `kernel`), o mesmo conteúdo do buffer de anel exibido por `dmesg`.
+
+### 108.2-029 | unica | 2
+ref: 102:p.329
+tags: journalctl, boot, -b
+O que exibe o comando `journalctl -b -1`?
+- Somente a última linha do boot atual
+- As mensagens do primeiro boot registrado no journal, contado a partir do início do diário
+= As mensagens da inicialização anterior à atual (exige journal persistente)
+- As mensagens de todas as inicializações registradas no journal, menos a inicialização atual
+> Com `-b`, um deslocamento menor ou igual a zero conta a partir do fim do journal: `0` é o boot atual, `-1` o anterior, `-2` o anterior a esse. Para que existam dados de boots anteriores, o journal precisa ser persistente; caso contrário o journalctl avisa que não há um journal persistente (testado: "Specifying boot ID or boot offset has no effect, no persistent journal was found").
+> O primeiro boot do journal seria `journalctl -b 1` (deslocamentos positivos contam a partir do início).
+
+### 108.2-030 | unica | 3
+ref: 102:p.329
+tags: journalctl, --list-boots, -b
+A saída de `journalctl --list-boots` é mostrada abaixo. Qual comando exibe as mensagens do boot de 05/03/2024?
+
+```
+-2 4c5e1f0b8a9d4e3f9b2a7c6d5e4f3a2b Mon 2024-03-04 08:01:12 -03 Mon 2024-03-04 18:30:44 -03
+-1 a1b2c3d4e5f60718293a4b5c6d7e8f90 Tue 2024-03-05 08:00:50 -03 Tue 2024-03-05 19:02:10 -03
+ 0 9f8e7d6c5b4a39281706f5e4d3c2b1a0 Wed 2024-03-06 08:03:21 -03 Wed 2024-03-06 11:45:09 -03
+```
+- journalctl -b 0
+- journalctl -b 1
+= journalctl -b -1
+- journalctl -b -2 -r
+> A primeira coluna é o deslocamento: `0` é o boot atual, `-1` o anterior (05/03) e `-2` o anterior a esse (04/03). `journalctl -b -1` mostra o boot de 05/03.
+> `-b 0` seria o boot atual (06/03). `-b 1` (positivo) conta a partir do início do journal e corresponde ao primeiro boot, o de 04/03, tal como `-b -2` (que, com `-r`, apenas inverte a ordem da saída).
+
+### 108.2-031 | unica | 2
+ref: 102:p.330
+tags: journalctl, -p, prioridade
+Quais prioridades são exibidas por `journalctl -p warning`?
+- Apenas warning
+- warning, notice, info e debug
+= warning, err, crit, alert e emerg
+- Somente err, crit, alert e emerg, sem a warning
+> Como nos seletores do rsyslog, informar uma prioridade inclui essa e as **mais graves**: `-p warning` mostra `warning`, `err`, `crit`, `alert` e `emerg`. Testado no laboratório com mensagens de cada nível geradas por `systemd-cat -p`.
+> `-p err` (ou `-p 3`) mostraria `err` e as mais graves; para ver prioridades menos graves é preciso usar `-p debug` (que inclui tudo) ou um intervalo.
+
+### 108.2-032 | unica | 3
+ref: 102:p.352
+tags: journalctl, -p, intervalo
+Qual comando mostra apenas as mensagens de prioridade `warning`, `err` e `crit` (excluindo `emerg`, `alert` e as menos graves)?
+- journalctl -p warning
+- journalctl -p warning,err,crit
+- journalctl -p warning..err
+= journalctl -p warning..crit
+> A sintaxe `-p DE..ATÉ` define um intervalo, incluindo as duas pontas. Também é aceita em forma numérica: `journalctl -p 4..2`. Testado: `-p warning..crit` e `-p 4..2` devolvem exatamente `warning`, `err` e `crit`.
+> `-p warning` incluiria também `emerg` e `alert`; `-p warning,err,crit` não é sintaxe válida (o journalctl aceita um nível ou um intervalo `DE..ATÉ`); `-p warning..err` deixaria de fora `crit`.
+
+### 108.2-033 | unica | 2
+ref: 102:p.330-331
+tags: journalctl, --since, --until
+O que exibe o comando `journalctl --since yesterday --until today`?
+- Somente as mensagens das últimas 24 horas, contadas a partir de agora
+= Todas as mensagens de ontem, de 00:00 de ontem até 00:00 de hoje
+- Somente as mensagens de hoje, até o momento atual
+- Todas as mensagens anteriores a ontem
+> `yesterday` equivale a 00:00 do dia anterior e `today` a 00:00 do dia atual, então o intervalo cobre o dia de ontem inteiro. Outras formas aceitas: `now`, `tomorrow`, `"2 minutes ago"`, `"-2 hours"`, `"2024-03-05 19:00:00"`; se a data for omitida, assume-se o dia atual, e se a hora for omitida, meia-noite.
+> As "últimas 24 horas" seriam `--since "24 hours ago"`; "hoje até agora" seria `--since today`.
+
+### 108.2-034 | unica | 2
+ref: 102:p.331
+tags: journalctl, executável
+Qual comando exibe somente as mensagens geradas pelo executável `/usr/sbin/sshd`?
+- journalctl -u /usr/sbin/sshd
+- journalctl -t /usr/sbin/sshd
+- journalctl _PID=/usr/sbin/sshd
+= journalctl /usr/sbin/sshd
+> Quando o argumento é um caminho de executável, o journalctl filtra pelo programa (`journalctl /usr/sbin/sshd`).
+> `-u` espera o nome de uma unidade do systemd (por exemplo `ssh.service`); `-t` espera um identificador syslog (como `sshd`); `_PID=` exige um número de processo.
+
+### 108.2-035 | unica | 3
+ref: 102:p.330-332
+tags: journalctl, -u, -p, --since
+Qual comando mostra apenas as mensagens de erro (ou mais graves) do serviço `sshd.service` registradas desde o início de ontem?
+- journalctl -u sshd.service -p err --until yesterday
+- journalctl -u sshd.service -p debug --since yesterday
+- journalctl -U sshd.service -p err --since yesterday
+- journalctl -k -p err --since yesterday
+= journalctl -u sshd.service -p err --since yesterday
+> `-u` filtra pela unidade, `-p err` por prioridade (erro e mais graves) e `--since yesterday` pelo início do intervalo.
+> `--until yesterday` mostraria o que foi gravado **antes** de ontem; `-p debug` inclui todas as prioridades; `-U` é a forma curta de `--until` (e exige um horário, o que gera "Failed to parse timestamp"); `-k` limita à saída do kernel.
+
+### 108.2-036 | unica | 3
+ref: 102:p.333-334
+tags: journalctl, campos, OR
+Qual comando exibe as mensagens que tenham `PRIORITY=3` **ou** `SYSLOG_FACILITY=0`?
+- journalctl PRIORITY=3 SYSLOG_FACILITY=0
+- journalctl PRIORITY=3 OR SYSLOG_FACILITY=0
+- journalctl PRIORITY=3,SYSLOG_FACILITY=0
+= journalctl PRIORITY=3 + SYSLOG_FACILITY=0
+> Campos diferentes na mesma consulta são combinados com **E** (todos precisam casar); o separador `+` produz o **OU** lógico. Repetir o mesmo campo (`PRIORITY=1 PRIORITY=3`) também funciona como OU entre os valores. Testado no laboratório.
+> `OR` não é uma palavra reservada (o journalctl tenta usá-la como filtro e responde `Failed to add match 'OR'`).
+
+### 108.2-037 | unica | 2
+ref: 102:p.335-336
+tags: systemd-cat, journal
+Qual comando envia a saída de `echo "backup ok"` ao journal, com o identificador `backup` e a prioridade `warning`?
+- systemd-cat --identifier warning --priority backup echo "backup ok"
+- journalctl -t backup -p warning echo "backup ok"
+- systemd-cat --journal backup echo "backup ok"
+= systemd-cat -t backup -p warning echo "backup ok"
+> O `systemd-cat` executa o comando dado e envia sua saída (stdout e stderr) ao journal; `-t` define o identificador e `-p` a prioridade. Também funciona com pipe: `echo "backup ok" | systemd-cat -t backup -p warning`. Testado no laboratório e conferido com `journalctl -t backup -p warning`.
+> Trocar os valores faz o systemd-cat falhar com "Failed to parse priority value"; `journalctl` apenas lê o journal, não grava; `--journal` não existe no systemd-cat.
+
+### 108.2-038 | unica | 2
+ref: 102:p.336-337
+tags: journald, storage, volátil
+Em um sistema com `Storage=auto` em `/etc/systemd/journald.conf` e sem o diretório `/var/log/journal`, onde o journal é gravado e o que acontece na reinicialização?
+- Em /var/log/journal, que é criado automaticamente, e os dados são mantidos
+- Em /var/log/syslog, que é mantido entre as reinicializações
+= Em /run/log/journal, na memória, e os dados são perdidos
+- Em /run/log/journal, com cópia automática para o disco ao desligar
+> Com `Storage=auto` o journald só grava em disco se `/var/log/journal/` **já existir**; caso contrário usa o armazenamento volátil em `/run/log/journal/<machine-id>/`, que se perde ao reiniciar. É o que explica o aviso de que não há journal persistente ao consultar boots anteriores.
+> O `auto` não cria o diretório (quem o cria é `Storage=persistent`), e não existe cópia automática para o disco ao desligar.
+
+### 108.2-039 | unica | 2
+ref: 102:p.337-338
+tags: journald.conf, storage, persistent
+Qual alteração em `/etc/systemd/journald.conf` (seguida de `systemctl restart systemd-journald`) faz o journald **criar** `/var/log/journal` e passar a gravar o journal em disco?
+- Storage=auto
+- Storage=volatile
+- Storage=disk-persistent
+= Storage=persistent
+> Com `Storage=persistent` os dados vão para `/var/log/journal/` (com `/run/log/journal/` como alternativa no início do boot ou se o disco não for gravável) e os diretórios são criados se necessário. Criar manualmente o diretório `/var/log/journal` e reiniciar o daemon também ativa a persistência com `auto`.
+> `auto` não cria o diretório; `volatile` guarda apenas em `/run/log/journal` (memória); `disk-persistent` não é um valor válido (os valores são `volatile`, `persistent`, `auto` e `none`).
+
+### 108.2-040 | unica | 2
+ref: 102:p.338
+tags: journald.conf, storage, none
+O que acontece quando se define `Storage=none` em `/etc/systemd/journald.conf`?
+- O journal passa a ser gravado apenas em /run/log/journal, na memória, e é perdido ao reiniciar
+- O serviço journald é desativado e todas as mensagens passam a ser tratadas só pelo rsyslog
+= Os dados recebidos são descartados, mas o encaminhamento (console, kmsg, syslog) continua possível
+- O journal é gravado em disco sem compactação e sem índice, em arquivos de texto simples
+> Com `Storage=none` o journald não armazena nada, mas ainda pode **encaminhar** as mensagens (`ForwardToConsole`, `ForwardToKMsg`, `ForwardToSyslog`, `ForwardToWall`).
+> O armazenamento só em `/run/log/journal` é `Storage=volatile`; o serviço continua em execução, apenas sem guardar o diário.
+
+### 108.2-041 | lacuna | 1
+ref: 102:p.339
+tags: journalctl, --disk-usage
+Complete o comando que informa quanto espaço em disco os arquivos do journal (ativos e arquivados) ocupam: `journalctl ____`
+= --disk-usage
+> `journalctl --disk-usage` mostra uma linha como "Archived and active journals take up 8.0M in the file system." (testado no laboratório).
+
+### 108.2-042 | unica | 2
+ref: 102:p.339
+tags: journald.conf, SystemMaxUse
+Qual diretiva de `/etc/systemd/journald.conf` define o espaço máximo que o journal **persistente** (`/var/log/journal`) pode ocupar em disco?
+- RuntimeMaxUse=
+- SystemKeepFree=
+- SystemMaxFileSize=
+= SystemMaxUse=
+> `SystemMaxUse=` limita o espaço total usado pelo journal persistente (o padrão é 10% do sistema de arquivos, no máximo 4 GiB); por exemplo, `SystemMaxUse=500M`. Os nomes iniciados por `Runtime` valem para o journal volátil em `/run/log/journal`.
+> `SystemKeepFree=` define quanto espaço deve ficar **livre** (padrão de 15%); `SystemMaxFileSize=` limita o tamanho de cada arquivo individual. Depois de alterar o arquivo é preciso reiniciar o systemd-journald.
+
+### 108.2-043 | unica | 2
+ref: 102:p.340-341
+tags: journalctl, --vacuum-size
+Qual comando remove arquivos de journal arquivados até que o total fique abaixo de 200 MiB?
+- journalctl --vacuum-time=200M
+- journalctl --vacuum-files=200M
+- journalctl --disk-usage=200M
+= journalctl --vacuum-size=200M
+> `--vacuum-size=` remove os arquivos arquivados mais antigos até o limite de tamanho (aceita sufixos K, M, G, T). `--vacuum-time=` trabalha com tempo (por exemplo, `2weeks`) e `--vacuum-files=` com número de arquivos (um inteiro, sem sufixo de tamanho). `--disk-usage` só informa o uso e não aceita valor.
+
+### 108.2-044 | lacuna | 2
+ref: 102:p.340
+tags: journalctl, --vacuum-time
+Complete o comando que remove as entradas dos arquivos de journal arquivados com mais de 2 semanas: `journalctl --vacuum-____=2weeks`
+= time
+> `--vacuum-time=` apaga os arquivos arquivados mais antigos que o período informado; aceita sufixos como `s`, `m`, `h`, `days` (ou `d`), `weeks` (`w`), `months` e `years` (`y`).
+
+### 108.2-045 | unica | 3
+ref: 102:p.340-341, 102:p.351
+tags: journalctl, vacuum, rotate
+Depois de executar `journalctl --vacuum-size=100M`, o comando `journalctl --disk-usage` continua informando um uso bem acima de 100 MB. Qual é a explicação mais provável?
+- O vacuum só passa a valer depois de reiniciar o systemd-journald com systemctl restart
+- O limite do vacuum vale apenas para o journal volátil em /run/log/journal, não para o persistente
+- O valor deveria ter sido informado em bytes, sem o sufixo M, para ser aceito pelo vacuum
+= O vacuum remove só arquivos arquivados; os ativos continuam sendo contados e não são apagados pelo vacuum
+> A limpeza (`--vacuum-*`) atua somente nos arquivos de journal **arquivados**. Os arquivos ativos (`system.journal`, `user-UID.journal`) entram na soma de `--disk-usage`, mas só podem ser removidos depois de arquivados com `journalctl --rotate`. Testado no laboratório: com `--vacuum-size=1M`, o uso caiu de 11,5M para 8,0M, o tamanho do arquivo ativo.
+> O sufixo M é aceito, o vacuum age sobre os diretórios persistente e volátil e não depende de reinício do daemon.
+
+### 108.2-046 | multipla | 3
+ref: 102:p.341-342
+tags: journalctl, -D, --root, resgate
+Um disco com o sistema defeituoso foi montado em `/mnt/sistema` em um sistema de resgate, e o journal dele está em `/mnt/sistema/var/log/journal`. Quais comandos leem esse journal?
+= journalctl -D /mnt/sistema/var/log/journal
+- journalctl -D /mnt/sistema
+- journalctl --file=/mnt/sistema/var/log/journal
+= journalctl --root=/mnt/sistema
+- journalctl --root=/mnt/sistema/var/log/journal
+- journalctl -b -1
+> `-D` (`--directory`) aponta para o diretório que contém as pastas `<machine-id>` com os arquivos de journal; `--root` recebe a **raiz** do sistema montado e o journalctl procura `var/log/journal` dentro dela. Isso é necessário porque o `machine-id` do sistema de resgate é diferente e, por padrão, o journalctl só olha o journal do próprio sistema em execução.
+> Testado no laboratório: `-D /mnt/.../var/log/journal` e `--root=/mnt/...` mostram as entradas. `-D` na raiz montada, `--root` apontando para o diretório do journal e `--file` apontando para um diretório (erro "Is a directory") não funcionam; `-b -1` consulta o journal do sistema de resgate.
+
+### 108.2-047 | lacuna | 2
+ref: 102:p.342-343
+tags: journald.conf, ForwardToSyslog, rsyslog
+Complete a diretiva de `/etc/systemd/journald.conf` que faz o journald encaminhar as mensagens ao socket `/run/systemd/journal/syslog`, para que um daemon syslog tradicional as leia: `____=yes`
+= ForwardToSyslog
+> Com `ForwardToSyslog=yes` o journald repassa as mensagens ao socket `/run/systemd/journal/syslog`; um daemon como o rsyslog pode lê-las ali (ou ler diretamente os arquivos do journal, desde que `Storage` seja diferente de `none`). Existem também `ForwardToKMsg`, `ForwardToConsole` e `ForwardToWall`.
+
+### 108.2-048 | multipla | 3
+ref: 102:p.343, 102:p.352
+tags: journald.conf, ForwardToConsole, TTYPath
+Quais diretivas de `/etc/systemd/journald.conf` fazem o journald encaminhar as mensagens para o terminal `/dev/tty5`?
+= ForwardToConsole=yes
+- ForwardToWall=yes
+- ConsolePath=/dev/tty5
+= TTYPath=/dev/tty5
+- Storage=console
+> `ForwardToConsole=yes` ativa o encaminhamento ao console do sistema e `TTYPath=/dev/tty5` troca o terminal usado (o padrão é `/dev/console`). Reinicie o systemd-journald após editar.
+> `ForwardToWall` envia as mensagens por `wall` a todos os usuários logados; `ConsolePath` não existe; `Storage=` só controla onde o journal é armazenado (`volatile`, `persistent`, `auto`, `none`).
+
+### 108.2-049 | unica | 2
+ref: 102:p.342-343
+tags: rsyslog, journald, interação
+Qual afirmação descreve corretamente a interação entre o systemd-journald e o rsyslog em um sistema com systemd?
+- O rsyslog substitui o journald e o desativa automaticamente ao iniciar, tornando-o desnecessário
+- O journald grava diretamente em /var/log/syslog, dispensando a existência do rsyslog
+- Os dois não podem ser executados no mesmo sistema ao mesmo tempo, pois disputam o /dev/log
+= O journald repassa as mensagens ao rsyslog por um socket, ou o rsyslog lê diretamente o próprio journal
+> Os dois coexistem: o journald centraliza as mensagens em formato binário e, com `ForwardToSyslog=yes`, as repassa pelo socket `/run/systemd/journal/syslog`; alternativamente, o rsyslog lê as mensagens diretamente do journal (módulo `imjournal`) e continua gravando os arquivos de texto em `/var/log/`, segundo as regras do `rsyslog.conf`.
+
+### 108.2-050 | unica | 1
+ref: 102:p.313-314
+tags: logrotate, arquivos
+Qual arquivo contém as opções globais do `logrotate` e inclui o diretório `/etc/logrotate.d/`, onde os pacotes colocam suas regras de rotação?
+= /etc/logrotate.conf
+- /etc/rsyslog.conf
+- /etc/cron.daily/logrotate
+- /var/lib/logrotate/status
+> O `logrotate` lê `/etc/logrotate.conf`, que define padrões como `weekly`, `rotate 4` e `create` e termina com `include /etc/logrotate.d`; cada pacote traz ali seu arquivo (`rsyslog`, `apt`, `dpkg`...).
+> `/etc/cron.daily/logrotate` é o script que dispara o programa; `/var/lib/logrotate/status` guarda o estado das últimas rotações; `/etc/rsyslog.conf` é do rsyslog.
+
+### 108.2-051 | unica | 1
+ref: 102:p.313-314
+tags: logrotate, cron
+Como o `logrotate` costuma ser executado na maioria das distribuições?
+- Como um daemon que permanece sempre em execução e vigia o tamanho dos logs
+- A cada reinicialização do rsyslog, por um gancho do próprio rsyslogd
+= Uma vez por dia, de forma agendada (por cron ou por um timer do systemd)
+- Somente quando o administrador o executa manualmente
+> O `logrotate` não é um daemon: é um programa disparado periodicamente, tradicionalmente pelo script `/etc/cron.daily/logrotate` (em muitas distribuições modernas, por um timer do systemd). Ele consulta `/etc/logrotate.conf` e decide, conforme `daily`/`weekly`/`size`, quais logs precisam ser rotacionados.
+
+### 108.2-052 | unica | 2
+ref: 102:p.313
+tags: logrotate, rotate, compress
+Um diretório contém `messages`, `messages.1`, `messages.2.gz`, `messages.3.gz` e `messages.4.gz`, com a configuração `rotate 4`, `compress` e `delaycompress`. O que acontece com o conteúdo de `messages.4.gz` na próxima rotação?
+- Vira messages.5.gz
+- Volta a ser o arquivo messages.1
+= É descartado (apagado)
+- É compactado de novo e fica como messages.4.bz2
+> Com `rotate 4`, o `logrotate` mantém quatro cópias rotacionadas. Na rotação seguinte: `messages.4.gz` é removido, `.3.gz` vira `.4.gz`, `.2.gz` vira `.3.gz`, `messages.1` é compactado e vira `.2.gz`, e `messages` passa a ser `messages.1`, enquanto um novo `messages` vazio é criado. Testado no laboratório com `rotate 3`: o mais antigo foi descartado.
+
+### 108.2-053 | unica | 2
+ref: 102:p.315
+tags: logrotate, delaycompress
+Qual é o efeito da diretiva `delaycompress` em uma configuração do logrotate?
+- Atrasa a rotação do log em um dia depois de ele atingir o tamanho máximo configurado
+- Compacta o log com mais lentidão, para poupar CPU em horários de pico, sem afetar a rotação
+- Executa o script postrotate com um atraso configurável, em segundos, após a rotação
+= Adia a compactação do log recém-rotacionado para o próximo ciclo de rotação, mantendo-o em texto até lá
+> `delaycompress` só faz sentido junto com `compress`: o arquivo do ciclo anterior (`log.1`) fica **sem compactar** e só é compactado (`log.2.gz`) no ciclo seguinte. Isso ajuda quando um programa continua gravando por algum tempo no arquivo antigo, que não pode ser fechado. Testado no laboratório: depois de rotações forçadas, ficaram `app.log.1` (texto) e `app.log.2.gz`, `app.log.3.gz`.
+
+### 108.2-054 | unica | 2
+ref: 102:p.315
+tags: logrotate, notifempty, missingok
+O que faz a diretiva `notifempty` em um bloco do logrotate?
+- Não emite erro quando o arquivo de log não existe
+- Não cria um novo arquivo vazio depois da rotação
+- Rotaciona o log somente se houver ao menos uma linha de erro
+= Não rotaciona o arquivo de log quando ele está vazio
+> `notifempty` evita a rotação de logs vazios. Não confunda com `missingok`, que apenas impede a mensagem de erro quando o log não existe, e com `nocreate`, que impede a criação do novo arquivo vazio depois da rotação (o oposto de `create`).
+
+### 108.2-055 | lacuna | 1
+ref: 102:p.315
+tags: logrotate, missingok
+Qual diretiva do logrotate evita que ele emita uma mensagem de erro quando o arquivo de log listado não existe, passando simplesmente ao próximo (responda com o nome da diretiva)?
+= missingok
+> `missingok` ignora logs ausentes sem gerar erro. Costuma aparecer junto com `notifempty` (não rotacionar vazios), por exemplo nos blocos de `/etc/logrotate.d/rsyslog`.
+
+### 108.2-056 | unica | 3
+ref: 102:p.315
+tags: logrotate, sharedscripts, postrotate
+Um bloco do logrotate usa o padrão `/var/log/mail/*` e tem um script `postrotate`. Qual diretiva faz o script ser executado **uma única vez**, e não uma vez por arquivo rotacionado?
+- sharedpostrotate
+- delaycompress
+= sharedscripts
+- copytruncate
+> `sharedscripts` executa os scripts `prerotate`/`postrotate` uma só vez, qualquer que seja o número de arquivos que casem com o padrão (e apenas se algum deles precisar de rotação). Sem ela, o script roda para cada arquivo.
+> `sharedpostrotate` não existe; `delaycompress` apenas adia a compactação; `copytruncate` copia o log e o esvazia no lugar, em vez de renomeá-lo.
+
+### 108.2-057 | unica | 3
+ref: 102:p.314
+tags: logrotate, precedência, daily, weekly
+O `/etc/logrotate.conf` define `weekly` e `rotate 4`. O arquivo `/etc/logrotate.d/app` contém o bloco abaixo. Com que frequência `/var/log/app.log` será rotacionado e quantas cópias serão mantidas?
+
+```
+/var/log/app.log {
+    daily
+    rotate 2
+    missingok
+}
+```
+- Semanalmente, mantendo 4 cópias, porque a configuração global prevalece
+- Semanalmente, mantendo 2 cópias
+= Diariamente, mantendo 2 cópias
+- Diariamente, mantendo 4 cópias
+> As definições locais (dentro do bloco do log, em `/etc/logrotate.d/`) têm precedência sobre as globais de `/etc/logrotate.conf`. Testado com `logrotate -d`: o log do exemplo aparece como "after 1 days (2 rotations)", enquanto um log sem `daily` herda "weekly (4 rotations)".
+
+### 108.2-058 | unica | 2
+ref: 102:p.314-315
+tags: logrotate, size
+Qual diretiva faz o logrotate rotacionar um log somente quando ele ultrapassar 10 MiB, independentemente do calendário (diário, semanal)?
+- minsize 10M
+- rotate 10M
+- maxage 10M
+= size 10M
+> `size 10M` rotaciona o arquivo quando ele passa do tamanho indicado, no lugar do critério de tempo. Testado no laboratório: `size 10k` apareceu como "10240 bytes" e o log de 20.000 bytes foi marcado como "needs rotating".
+> `minsize` só rotaciona se o intervalo de tempo também tiver passado; `rotate` é o número de cópias a manter (não aceita tamanho); `maxage` é um número de dias para remover logs rotacionados antigos.
+
+### 108.2-059 | lacuna | 2
+ref: 102:p.314
+tags: logrotate, -d, debug
+Complete o comando para simular a rotação, apenas exibindo o que seria feito, sem alterar nenhum arquivo: `logrotate ____ /etc/logrotate.conf`
+= -d
+= --debug
+> O modo de depuração (`-d`, `--debug`) só imprime mensagens do que seria feito (e avisa "logrotate in debug mode does nothing except printing debug messages!"). Para forçar a rotação mesmo que o intervalo ainda não tenha sido atingido, usa-se `-f` (`--force`).
+
+### 108.2-060 | unica | 2
+ref: 102:p.314
+tags: logrotate, -f, force
+Qual opção do logrotate força a rotação imediata dos logs, mesmo que o intervalo configurado (por exemplo, `weekly`) ainda não tenha sido atingido?
+- -d
+- -v
+- -s
+- --simulate
+= -f
+> `-f` (`--force`) força a rotação. `-d` apenas simula (nada é alterado), `-v` só deixa a saída mais detalhada e `-s` informa um arquivo de estado alternativo (onde o logrotate registra a data da última rotação de cada log).
+
+### 108.2-061 | unica | 1
+ref: 102:p.297
+tags: syslog-ng, rsyslog, syslog
+Qual dos programas abaixo é uma implementação alternativa ao rsyslog para tratar o log tradicional no estilo syslog?
+- systemd-cat
+- klogd
+= syslog-ng
+- logger
+> Os serviços de log tradicionais são o syslog, o **syslog-ng** (syslog "nova geração") e o **rsyslog**, hoje o mais usado. `systemd-cat` envia texto ao journal, `klogd` trata as mensagens do kernel (trabalhando junto com o rsyslogd) e `logger` é um cliente que envia mensagens ao log.
+
+### 108.2-062 | unica | 1
+ref: 102:p.297
+tags: rsyslog, RELP
+O que é o RELP, citado como uma melhoria trazida pelo rsyslog?
+- Um formato de arquivo usado para compactar e arquivar os logs rotacionados pelo logrotate
+- Um módulo do kernel que grava as mensagens de inicialização no ring buffer e no disco
+- Um tipo de template do rsyslog usado para nomear dinamicamente os arquivos de log
+= Um protocolo de log confiável, que estende o syslog para garantir a entrega das mensagens
+> RELP significa Reliable Event Logging Protocol: estende o protocolo syslog de modo a assegurar a entrega das mensagens, ao contrário do UDP puro, que não confirma o recebimento.
+
+### 108.2-063 | multipla | 2
+ref: 102:p.306-308
+tags: rsyslog, seletores, prioridade
+Quais seletores do rsyslog capturam uma mensagem gerada por `logger -p mail.crit "teste"`?
+= mail.warning
+- mail.alert
+= *.crit
+- mail.=err
+- daemon.crit
+- mail.none
+> Um seletor com prioridade casa com essa prioridade e com as mais graves; `crit` é mais grave que `warning`, então `mail.warning` captura a mensagem; `*.crit` pega `crit` ou mais grave em qualquer facility, incluindo `mail`.
+> `mail.alert` só inclui `alert` e `emerg`; `mail.=err` casa exatamente `err`; `daemon.crit` é outra facility; `mail.none` exclui a facility `mail`.
+
+### 108.2-064 | multipla | 2
+ref: 102:p.315
+tags: logrotate, missingok, notifempty
+Quais diretivas do logrotate evitam, respectivamente, erro quando o log não existe e rotação inútil quando ele está vazio?
+- sharedscripts
+= missingok
+- delaycompress
+= notifempty
+- create
+> `missingok` não gera erro para logs ausentes e `notifempty` não rotaciona logs vazios. `sharedscripts` roda os scripts uma única vez, `delaycompress` adia a compactação e `create` cria o novo arquivo vazio depois da rotação.
+
+### 108.2-065 | multipla | 2
+ref: 102:p.339
+tags: journald.conf, SystemMaxUse, limites
+Quais diretivas de `/etc/systemd/journald.conf` controlam o espaço em disco usado pelo journal **persistente**, em `/var/log/journal`?
+= SystemMaxUse=
+- RuntimeMaxUse=
+= SystemKeepFree=
+- ForwardToSyslog=
+= SystemMaxFileSize=
+- TTYPath=
+> As diretivas com prefixo `System` valem para o journal persistente: `SystemMaxUse=` (máximo total), `SystemKeepFree=` (espaço a deixar livre) e `SystemMaxFileSize=` (tamanho máximo de cada arquivo). `RuntimeMaxUse=` é o equivalente para o journal volátil em `/run/log/journal`; `ForwardToSyslog=` e `TTYPath=` tratam de encaminhamento.
+
+### 108.2-066 | multipla | 2
+ref: 102:p.308, 102:p.312
+tags: logger, tag, stdin
+Quais comandos registram uma mensagem no log do sistema com a etiqueta `meuscript`?
+= logger -t meuscript "tudo certo"
+- logger -p meuscript "tudo certo"
+= echo "tudo certo" | logger -t meuscript
+- logger -f meuscript "tudo certo"
+- logger -u meuscript "tudo certo"
+> A etiqueta é definida por `-t` (`--tag`), e a mensagem pode vir como argumento ou da entrada padrão por um pipe.
+> `-p` define `facility.prioridade` (e `meuscript` não é um valor válido); `-f` lê o texto de um arquivo; `-u` indica um socket Unix alternativo. Testado no laboratório: `-p` inválido gera "unknown facility name".

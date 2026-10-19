@@ -1,0 +1,455 @@
+### 104.5-001 | unica | 1
+ref: 101:p.503
+tags: ls, permissões, leitura
+Observe a listagem de um arquivo:
+
+```
+-rw-r-----  1  ana  dev  1024  Jan 10 09:30  relatorio.txt
+```
+Qual afirmação descreve corretamente o acesso a ele?
+= ana lê e grava; os membros do grupo dev só leem; os demais usuários não têm acesso
+- ana só lê; os membros do grupo dev leem e gravam; os demais usuários só leem
+- ana lê e grava; os membros do grupo dev e todos os demais usuários do sistema só leem
+- dev é o dono e ana é o grupo; ambos leem e gravam, e os demais não têm acesso
+> Na saída de `ls -l`, o primeiro caractere é o tipo (`-`, arquivo comum) e os três trios seguintes são as permissões do dono (rw-), do grupo (r--) e dos outros (---). A terceira coluna é o usuário dono (ana) e a quarta, o grupo (dev).
+> As outras alternativas trocam a ordem dos trios, dão leitura a "outros" ou invertem as colunas de dono e grupo.
+
+### 104.5-002 | unica | 1
+ref: 101:p.510
+tags: chmod, octal
+Qual modo octal corresponde às permissões `rwxr-x---`?
+= 750
+- 740
+- 755
+- 570
+- 705
+> r vale 4, w vale 2 e x vale 1; cada trio é a soma dos valores: rwx = 7 (4+2+1), r-x = 5 (4+1) e --- = 0. O dono é o primeiro dígito, o grupo o segundo e os outros o terceiro: `chmod 750 arquivo`.
+> 740 daria apenas leitura ao grupo; 755 liberaria leitura e execução para todos; 570 e 705 embaralham os dígitos.
+
+### 104.5-003 | unica | 2
+ref: 101:p.517
+tags: suid, octal, chmod
+Qual modo octal de quatro dígitos produz a listagem `-rwsr-xr-x` em um arquivo?
+= 4755
+- 2755
+- 1755
+- 6755
+- 4644
+> O `s` na posição do `x` do dono indica SUID, que vale 4 no primeiro dígito; o restante (rwxr-xr-x) é 755. Logo: `chmod 4755 arquivo`.
+> 2755 geraria `-rwxr-sr-x` (SGID); 1755 não se aplica a arquivos comuns e mostraria `t` nos outros; 6755 ligaria SUID e SGID (`-rwsr-sr-x`); 4644 deixaria `-rwSr--r--`.
+
+### 104.5-004 | unica | 3
+ref: 101:p.515-517, 101:p.527
+tags: sgid, sticky, octal
+Qual modo octal representa um diretório listado como `drwxrwsr-t`?
+= 3775
+- 6775
+- 1775
+- 2775
+- 3777
+> O `s` no trio do grupo é SGID (2) e o `t` no trio dos outros é sticky bit (1); somados, o dígito especial é 3. Os trios são rwx (7), rws com x (7) e r-t com x (5): 3775.
+> 6775 seria SUID+SGID; 1775 e 2775 ligariam apenas um dos dois bits especiais; 3777 daria escrita aos outros, e a listagem seria `drwxrwsrwt`.
+
+### 104.5-005 | unica | 2
+ref: 101:p.508-509, 101:p.522
+tags: chmod, modo simbólico
+Um arquivo está com as permissões `-rw-rw-rw-`. Qual será a listagem depois de `chmod u+x,go-wx arquivo`?
+= -rwxr--r--
+- -rwxrw-rw-
+- -rwxr-xr-x
+- -rwx------
+- -rw-r--r--
+> `u+x` acrescenta execução ao dono (rw- vira rwx) e `go-wx` remove escrita e execução de grupo e outros: o grupo fica com `r--` e os outros também. Resultado: `-rwxr--r--` (testado).
+> As demais listagens não correspondem às operações: manter `rw-` em grupo/outros ignora o `go-wx`, `r-x` acrescentaria execução e `---` removeria também a leitura.
+
+### 104.5-006 | unica | 2
+ref: 101:p.513-514, 101:p.522
+tags: umask, permissões padrão
+Com `umask 027` ativo no shell, quais permissões recebem, respectivamente, um arquivo e um diretório recém-criados?
+= arquivo rw-r----- e diretório rwxr-x---
+- arquivo rw-r--r-- e diretório rwxr-xr-x
+- arquivo rwxr-x--- e diretório rwxr-x---
+- arquivo rw------- e diretório rwx------
+- arquivo rw-r----- e diretório rw-r-----
+> A máscara é subtraída do modo-base: 666 para arquivos e 777 para diretórios. Com 027: arquivos ficam 640 (rw-r-----) e diretórios 750 (rwxr-x---). Testado.
+> `rw-r--r--`/`rwxr-xr-x` corresponde a umask 022; `rw-------`/`rwx------` a 077; arquivos comuns não nascem com execução, e um diretório rw-r----- (umask 137) não pode ser acessado pelo grupo. O padrão do sistema costuma ser 022 (Debian) ou 002 para usuários com grupo privado (RHEL/Fedora).
+
+### 104.5-007 | unica | 2
+ref: 101:p.513-514
+tags: umask
+Qual valor de umask faz com que arquivos novos sejam criados com `rw-rw-r--` e diretórios novos com `rwxrwxr-x`?
+= 002
+- 664
+- 022
+- 220
+- 775
+> A umask indica as permissões que serão removidas do modo-base (666 para arquivos, 777 para diretórios). Para retirar apenas a escrita dos outros, usa-se 002: 666-002 = 664 e 777-002 = 775 (testado).
+> 664 e 775 são os modos resultantes, não a máscara; 022 retira escrita do grupo; 220 retiraria escrita do dono e do grupo.
+
+### 104.5-008 | unica | 2
+ref: 101:p.515-517
+tags: sgid, diretório, grupo
+Em /srv/proj existe o diretório abaixo. A usuária ana (grupo primário ana, também membro de projeto) executa `touch /srv/proj/relatorio.txt`. Qual será o grupo proprietário do novo arquivo?
+
+```
+drwxrws---  2  root  projeto  4096  Jan 10 09:00  /srv/proj
+```
+= o grupo projeto, herdado do diretório
+- o grupo ana, grupo primário de quem criou o arquivo
+- o grupo root, que é o dono do diretório
+- o grupo users, comum a todas as contas do sistema
+> O `s` no trio do grupo indica o bit SGID no diretório: arquivos e subdiretórios criados dentro dele herdam o grupo do diretório (projeto), e não o grupo primário de quem os cria. Testado: o novo arquivo saiu `ana projeto`.
+> Sem o SGID, o novo arquivo ficaria no grupo primário de ana (`ana`). `root` é só o dono do diretório e `users` não tem relação com a listagem.
+
+### 104.5-009 | unica | 2
+ref: 101:p.515, 101:p.526
+tags: sticky, /tmp
+O diretório /tmp está com `drwxrwxrwt`. O usuário bruno executa `rm -f /tmp/dados.txt`, arquivo pertencente à ana com permissões `-rw-rw-rw-`. O que acontece?
+= rm falha com "Operation not permitted", por causa do sticky bit do diretório
+- O arquivo é removido, pois o diretório permite escrita a todos os usuários
+- O arquivo é removido, pois o próprio arquivo permite escrita aos outros
+- rm falha com "No such file or directory", pois bruno não enxerga arquivos de ana
+- rm pede confirmação e remove o arquivo se bruno confirmar a operação
+> O `t` no trio dos outros é o sticky bit. Em um diretório com esse bit, só o dono do arquivo, o dono do diretório e o root podem remover ou renomear entradas, mesmo que w esteja liberado para todos. Testado: `rm: cannot remove ...: Operation not permitted` (e `mv` também falha).
+> Sem o sticky bit (por exemplo, com modo 777), a remoção funcionaria, pois apagar depende da escrita no diretório e não no arquivo. `-f` apenas suprime a confirmação.
+
+### 104.5-010 | unica | 3
+ref: 101:p.526
+tags: suid, S maiúsculo
+Um script tem as permissões `-rwsr-xr-x`. Depois de `chmod u-x test.sh`, a listagem passa a ser `-rwSr-xr-x`. O que o `S` maiúsculo indica?
+= O SUID continua ativo, mas o dono não tem permissão de execução
+- O SUID foi removido junto com a permissão de execução do dono
+- O sticky bit está ativo e os outros usuários não podem executar
+- O SGID está ativo, mas o grupo não tem permissão de execução
+- A permissão está inválida e o arquivo não pode mais ser executado por ninguém
+> Quando o bit especial ocupa a posição do `x`, a letra minúscula (`s`, `t`) indica que o `x` correspondente também está ligado e a maiúscula (`S`, `T`) indica que o `x` está desligado. Aqui o SUID segue ativo (4xxx), mas o dono perdeu a execução. Testado.
+> O SUID não é removido por `u-x`; sticky e SGID ficam em outras posições (grupo e outros), e o arquivo continua executável para grupo e outros.
+
+### 104.5-011 | unica | 2
+ref: 101:p.511
+tags: chown, root
+A usuária ana, sem privilégios de administrador, executa `chown bruno relatorio.txt` em um arquivo de sua propriedade. Qual é o resultado?
+= Recusado ("Operation not permitted"): só o root pode mudar o dono de um arquivo
+- O dono passa a ser bruno, pois ana é a proprietária atual do arquivo
+- O dono passa a ser bruno, somente se ana e bruno pertencerem ao mesmo grupo de usuários
+- O dono passa a ser bruno, mas o grupo proprietário muda para root
+> Apenas o root altera o dono de um arquivo. Um usuário comum pode, no máximo, trocar o grupo de um arquivo seu para um grupo ao qual ele mesmo pertença. Testado: `chown: changing ownership of 'f': Operation not permitted`.
+> Ser dono do arquivo ou compartilhar grupo com o destinatário não autoriza a troca de dono.
+
+### 104.5-012 | unica | 3
+ref: 101:p.507
+tags: diretório, execução, travessia
+Veja as permissões de um diretório e do script que ele contém:
+
+```
+$ ls -ld caixa
+d--x--x--x 2 ana ana 4096 Jan 10 10:00 caixa
+$ ls -l caixa/oi.sh
+-rwxr-xr-x 1 ana ana 16 Jan 10 10:00 caixa/oi.sh
+```
+Logada como ana, qual dos comandos funciona?
+= cat caixa/oi.sh
+- ls caixa
+- ls -l caixa
+- ls caixa/*
+- find caixa -type f
+> A permissão x em um diretório permite atravessá-lo e acessar um item cujo nome seja conhecido; a leitura do conteúdo exige r. Como o arquivo oi.sh permite leitura, `cat caixa/oi.sh` (e `sh caixa/oi.sh`) funciona.
+> `ls caixa`, `ls -l caixa` e `find` precisam listar o diretório e falham com "Permission denied"; no `ls caixa/*` o shell não consegue expandir o curinga (sem r no diretório) e o ls reclama que o arquivo "caixa/*" não existe. Todos testados.
+
+### 104.5-013 | unica | 3
+ref: 101:p.506
+tags: diretório, remover, escrita
+A usuária ana é dona do diretório e do arquivo abaixo, e executa `rm -f nota.txt` dentro do diretório. Qual é o resultado?
+
+```
+dr-xr-xr-x  2  ana  ana  4096  Jan 10 10:00  .
+-rw-rw-rw-  1  ana  ana     0  Jan 10 10:00  nota.txt
+```
+= Falha com "Permission denied": remover exige escrita no diretório, não no arquivo
+- O arquivo é removido, pois ana é a dona e o arquivo permite escrita a todos
+- O arquivo é removido, pois a opção -f ignora as permissões do diretório
+- Falha com "Permission denied": remover exige a permissão x no próprio arquivo, e ele não a tem
+> Criar, remover e renomear entradas são alterações do diretório, por isso exigem `w` (e `x`) nele. Com `dr-xr-xr-x`, nem a dona consegue remover nota.txt, mesmo com o arquivo gravável por todos. Testado: `rm: cannot remove ...: Permission denied`.
+> Inversamente, um arquivo com permissão 000 pode ser removido por quem tem `w` e `x` no diretório. A opção `-f` só evita perguntas e erros de arquivo inexistente; o root é a exceção, pois ignora essas permissões.
+
+### 104.5-014 | unica | 2
+ref: 101:p.506, 101:p.508-509
+tags: chmod, execução, script
+Veja o erro ao executar um script:
+
+```
+$ ls -l backup.sh
+-rw-r--r-- 1 ana ana 48 Jan 10 11:00 backup.sh
+$ ./backup.sh
+bash: ./backup.sh: Permission denied
+```
+Qual comando corrige o problema permitindo que somente a dona execute o script?
+= chmod u+x backup.sh
+- chmod a+x backup.sh
+- chmod g+x backup.sh
+- chmod u+s backup.sh
+> O script não tem a permissão de execução (x). `chmod u+x` a concede apenas ao dono; depois disso `./backup.sh` funciona. Testado (antes: "Permission denied" com status 126).
+> `a+x` liberaria a execução para todos, `g+x` não alcança a dona e `u+s` liga o SUID sem dar `x`, resultando em `S` maiúsculo. Note que `bash backup.sh` rodaria o script mesmo sem `x`, pois só exige leitura.
+
+### 104.5-015 | unica | 2
+ref: 101:p.515-517, 101:p.526-527
+tags: sgid, equipe, grupo
+O diretório /srv/proj já pertence ao grupo projeto. Qual comando faz com que os arquivos criados dentro dele pelos membros da equipe passem a pertencer automaticamente ao grupo projeto?
+= chmod g+s /srv/proj
+- chmod u+s /srv/proj
+- chmod o+t /srv/proj
+- chmod g+x /srv/proj
+> O bit SGID (`g+s`, valor octal 2) em um diretório faz os novos arquivos e subdiretórios herdarem o grupo do diretório. Os subdiretórios também herdam o próprio SGID (testado).
+> `u+s` liga o SUID, que não tem efeito em diretórios no Linux; `o+t` é o sticky bit (impede que um membro remova arquivos de outro) e `g+x` apenas permite acessar o diretório.
+
+### 104.5-016 | unica | 3
+ref: 101:p.513-517
+tags: sgid, umask, equipe
+Ana e bruno pertencem ao grupo projeto e trabalham em /srv/proj (`drwxrws--- root projeto`). Os arquivos criados por ana ficam assim, e bruno não consegue gravar neles:
+
+```
+-rw-r--r--  1  ana  projeto  0  Jan 10 09:10  relatorio.txt
+```
+Qual é a causa e a solução?
+= O umask 022 de ana retirou a escrita do grupo; ela deve usar umask 002 (ou aplicar chmod g+w)
+- O SGID do diretório impede gravação por outros membros; é preciso remover o bit com chmod g-s
+- Falta o sticky bit no diretório, necessário para que o grupo grave em arquivos de outros membros
+- Bruno precisa ser dono do diretório para gravar em arquivos que pertencem ao grupo
+> O SGID resolve apenas o grupo do arquivo (projeto); as permissões do grupo vêm do umask de quem cria o arquivo. Com umask 022 o grupo recebe `r--`. Quem trabalha em equipe deve usar umask 002 (arquivos 664, diretórios 775) ou ajustar com `chmod g+w`. Testado: com umask 002 o bruno gravou no arquivo da ana.
+> Remover o SGID faria os arquivos voltarem ao grupo primário; o sticky bit é uma restrição a mais, não uma liberação; e ser dono do diretório não é exigido para gravar em arquivos do grupo.
+
+### 104.5-017 | unica | 3
+ref: 101:p.515-517, 101:p.523
+tags: sgid, chmod, diretório
+O diretório /srv/proj está com `drwxrwsr-x` e o administrador quer desativar o bit SGID, mantendo as demais permissões. Qual comando faz isso de forma segura?
+= chmod g-s /srv/proj
+- chmod 775 /srv/proj
+- chmod 0775 /srv/proj
+- chmod g-x /srv/proj
+- chmod o-t /srv/proj
+> Em diretórios, o `chmod` do GNU preserva os bits SUID e SGID quando o modo numérico tem até quatro dígitos: `chmod 775` e `chmod 0775` mantêm o `s` (testado: `drwxr-sr-x` continuou assim após `chmod 755`). Para apagá-lo é preciso o modo simbólico `g-s`, um modo numérico com cinco dígitos (como `00775`) ou `=775`.
+> Para arquivos comuns, o material usa `chmod 0755` para limpar os bits especiais, e funciona. `g-x` transformaria o `s` em `S` mantendo o SGID ativo, e `o-t` afeta o sticky bit.
+
+### 104.5-018 | unica | 2
+ref: 101:p.517
+tags: suid, passwd
+O programa /usr/bin/passwd tem a listagem abaixo, e o arquivo /etc/shadow é `-rw-r----- root shadow`. Por que um usuário comum consegue trocar a própria senha?
+
+```
+-rwsr-xr-x  1  root  root  68248  Dec 14  2025  /usr/bin/passwd
+```
+= O bit SUID faz o processo executar com os privilégios do dono do arquivo (root)
+- O bit SGID faz o processo executar com os privilégios do grupo shadow, dono do /etc/shadow
+- O sticky bit mantém o programa na memória com privilégios elevados
+- A permissão x para outros concede privilégios de root durante a execução
+> O `s` no trio do dono é o SUID: ao executar o programa, o processo assume a identidade do dono (root) e consegue alterar o /etc/shadow, que o usuário comum não pode gravar. O mesmo padrão aparece em `su`.
+> Nesse arquivo não há `s` no trio do grupo (SGID); o sticky bit não se aplica a arquivos comuns; e `x` para outros apenas permite executar, sem mudar a identidade do processo.
+
+### 104.5-019 | unica | 3
+ref: 101:p.515-517
+tags: suid, sgid, sticky
+Qual afirmação sobre os bits especiais no Linux está correta?
+= O SUID só tem efeito em arquivos executáveis; em diretórios ele é ignorado
+- O sticky bit em um arquivo comum impede que ele seja apagado por qualquer usuário
+- O SGID em um arquivo executável faz o processo rodar com o usuário dono do arquivo
+- O SUID em um diretório faz os arquivos criados nele pertencerem ao dono do diretório
+> O SUID (valor 4) vale para arquivos executáveis e não tem efeito em diretórios no Linux. O SGID (2) em arquivos executa com o grupo do arquivo e, em diretórios, faz a herança do grupo. O sticky bit (1) é relevante em diretórios (remoção restrita) e não tem efeito em arquivos comuns.
+> A herança de grupo é do SGID, não do SUID, e rodar "como o usuário dono" é do SUID. Obs.: o kernel também ignora o SUID em scripts interpretados (testado: um script SUID root mostrou `id -u` do usuário que o executou).
+
+### 104.5-020 | unica | 3
+ref: 101:p.511, 101:p.517
+tags: chown, suid
+Como root, você tem um arquivo `-rwsr-xr-x 1 root root` e executa `chown ana arquivo`. Qual será a listagem?
+= -rwxr-xr-x 1 ana root
+- -rwsr-xr-x 1 ana root
+- -rwSr-xr-x 1 ana root
+- -rwxr-xr-x 1 root root
+- -rwsr-xr-x 1 ana ana
+> Ao mudar o dono (ou o grupo) de um arquivo comum, o kernel apaga os bits SUID e SGID por segurança; portanto o `s` some e o arquivo fica `-rwxr-xr-x`. Se o SUID é necessário, é preciso aplicá-lo de novo com `chmod u+s` depois do `chown`. Testado.
+> O grupo não muda com `chown ana` (sem `:`), por isso continua root; `S` maiúsculo só aparece quando o SUID está ativo sem `x`, o que não é o caso.
+
+### 104.5-021 | unica | 1
+ref: 101:p.505, 101:p.518
+tags: ls, tipos de arquivo
+Na listagem abaixo, o que representa o primeiro caractere `c`?
+
+```
+crw-rw-rw-  1  root  root  1, 3  Jan 10 09:00  /dev/null
+```
+= Dispositivo de caracteres
+- Dispositivo de bloco (disco)
+- Link simbólico
+- Soquete (socket)
+- Pipe nomeado (FIFO)
+> O primeiro caractere de `ls -l` indica o tipo: `-` arquivo comum, `d` diretório, `l` link simbólico, `b` dispositivo de bloco (discos, como /dev/sda1), `c` dispositivo de caracteres (terminais, /dev/null) e `s` soquete. Os números "1, 3" são major e minor do dispositivo.
+> Pipes nomeados (FIFO) aparecem com `p`.
+
+### 104.5-022 | unica | 3
+ref: 101:p.507
+tags: precedência, dono, grupo
+O arquivo abaixo pertence a ana, que também é membro do grupo ana. O que acontece quando ana executa `cat dados.bin`?
+
+```
+----rw-rw-  1  ana  ana  0  Jan 10 09:00  dados.bin
+```
+= Acesso negado: sendo a dona, vale só o trio do dono (---), ainda que grupo e outros permitam
+- O arquivo é lido, pois ana também pertence ao grupo ana e o grupo permite leitura e escrita
+- O arquivo é lido, pois outros têm permissão e o sistema aplica sempre a mais permissiva
+- Acesso negado, pois falta o x para ana ler o conteúdo de um arquivo
+> O sistema verifica em ordem: se o usuário é o dono, aplica apenas as permissões do dono; senão, se é do grupo, aplica as do grupo; caso contrário, as de outros. Aqui o trio do dono é `---`, então a leitura é negada (testado: `Permission denied`), mesmo que grupo e outros pudessem ler e gravar.
+> Para ler um arquivo comum basta `r`; `x` só é necessário para executar.
+
+### 104.5-023 | unica | 3
+ref: 101:p.510, 101:p.525
+tags: chmod, octal, dígitos
+Um arquivo está com todas as permissões zeradas (`----------`). Qual será a listagem depois de `chmod 44 arquivo`?
+= ----r--r--
+- -r--r-----
+- -r--r--r--
+- -------r--
+- ----r-----
+> No modo octal, o `chmod` interpreta os dígitos "de trás para frente": um dígito altera apenas os outros; dois dígitos alteram grupo e outros; três alteram dono, grupo e outros; quatro incluem os bits especiais. `chmod 44` equivale a `chmod 0044`: grupo e outros com `r--`. Testado.
+> `chmod 4` produziria `-------r--`; `-r--r--r--` seria `chmod 444` e `-r--r-----` seria `chmod 440`.
+
+### 104.5-024 | unica | 2
+ref: 101:p.512
+tags: groupmems, grupos
+Qual comando, executado pelo root, lista os usuários que são membros do grupo cdrom?
+= groupmems -g cdrom -l
+- groups cdrom
+- id cdrom
+- groupmems -g cdrom -p
+> `groupmems -g GRUPO -l` mostra os membros do grupo (só o root pode executá-lo). Já `groups USUARIO` faz o inverso: lista os grupos de um usuário; com um nome de grupo, `groups` e `id` respondem que o usuário não existe (testado).
+> `groupmems -g cdrom -p` usa a opção `-p` (purge), que esvazia o grupo, removendo todos os membros, e não lista nada: não confunda com `-l` (list). Outra forma de ver os membros é `getent group cdrom`, que não estava entre as alternativas.
+
+### 104.5-025 | unica | 1
+ref: 101:p.508
+tags: chmod, permissão para alterar
+Quem pode alterar as permissões de um arquivo com o comando chmod?
+= Somente o dono do arquivo e o root
+- Qualquer usuário que tenha permissão de escrita no arquivo
+- Qualquer membro do grupo proprietário do arquivo
+- Somente o root
+> O `chmod` só funciona para o proprietário do arquivo ou para o administrador. Testado: ao tentar `chmod 777 /etc/hostname` como usuário comum, o resultado foi `Operation not permitted`.
+> Ter escrita no arquivo ou pertencer ao grupo proprietário não dá o direito de mudar o modo.
+
+### 104.5-026 | multipla | 2
+ref: 101:p.508-510
+tags: chmod, modo simbólico, octal
+Quais comandos deixam um arquivo exatamente com `rw-r-----`, independentemente das permissões que ele tinha antes?
+= chmod 640 arquivo
+= chmod u=rw,g=r,o= arquivo
+- chmod 460 arquivo
+- chmod u+rw,g+r,o-rwx arquivo
+- chmod 604 arquivo
+> `chmod 640` define os três trios de uma vez; no modo simbólico, `=` define as permissões exatas (e `o=` zera as dos outros). O resultado é igual qualquer que seja o estado anterior.
+> `chmod 460` dá `r--rw----`; `604` dá `rw----r--`. Com `+` e `-` só se acrescenta ou remove: partindo de 777, `u+rw,g+r,o-rwx` deixa `rwxrwx---` (testado), ou seja, o resultado depende do modo anterior.
+
+### 104.5-027 | multipla | 2
+ref: 101:p.515, 101:p.526
+tags: sticky, /tmp
+Quais afirmações sobre o sticky bit em um diretório estão corretas?
+= Impede que usuários removam ou renomeiem arquivos de outros, a menos que sejam donos do arquivo ou do diretório
+= É exibido como `t` (ou `T`) no lugar do `x` do trio dos outros
+= Tem valor 1 no primeiro dígito do modo octal de quatro dígitos
+- Faz os arquivos criados no diretório herdarem o grupo do diretório
+- Faz os programas do diretório executarem com os privilégios do dono
+> O sticky bit (restricted deletion flag) é típico de diretórios compartilhados como /tmp (`drwxrwxrwt`, modo 1777). A letra é `t` quando os outros têm `x` e `T` quando não têm.
+> Herdar o grupo do diretório é função do SGID (valor 2), e executar com o dono é função do SUID (valor 4) em arquivos.
+
+### 104.5-028 | multipla | 2
+ref: 101:p.511
+tags: chown, chgrp, grupo
+Quais comandos alteram o grupo proprietário de `texto.txt` para students, sem modificar o dono?
+= chown :students texto.txt
+= chgrp students texto.txt
+- chown students texto.txt
+- chgrp :students texto.txt
+- chown students: texto.txt
+> O `chown` aceita `USUARIO:GRUPO`, e o usuário pode ser omitido (`:students`). O `chgrp students texto.txt` faz o mesmo de forma direta.
+> `chown students texto.txt` tenta definir o dono como "students" (falha se o usuário não existe: `invalid user`); `chown students:` define o dono e usa o grupo de login dele (`invalid spec` testado); `chgrp :students` não é aceito (`invalid group: ':students'`, testado).
+
+### 104.5-029 | multipla | 2
+ref: 101:p.506-507
+tags: diretório, criar arquivo, w, x
+Quais permissões no diretório são necessárias para que um usuário crie um arquivo novo dentro dele?
+= Escrita (w) no diretório
+= Execução (x) no diretório
+- Leitura (r) no diretório
+- Escrita (w) no diretório pai
+- Bit SGID no diretório
+> Criar uma entrada é uma modificação do diretório, que exige `w`, e o acesso ao diretório exige `x`. Testado: com `chmod 300` (-wx) `touch d/novo` funciona; com `chmod 200` (apenas w) ou `500` (r-x) falha com "Permission denied".
+> `r` só é preciso para listar nomes (`ls`); a escrita no diretório pai não interfere; o SGID só define o grupo do arquivo criado.
+
+### 104.5-030 | multipla | 3
+ref: 101:p.515-517, 101:p.526
+tags: sgid, suid, sticky, ls
+Quais listagens indicam que o bit SGID está ativo?
+= drwxr-sr-x  (diretório)
+= -rwxr-sr-x  (arquivo)
+= -rwxr-Sr-x  (arquivo)
+- -rwsr-xr-x  (arquivo)
+- drwxrwxrwt  (diretório)
+> O SGID aparece no trio do grupo: `s` quando o grupo também tem `x` e `S` quando não tem. Por isso `drwxr-sr-x`, `-rwxr-sr-x` e `-rwxr-Sr-x` têm SGID.
+> `-rwsr-xr-x` tem SUID (trio do dono) e `drwxrwxrwt` tem sticky bit (trio dos outros).
+
+### 104.5-031 | lacuna | 1
+ref: 101:p.510
+tags: chmod, octal
+Complete com o modo octal que deixa o arquivo com `rw-r-----`: chmod ____ relatorio.txt
+= 640
+= 0640
+> rw- = 6, r-- = 4 e --- = 0, logo 640.
+
+### 104.5-032 | lacuna | 2
+ref: 101:p.513-514
+tags: umask
+Qual valor de umask faz arquivos novos serem criados com `rw-r-----` e diretórios novos com `rwxr-x---`?
+= 027
+= 0027
+> 666 - 027 = 640 (rw-r-----) e 777 - 027 = 750 (rwxr-x---). Testado.
+
+### 104.5-033 | lacuna | 1
+ref: 101:p.511
+tags: chgrp
+Qual comando altera somente o grupo proprietário de um arquivo (sintaxe `____ GRUPO arquivo`)?
+= chgrp
+> `chgrp GRUPO arquivo` altera o grupo; `chown :GRUPO arquivo` faz o mesmo, e `chown` também altera o dono.
+
+### 104.5-034 | lacuna | 2
+ref: 101:p.515
+tags: sticky, octal
+Complete o dígito inicial do modo octal que liga o sticky bit e deixa o diretório com `drwxrwxr-t`: chmod ____775 /srv/shared
+= 1
+> O primeiro dígito do modo de quatro dígitos soma os bits especiais: SUID = 4, SGID = 2 e sticky = 1. Assim, `chmod 1775` produz `drwxrwxr-t`.
+
+### 104.5-035 | lacuna | 2
+ref: 101:p.504
+tags: ls, diretório
+Qual opção do `ls` mostra as permissões do próprio diretório em vez de listar seu conteúdo (por exemplo, `ls -l ____ /etc`)?
+= -d
+= --directory
+> `ls -ld /etc` exibe as informações do diretório /etc (`drwxr-xr-x ...`); sem `-d`, `ls -l /etc` listaria o que há dentro dele.
+
+### 104.5-036 | lacuna | 1
+ref: 101:p.513
+tags: umask, modo simbólico
+Qual opção do comando umask exibe a máscara em formato simbólico (como `u=rwx,g=rx,o=rx`)?
+= -S
+> `umask` mostra a máscara em octal (`0022`) e `umask -S` mostra as permissões que serão concedidas em forma simbólica (`u=rwx,g=rx,o=rx`). Testado.
+
+### 104.5-037 | lacuna | 2
+ref: 101:p.511
+tags: chown, usuário e grupo
+Complete para que o dono de `relatorio.txt` passe a ser ana e o grupo, dev, em um único comando: chown ____ relatorio.txt
+= ana:dev
+= ana.dev
+> A sintaxe é `chown USUARIO:GRUPO arquivo`. A forma antiga com ponto (`ana.dev`) ainda funciona no GNU chown (testado no coreutils 9.1), mas exibe o aviso "'.' should be ':'"; por isso é aceita aqui, embora o recomendado seja usar `:`.
+
+### 104.5-038 | lacuna | 2
+ref: 101:p.510
+tags: chmod, recursivo
+Qual opção do chmod aplica a mudança de permissões a um diretório e a todo o seu conteúdo (por exemplo, `chmod ____ g+w /srv/proj`)?
+= -R
+= --recursive
+> Sem `-R`, o `chmod` altera apenas o diretório citado. Use a opção recursiva com cuidado, pois ela modifica arquivos e subdiretórios sem distinção. Testado com `chmod -R g+w`.

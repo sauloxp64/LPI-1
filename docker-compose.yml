@@ -1,0 +1,44 @@
+# Área de estudos LPIC-1
+#   docker compose up -d --build      # sobe tudo
+#   http://localhost:8088             # a área de estudos (o terminal do laboratório vem embutido em /terminal/)
+name: lpic1
+
+services:
+  web:
+    build: ./app
+    image: lpic1-web
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:8088"      # só o seu computador acessa. Para abrir na rede local: "8088:8088" + ALLOWED_HOSTS (abaixo)
+    environment:
+      LAB_URL: http://lab:8099
+      LAB_TERMINAL_URL: http://lab:7681
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}   # hosts extras aceitos no cabeçalho Host (anti DNS-rebinding), ex.: "meu-pc.local,192.168.0.10"
+      TZ: America/Sao_Paulo
+    volumes:
+      - dados:/data                                   # progresso (SQLite)
+      - ./:/materiais:ro                              # PDFs da LPI na raiz do projeto (não versionados — veja o README); sem eles o app funciona, só sem o visualizador
+      - ./app/content:/app/content:ro                 # banco de questões editável
+      - ./lab/challenges:/lab/challenges:ro           # desafios do laboratório
+    depends_on:
+      - lab
+
+  lab:
+    build: ./lab
+    image: lpic1-lab
+    init: true
+    restart: unless-stopped
+    hostname: lpic-lab
+    expose:
+      - "7681"                     # terminal (ttyd) — só a rede interna; o app web faz o proxy em /terminal/
+      - "8099"                     # verificador dos desafios — só a rede interna
+    environment:
+      LAB_ALLOW_SOLVE: ${LAB_ALLOW_SOLVE:-0}   # =1 só para os autotestes (scripts/selftest.sh)
+    volumes:
+      - ./lab/challenges:/opt/lab/challenges:ro
+    mem_limit: 1g
+    pids_limit: 512
+
+volumes:
+  dados:

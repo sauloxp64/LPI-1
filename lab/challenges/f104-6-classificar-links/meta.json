@@ -1,0 +1,22 @@
+{
+  "id": "f104-6-classificar-links",
+  "obj": "104.6",
+  "titulo": "Hardlink, symlink ou cópia?",
+  "nivel": 1,
+  "minutos": 6,
+  "params": {
+    "base": { "escolha": ["estoque", "clientes", "pedidos", "catalogo", "folha"] }
+  },
+  "enunciado": "Em `~/lab/auditoria/` (e na subpasta `sub/`) há o arquivo original **`{base}.dat`** e vários outros itens que parecem apontar para ele. Alguns são **hardlinks** do original, outros são **links simbólicos** (alguns relativos, outros absolutos, e ao menos um quebrado), outros ainda são **cópias independentes** com o mesmo conteúdo, e há um arquivo parecido, mas diferente (que não entra em nenhuma lista).\n\nClassifique tudo e grave, em `~/lab/auditoria/`, um arquivo para cada categoria, com **um caminho por linha, relativo a `~/lab/auditoria/`** (por exemplo `nome.dat` ou `sub/nome.dat`). O próprio `{base}.dat` não deve aparecer:\n\n* `duros.txt` — os **hardlinks** do original (nomes que compartilham o mesmo inode);\n* `simbolicos.txt` — todos os **links simbólicos**, inclusive o quebrado;\n* `copias.txt` — as **cópias**: arquivos comuns com o mesmo conteúdo do original, mas inode próprio.\n\nNão altere, mova nem apague nada da pasta.",
+  "verifica": [
+    "`duros.txt` lista exatamente os hardlinks do original",
+    "`simbolicos.txt` lista exatamente os links simbólicos (inclusive o quebrado)",
+    "`copias.txt` lista exatamente as cópias independentes (mesmo conteúdo, inode diferente)"
+  ],
+  "dicas": [
+    "O que torna dois nomes hardlinks é compartilharem o mesmo **número de inode**. Um `ls` com a opção que mostra o inode ajuda a comparar; a contagem de links na 2ª coluna também.",
+    "`ls -liR` mostra inode (1ª coluna), tipo (`l` = link simbólico, com `->` mostrando o destino) e a contagem de links. `find . -type l` lista só os simbólicos.",
+    "`find . -samefile {base}.dat` acha todos os nomes do mesmo inode do original (inclui o próprio original: retire-o da lista). Para as cópias, compare o conteúdo com `cmp` ou `md5sum`."
+  ],
+  "solucao": "```\ncd ~/lab/auditoria\nls -liR                                        # inode, tipo e destino dos links\nfind . -samefile {base}.dat                     # hardlinks (+ o próprio original)\nfind . -type l                                  # links simbólicos\nmd5sum {base}.dat sub/*.dat *.dat | sort        # mesmo conteúdo? (cópias têm inode diferente)\n```\nGrave cada resultado (sem o `./` inicial e sem o original) em `duros.txt`, `simbolicos.txt` e `copias.txt`. **Hardlink**: outro *nome* para o mesmo inode (mesmos dados, mesmo dono/permissões; a contagem de links sobe; só funciona no mesmo sistema de arquivos e não para diretórios). **Link simbólico**: um arquivo pequeno que guarda um *caminho* (`l` no `ls -l`); se o destino some, ele fica quebrado. **Cópia**: dados duplicados em outro inode — alterar a cópia não muda o original, diferente do que ocorre com o hardlink."
+}

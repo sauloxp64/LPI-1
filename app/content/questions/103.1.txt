@@ -1,0 +1,533 @@
+### 103.1-001 | unica | 1
+ref: 101:p.185-186
+tags: pwd
+Qual comando exibe o caminho absoluto do diretório de trabalho atual?
+= pwd
+- whoami
+- echo ~
+- ls -d
+> `pwd` ("print working directory") imprime o caminho absoluto do diretório em que o shell está. `whoami` mostra o nome do usuário; `echo ~` mostra o diretório pessoal (que só coincide com o diretório atual por acaso); `ls -d` sem argumentos apenas imprime `.`.
+
+### 103.1-002 | unica | 3
+ref: 101:p.185-186
+tags: pwd, link simbólico
+O diretório `/tmp/lnk` é um link simbólico para `/usr`. Depois de `cd /tmp/lnk`, qual comando exibe o caminho físico (`/usr`), com os links simbólicos resolvidos?
+= pwd -P
+- pwd -L
+- pwd
+- echo $PWD
+> O `pwd` do Bash usa, por padrão, o modo lógico (`-L`): mostra o caminho pelo qual você chegou ao diretório, ou seja, `/tmp/lnk`. Só `pwd -P` resolve os links e mostra o caminho físico `/usr`. `pwd`, `pwd -L` e `echo $PWD` (variável mantida pelo shell em modo lógico) imprimem `/tmp/lnk`.
+
+### 103.1-003 | unica | 1
+ref: 101:p.186-187
+tags: uname
+Qual comando mostra, em uma única linha, todas as informações do `uname`: nome do kernel, nome do host, release, versão do kernel e arquitetura?
+= uname -a
+- uname -s
+- uname -r
+- uname -n
+> A opção `-a` (`--all`) junta tudo. As outras mostram um campo só: `-s` o nome do kernel (Linux), `-r` o release do kernel e `-n` o nome do host na rede (nodename).
+
+### 103.1-004 | unica | 2
+ref: 101:p.186-187
+tags: uname, arquitetura
+Um script precisa saber se a máquina é de 64 bits. Qual comando imprime exatamente `x86_64` em um PC desse tipo?
+= uname -m
+- uname -s
+- uname -n
+- uname -r
+- uname -o
+> `uname -m` (`--machine`) imprime o nome do hardware da máquina, como `x86_64` ou `aarch64`. `-s` imprime `Linux`, `-n` o nome do host, `-r` o release do kernel (algo como `6.1.0-18-amd64`) e `-o` o sistema operacional (`GNU/Linux`).
+
+### 103.1-005 | lacuna | 1
+ref: 101:p.186-187
+tags: uname, kernel
+Complete o comando para exibir somente o release do kernel em execução, por exemplo `6.1.0-18-amd64`:
+
+`uname ____`
+= -r
+= --kernel-release
+> `-r` (`--kernel-release`) imprime o release do kernel. Não confunda com `-v` (`--kernel-version`), que mostra a data e o número de compilação do kernel (algo como `#1 SMP PREEMPT_DYNAMIC ...`).
+
+### 103.1-006 | unica | 2
+ref: 101:p.186-187
+tags: man, seções
+Qual comando abre a página de manual que descreve o formato do arquivo `/etc/passwd`, e não o comando `passwd`?
+= man 5 passwd
+- man 1 passwd
+- man passwd
+- man -k passwd
+- whatis passwd
+> A seção 5 do manual trata de formatos de arquivo e convenções; a seção 1, de comandos de usuário. Sem número, `man passwd` abre a primeira página encontrada, a do comando (seção 1). `man -k passwd` e `whatis passwd` apenas listam páginas e descrições, sem abrir nenhuma delas.
+
+### 103.1-007 | multipla | 2
+ref: 101:p.188
+tags: apropos, man
+Você não lembra o nome do comando que mexe em tabelas de partição de disco. Quais comandos procuram a palavra `partition` nos nomes e nas descrições das páginas de manual?
+= apropos partition
+= man -k partition
+- man partition
+- whatis partition
+- which partition
+> `apropos` e `man -k` são equivalentes: pesquisam a palavra nos nomes e nas descrições curtas das páginas. `man partition` só funciona se existir uma página com esse nome exato, e `whatis` também procura apenas pelo nome (aqui responde "nothing appropriate"). `which` procura executáveis no PATH, não documentação.
+
+### 103.1-008 | unica | 2
+ref: 101:p.188
+tags: type, builtin
+Qual é a saída do comando `type cd` no Bash?
+= cd is a shell builtin
+- cd is /usr/bin/cd
+- cd is hashed (/usr/bin/cd)
+- bash: type: cd: not found
+> `cd` precisa alterar o diretório do próprio processo do shell, por isso é um comando interno (builtin) e não um arquivo no disco. É o `type` que identifica isso. As demais saídas descreveriam um executável externo, memorizado ou inexistente.
+
+### 103.1-009 | unica | 2
+ref: 101:p.188
+tags: type, hash
+Depois de usar `uname` uma vez, o comando `type uname` mostra `uname is hashed (/usr/bin/uname)`. O que significa "hashed"?
+= O Bash guardou em memória o caminho do executável, para não varrer o PATH na próxima vez
+- O arquivo foi verificado por soma de verificação e sua integridade está confirmada
+- O nome é um alias criado pelo usuário que aponta para o caminho exibido
+- O comando é interno do shell e não depende de nenhum arquivo no disco
+> O Bash mantém uma tabela hash com o caminho completo dos comandos externos já localizados. Dá para vê-la com `hash` e esvaziá-la com `hash -r`. Alias aparece como "aliased to ...", e comando interno aparece como "a shell builtin". A tabela não tem relação com checksums.
+
+### 103.1-010 | lacuna | 2
+ref: 101:p.188
+tags: hash
+Qual opção do `hash` esvazia por completo a tabela de caminhos de comandos memorizados pelo Bash?
+
+`hash ____`
+= -r
+> `hash -r` esquece todos os caminhos memorizados. `hash -d nome` remove somente a entrada de um comando específico e exige o nome (sem argumento, o Bash responde "option requires an argument").
+
+### 103.1-011 | unica | 3
+ref: 101:p.188
+tags: type, builtin
+Existe um executável `/usr/bin/echo`, mas o Bash também tem um `echo` interno. Qual a saída de `type -t echo`?
+= builtin
+- file
+- alias
+- keyword
+> `type -t` imprime só a categoria do nome: `alias`, `keyword`, `function`, `builtin` ou `file`. Quando há um builtin e um executável com o mesmo nome, o Bash prefere o builtin, então a resposta é `builtin`. `keyword` seria a resposta para palavras reservadas como `if`, e `file` para programas externos como `ls`.
+
+### 103.1-012 | multipla | 2
+ref: 101:p.188-189
+tags: which, type, command
+Supondo que `ls` não seja alias nem função, quais comandos imprimem o caminho do executável que será usado (por exemplo, `/usr/bin/ls`)?
+= which ls
+= type -p ls
+= command -v ls
+- whatis ls
+- man -w ls
+> `which ls`, `type -p ls` e `command -v ls` resolvem o nome pelo PATH e mostram o caminho do arquivo. `whatis ls` mostra a descrição curta da página de manual, e `man -w ls` mostra o caminho do arquivo da página de manual (algo como `/usr/share/man/man1/ls.1.gz`), não do programa. Nota: em RHEL/Fedora o `which` costuma ser um alias que também consulta aliases e funções do shell; em Debian/Ubuntu ele só procura no PATH.
+
+### 103.1-013 | lacuna | 1
+ref: 101:p.189
+tags: help, builtin
+Qual comando interno do Bash exibe a ajuda de outros comandos internos, como em `____ cd`?
+= help
+> `help` mostra a sintaxe e a descrição dos builtins do Bash (`help cd`, `help export`). Para programas externos usa-se `man` ou a opção `--help` do próprio programa. Sem argumentos, `help` lista todos os builtins.
+
+### 103.1-014 | unica | 1
+ref: 101:p.189-190
+tags: history, expansão
+Qual expressão do Bash executa novamente o último comando do histórico?
+= !!
+- !$
+- !*
+- !#
+> `!!` é substituído pelo comando anterior inteiro (`sudo !!` é um uso clássico). `!$` repete só o último argumento do comando anterior, `!*` todos os argumentos, e `!#` representa tudo o que já foi digitado na linha atual.
+
+### 103.1-015 | lacuna | 1
+ref: 101:p.189
+tags: history, expansão
+Qual expressão do Bash executa novamente o comando de número 45 da lista exibida por `history`?
+= !45
+> `!n` executa a entrada de número `n` do histórico. `!-n` conta a partir do fim (`!-2` é o penúltimo comando) e `!texto` executa o comando mais recente que começa com `texto`.
+
+### 103.1-016 | unica | 2
+ref: 101:p.189-190
+tags: history, expansão
+O que faz a expressão `!ssh` digitada no prompt do Bash?
+= Executa o comando mais recente do histórico que começa com `ssh`
+- Executa o comando mais recente que contém `ssh` em qualquer posição
+- Lista os comandos do histórico que contêm `ssh`, sem executá-los
+- Executa `ssh` usando o último argumento do comando anterior
+> `!texto` procura, do mais novo para o mais antigo, o primeiro comando que começa com `texto` e o executa. Para casar em qualquer posição seria `!?ssh?`; para apenas listar, `history | grep ssh`; o último argumento do comando anterior é `!$`.
+
+### 103.1-017 | unica | 1
+ref: 101:p.189-190
+tags: history, atalhos
+Qual combinação de teclas inicia a busca incremental reversa no histórico de comandos do Bash?
+= Ctrl+R
+- Ctrl+L
+- Ctrl+A
+- Ctrl+K
+> Ctrl+R abre `(reverse-i-search)`: ao digitar parte de um comando, o Bash mostra o mais recente que o contém. Ctrl+L limpa a tela, Ctrl+A vai ao início da linha e Ctrl+K apaga do cursor até o fim da linha. As setas para cima e para baixo apenas percorrem o histórico em ordem.
+
+### 103.1-018 | unica | 2
+ref: 101:p.189, 101:p.195
+tags: history
+Qual comando exibe somente os 20 comandos mais recentes da lista de histórico mantida na memória da sessão atual?
+= history 20
+- history | head -20
+- history -n 20
+- history -c 20
+- tail -n 20 ~/.bash_history
+> `history N` mostra as N últimas entradas da lista em memória. `history | head -20` mostra as 20 mais antigas. Em `history -n`, o argumento é um nome de arquivo e a opção lê do arquivo as linhas ainda não lidas, sem limitar nada; `history -c` apaga a lista. `tail` sobre `~/.bash_history` lê o arquivo, que não contém os comandos recentes da sessão ainda não gravados.
+
+### 103.1-019 | unica | 2
+ref: 101:p.189
+tags: history, .bash_history
+Um usuário executou vários comandos em um terminal, mas `tail ~/.bash_history` não mostra os mais recentes. Qual a explicação?
+= O histórico fica na memória e só é gravado em `~/.bash_history` quando a sessão do shell termina
+- Um serviço do sistema regrava o arquivo uma vez por hora, a partir da memória do shell
+- Comandos que terminam com erro nunca são registrados no histórico, apenas os bem-sucedidos
+- Só os comandos executados pelo root são gravados em arquivo, os dos demais ficam na memória
+> O Bash registra cada comando na lista em memória (a que `history` mostra) e só a grava em `~/.bash_history` ao encerrar a sessão. Para gravar antes, use `history -a` (acrescenta as linhas novas) ou `history -w` (regrava o arquivo inteiro). O Bash registra comandos independentemente do código de saída, e o comportamento vale para qualquer usuário.
+
+### 103.1-020 | lacuna | 2
+ref: 101:p.189
+tags: history, HISTFILE
+Por padrão o histórico é gravado em `~/.bash_history`. Qual variável do Bash define o caminho desse arquivo?
+= HISTFILE
+= $HISTFILE
+> `HISTFILE` guarda o caminho do arquivo de histórico. `HISTSIZE` e `HISTFILESIZE` limitam o tamanho da lista em memória e do arquivo, respectivamente.
+
+### 103.1-021 | unica | 3
+ref: 101:p.189
+tags: history, HISTSIZE, HISTFILESIZE
+Qual par de variáveis limita (1) quantos comandos o Bash mantém na memória e (2) quantas linhas o arquivo de histórico pode conter, nessa ordem?
+= HISTSIZE e HISTFILESIZE
+- HISTFILESIZE e HISTSIZE
+- HISTFILE e HISTSIZE
+- HISTCONTROL e HISTIGNORE
+> `HISTSIZE` é o número de comandos lembrados na sessão; `HISTFILESIZE` é o máximo de linhas do arquivo `~/.bash_history`, aplicado ao gravar. `HISTFILE` é o caminho do arquivo. `HISTCONTROL` (ignorar duplicatas ou linhas iniciadas por espaço) e `HISTIGNORE` (padrões de comandos a não registrar) filtram o que é registrado, mas não limitam tamanho.
+
+### 103.1-022 | lacuna | 2
+ref: 101:p.189
+tags: history
+Qual opção do `history` apaga todas as entradas da lista de histórico mantida na memória da sessão atual?
+
+`history ____`
+= -c
+> `history -c` limpa a lista em memória. `-d N` apaga apenas a entrada de número N, `-w` grava a lista no arquivo e `-r` lê o arquivo de volta para a memória.
+
+### 103.1-023 | unica | 1
+ref: 101:p.189
+tags: .bash_history, ls
+O arquivo `.bash_history` existe no diretório pessoal, mas não aparece na saída de `ls`. Por quê, e qual opção o revela?
+= Nomes iniciados por ponto são ocultos; `ls -a` os mostra
+- O arquivo é protegido por permissão; `ls -l` ignora a proteção
+- Ele só existe na memória do shell; `ls -h` o carrega do disco
+- É um link simbólico quebrado; `ls -R` o segue até o destino
+> Arquivos cujo nome começa com ponto ficam ocultos na listagem normal. `ls -a` mostra todos (incluindo `.` e `..`); `ls -A` mostra os ocultos sem `.` e `..`. `-l` muda o formato, `-h` torna os tamanhos legíveis e `-R` lista subdiretórios recursivamente; nenhuma dessas opções afeta arquivos ocultos.
+
+### 103.1-024 | unica | 2
+ref: 101:p.197-198
+tags: export, variáveis
+Considere a sequência de comandos:
+
+```
+$ myvar=hello
+$ bash -c 'echo "[$myvar]"'
+$ export myvar
+$ bash -c 'echo "[$myvar]"'
+```
+
+Quais são as duas linhas de saída, nessa ordem?
+= [] e depois [hello]
+- [hello] e depois [hello]
+- [] e depois []
+- [hello] e depois []
+> Sem `export`, `myvar` é uma variável apenas do shell atual, e o processo filho (`bash -c`) não a recebe, então imprime `[]`. As aspas simples evitam que o shell pai expanda `$myvar` antes. Depois de `export myvar`, a variável entra no ambiente dos processos filhos e o segundo comando imprime `[hello]`.
+
+### 103.1-025 | lacuna | 1
+ref: 101:p.197-198
+tags: export
+Qual comando torna a variável `PROJ` disponível para os processos filhos do shell atual?
+
+`____ PROJ`
+= export
+> `export PROJ` marca a variável para ser passada ao ambiente dos processos filhos. Também é possível atribuir e exportar de uma vez: `export PROJ=valor`.
+
+### 103.1-026 | unica | 2
+ref: 101:p.197
+tags: variáveis, atribuição
+Ao digitar `x = 5` no Bash, aparece a mensagem `bash: x: command not found`. Qual a causa?
+= Os espaços ao redor do `=` fazem o shell tratar `x` como um comando
+- A atribuição exige o cifrão no nome da variável, como em `$x=5`
+- Nomes de variável com uma única letra são reservados pelo shell
+- A variável só pode ser criada depois de executar `export x`
+> Em uma atribuição, não pode haver espaço antes nem depois do `=` (`x=5`). Com espaços, o Bash entende `x` como o nome de um programa e `=` e `5` como argumentos. O cifrão só é usado para ler o valor, e `export` não é pré-requisito para criar uma variável.
+
+### 103.1-027 | multipla | 2
+ref: 101:p.199
+tags: set, env, printenv
+A variável foi criada com `mynewvar=goodbye`, sem `export`. Quais comandos exibem a variável ou o seu valor?
+= echo $mynewvar
+= set | grep mynewvar
+- env | grep mynewvar
+- printenv mynewvar
+- export -p | grep mynewvar
+> `set` (sem argumentos) lista todas as variáveis do shell e as funções, inclusive as não exportadas, e `echo` expande a variável no próprio shell. `env`, `printenv` e `export -p` mostram só as variáveis exportadas, ou seja, as que fazem parte do ambiente dos processos filhos, e portanto não encontram `mynewvar`.
+
+### 103.1-028 | unica | 3
+ref: 101:p.197-198
+tags: variáveis, ambiente
+Qual é a saída dos três comandos?
+
+```
+$ FOO=bar
+$ FOO=baz bash -c 'echo $FOO'
+$ echo $FOO
+```
+= baz e depois bar
+- bar e depois bar
+- baz e depois baz
+- bar e depois baz
+> Uma atribuição colocada antes de um comando vale apenas para o ambiente daquele comando: o `bash -c` recebe `FOO=baz` e imprime `baz`. O valor `bar` do shell atual não é alterado, então o último `echo` imprime `bar`.
+
+### 103.1-029 | multipla | 2
+ref: 101:p.196-197
+tags: env, variáveis
+Quais comandos executam `date` com a variável `LANG` valendo `C` apenas para essa execução?
+= LANG=C date
+= env LANG=C date
+- LANG=C; date
+- export LANG=C date
+- set LANG=C date
+> `LANG=C date` e `env LANG=C date` colocam a variável no ambiente somente do processo `date`; depois dele, `LANG` volta ao valor anterior no shell. Em `LANG=C; date` o `;` separa duas instruções: a primeira altera `LANG` no próprio shell, e a mudança continua valendo para todos os comandos seguintes, não só para o `date` (se `LANG` não estivesse exportada, o `date` nem a receberia). `export LANG=C date` não executa `date`: exporta `LANG` e uma variável chamada `date`, e a alteração permanece no shell. `set LANG=C date` apenas redefine os parâmetros posicionais.
+
+### 103.1-030 | unica | 3
+ref: 101:p.197-198
+tags: export, shell filho
+Qual é a saída dos comandos abaixo?
+
+```
+$ export VAR=1
+$ bash -c 'VAR=2; echo $VAR'
+$ echo $VAR
+```
+= 2 e depois 1
+- 1 e depois 1
+- 2 e depois 2
+- 1 e depois 2
+> O shell filho herda `VAR=1`, mas ao fazer `VAR=2` altera apenas a sua própria cópia, e imprime `2`. Alterações feitas por um processo filho nunca voltam para o pai, e o shell original continua com `VAR=1`.
+
+### 103.1-031 | unica | 2
+ref: 101:p.198
+tags: unset, variáveis
+Qual comando remove completamente a variável `MYVAR` do shell atual?
+= unset MYVAR
+- unset $MYVAR
+- export -n MYVAR
+- env -u MYVAR
+- MYVAR=
+> `unset` recebe o nome da variável, sem cifrão. Com `unset $MYVAR`, o Bash expandiria o valor e tentaria remover uma variável com esse nome. `export -n` só retira o atributo de exportação (a variável continua existindo), `MYVAR=` deixa a variável definida e vazia, e `env -u` apenas executa um comando sem aquela variável, sem alterar o shell.
+
+### 103.1-032 | multipla | 3
+ref: 101:p.198, 101:p.204
+tags: PATH, unset, builtin
+Em um Bash recém-aberto, nenhum programa externo foi executado ainda. Depois de `unset PATH`, quais comandos ainda funcionam?
+= pwd
+= echo ola
+= /usr/bin/id -u
+- date
+- cat /etc/hostname
+> Comandos internos (`pwd`, `echo`) não dependem do PATH, e um comando com caminho absoluto dispensa a busca nos diretórios do PATH. Já `date` e `cat` são programas externos citados só pelo nome, e o Bash responde "No such file or directory". É por isso que `sudo` falha depois de `unset PATH`, a menos que se digite `/usr/bin/sudo`.
+
+### 103.1-033 | unica | 2
+ref: 101:p.204
+tags: PATH, export
+Qual comando acrescenta o diretório `/opt/tools/bin` ao final do PATH da sessão atual, mantendo os diretórios que já estavam nele e passando a alteração aos processos filhos?
+= export PATH="$PATH:/opt/tools/bin"
+- export PATH="/opt/tools/bin"
+- export PATH=$PATH /opt/tools/bin
+- export $PATH:/opt/tools/bin
+- PATH+=/opt/tools/bin
+> O valor atual é reaproveitado com `$PATH` e os diretórios são separados por dois-pontos. A segunda opção substitui o PATH inteiro, e as duas seguintes causam o erro "not a valid identifier" (o `export` espera nomes de variável, e o `$` é expandido antes). Em `PATH+=/opt/tools/bin` falta o separador, de modo que o texto seria colado ao último diretório do PATH (algo como `/bin/opt/tools/bin`). A mudança é temporária e some quando a sessão termina.
+
+### 103.1-034 | unica | 2
+ref: 101:p.197
+tags: PATH
+Com `PATH=/home/ana/bin:/usr/bin:/bin`, existe um executável `relatorio` em `/bin` e outro em `/home/ana/bin`. Ao digitar apenas `relatorio`, qual deles é executado?
+= O de /home/ana/bin, o primeiro diretório do PATH em que o nome é encontrado
+- O de /bin, porque os diretórios do sistema têm prioridade sobre os do usuário
+- Nenhum dos dois, pois o Bash recusa a execução quando o nome é ambíguo
+- O mais recente, comparando a data de modificação dos dois arquivos
+> O Bash percorre o PATH da esquerda para a direita e usa a primeira correspondência. Colocar `/home/ana/bin` no início faz seus programas terem prioridade sobre os do sistema. O Bash não avisa sobre ambiguidade nem compara datas.
+
+### 103.1-035 | unica | 1
+ref: 101:p.197, 101:p.204
+tags: PATH, execução
+O script `backup.sh`, com permissão de execução, está no diretório atual (`/srv/tools`), que não faz parte do PATH. Como executá-lo?
+= ./backup.sh
+- backup.sh
+- ~/backup.sh
+- /backup.sh
+- $PATH/backup.sh
+> Um nome sem barra é procurado só nos diretórios do PATH; como o diretório atual não está nele, `backup.sh` resulta em "command not found". Com `./` (ou o caminho completo) o Bash executa o arquivo diretamente. `~/backup.sh` aponta para o diretório pessoal e `/backup.sh` para a raiz, e `$PATH/backup.sh` seria um caminho inválido.
+
+### 103.1-036 | unica | 3
+ref: 101:p.183
+tags: sequência de comandos, operadores
+Quais linhas são impressas pela sequência abaixo?
+
+```
+$ true && echo A || echo B; false && echo C || echo D
+```
+= A e D
+- A, B e D
+- A, C e D
+- B e D
+> `true && echo A` imprime A; como deu certo, o `|| echo B` é ignorado. Depois do `;` começa outra lista: `false` falha, então `&& echo C` é ignorado, e o `|| echo D` é executado, imprimindo D. `&&` só executa o próximo comando se o anterior tiver sucesso, `||` só se tiver falhado.
+
+### 103.1-037 | lacuna | 2
+ref: 101:p.183
+tags: sequência de comandos, operadores
+Qual operador do Bash executa o segundo comando somente se o primeiro terminar com código de saída diferente de zero?
+
+`cmd1 ____ cmd2`
+= ||
+> `cmd1 || cmd2` executa `cmd2` apenas se `cmd1` falhar. `&&` faz o oposto (só executa se o primeiro tiver sucesso) e `;` executa os dois independentemente do resultado.
+
+### 103.1-038 | unica | 2
+ref: 101:p.183
+tags: código de saída
+Qual valor `echo $?` imprime logo depois do comando `ls /nao/existe 2>/dev/null` no GNU/Linux?
+= 2
+- 0
+- 1
+- 127
+> `$?` guarda o código de saída do último comando. O `ls` do GNU devolve 2 quando não consegue acessar um argumento da linha de comando. O 0 indica sucesso, o 1 corresponde a problemas menores (como falha em um subdiretório durante uma listagem recursiva) e o 127 indica "comando não encontrado".
+
+### 103.1-039 | multipla | 2
+ref: 101:p.199-200
+tags: aspas, escape
+Quais comandos criam um único arquivo chamado `my big file`?
+= touch "my big file"
+= touch 'my big file'
+= touch my\ big\ file
+- touch my big file
+- touch {my big file}
+> Aspas duplas, aspas simples e a barra invertida impedem que os espaços separem os argumentos, e o `touch` recebe um só nome. Sem proteção, `touch my big file` cria três arquivos (`my`, `big` e `file`), e `touch {my big file}` cria `{my`, `big` e `file}`, pois as chaves sem vírgula não protegem os espaços.
+
+### 103.1-040 | unica | 1
+ref: 101:p.199-200, 101:p.205
+tags: aspas
+Qual é a saída dos comandos abaixo?
+
+```
+$ nome=Ana
+$ echo "Oi $nome"; echo 'Oi $nome'
+```
+= Oi Ana e depois Oi $nome
+- Oi Ana e depois Oi Ana
+- Oi $nome e depois Oi Ana
+- Oi $nome e depois Oi $nome
+> Aspas duplas preservam os caracteres literalmente, exceto `$`, a crase e a barra invertida (e, às vezes, `!`), portanto a variável é expandida. Aspas simples preservam o valor literal de todos os caracteres, sem nenhuma expansão.
+
+### 103.1-041 | unica | 2
+ref: 101:p.200
+tags: aspas, escape
+Qual é a saída de `v=abc; echo "\$v vale $v"`?
+= $v vale abc
+- abc vale abc
+- \$v vale abc
+- $v vale $v
+> Dentro de aspas duplas, a barra invertida antes do cifrão remove o significado especial dele: o primeiro `$v` sai literal. O segundo `$v` não está protegido e é expandido para `abc`.
+
+### 103.1-042 | unica | 2
+ref: 101:p.199-200
+tags: aspas, substituição de comandos
+Qual é a saída do comando abaixo?
+
+```
+$ echo 'Hoje: $(echo X)' "Hoje: $(echo X)"
+```
+= Hoje: $(echo X) Hoje: X
+- Hoje: X Hoje: X
+- Hoje: $(echo X) Hoje: $(echo X)
+- Hoje: X Hoje: $(echo X)
+> Aspas simples desativam toda expansão, inclusive a substituição de comandos `$(...)`, e o texto sai literal. Aspas duplas preservam `$`, crase e barra invertida como especiais, então o `$(echo X)` é executado e substituído por `X`.
+
+### 103.1-043 | unica | 2
+ref: 101:p.199-200
+tags: aspas, curingas
+Em um diretório que contém somente `a.txt` e `b.txt`, o que imprimem os dois comandos abaixo, nessa ordem?
+
+```
+$ echo "*.txt"
+$ echo *.txt
+```
+= *.txt e depois a.txt b.txt
+- a.txt b.txt e depois *.txt
+- a.txt b.txt e depois a.txt b.txt
+- *.txt e depois *.txt
+> Entre aspas, o asterisco perde o significado de curinga e é impresso literalmente. Sem aspas, o shell expande `*.txt` para a lista de nomes correspondentes antes de chamar o `echo`.
+
+### 103.1-044 | lacuna | 1
+ref: 101:p.197
+tags: echo
+Qual opção do `echo` suprime a quebra de linha ao final da saída?
+
+`echo ____ "texto"`
+= -n
+> Com `-n`, o `echo` não acrescenta o `\n` final, e o prompt aparece logo depois do texto. A opção `-e` habilita a interpretação de sequências como `\n` e `\t`.
+
+### 103.1-045 | unica | 2
+ref: 101:p.197
+tags: echo, aspas
+No Bash, com as configurações padrão, qual é a saída de `echo "um\ndois"`?
+= um\ndois
+- um e dois em linhas separadas
+- umndois
+- bash: erro de sintaxe
+> Sem a opção `-e`, o `echo` do Bash não interpreta `\n` e imprime a sequência literalmente, em uma única linha. Para obter duas linhas, usa-se `echo -e "um\ndois"`. `umndois` seria a saída de `echo um\ndois`, sem aspas: o shell remove a barra invertida antes de chamar o `echo`.
+
+### 103.1-046 | unica | 2
+ref: 101:p.198
+tags: bash, shell filho, exit
+Dentro de um terminal com o Bash, o usuário digita `bash` e pressiona Enter. O que acontece?
+= É iniciado um shell filho, que herda só as variáveis exportadas; `exit` retorna ao shell pai
+- O shell atual é reiniciado, e todas as variáveis são mantidas, inclusive as não exportadas
+- É aberta uma nova janela de terminal, independente do shell em que o comando foi digitado
+- O shell atual relê o `~/.bashrc` e continua sendo o mesmo processo de antes
+> Cada `bash` executado dentro de outro cria um novo processo (filho). A variável `SHLVL` aumenta em 1, e o filho recebe uma cópia do ambiente, apenas com as variáveis exportadas. Ao digitar `exit`, o filho termina e o controle volta ao shell pai, onde as variáveis não exportadas continuam existindo.
+
+### 103.1-047 | lacuna | 1
+ref: 101:p.197
+tags: echo, variáveis
+Qual comando exibe o valor da variável `HOME`, quando usado como `____ $HOME`?
+= echo
+> `echo` imprime os argumentos depois que o shell expande `$HOME`. Para ver todas as variáveis exportadas, usa-se `env`; para ver também as não exportadas e as funções, `set`.
+
+### 103.1-048 | lacuna | 1
+ref: 101:p.186-187
+tags: uname, hostname
+Qual opção do `uname` exibe somente o nome do host na rede (nodename)?
+
+`uname ____`
+= -n
+= --nodename
+> `uname -n` imprime o nome do host. O mesmo valor aparece em `uname -a`, logo depois do nome do kernel.
+
+### 103.1-049 | lacuna | 2
+ref: 101:p.189
+tags: history, .bash_history
+Qual opção do `history` acrescenta ao `~/.bash_history`, imediatamente, as linhas da sessão atual que ainda não foram gravadas no arquivo?
+
+`history ____`
+= -a
+> `history -a` anexa ao arquivo de histórico as entradas novas da sessão, sem esperar o encerramento do shell. `-w` regrava o arquivo inteiro com a lista em memória, `-r` lê o arquivo para a memória e `-c` apaga a lista em memória.
+
+### 103.1-050 | lacuna | 2
+ref: 101:p.188
+tags: man, apropos
+Qual opção do `man` equivale ao comando `apropos`, pesquisando uma palavra nos nomes e descrições das páginas de manual?
+
+`man ____ partition`
+= -k
+= --apropos
+> `man -k palavra` é o mesmo que `apropos palavra`. Já `man -f nome` equivale a `whatis nome` e mostra apenas a descrição curta das páginas cujo nome coincide exatamente.

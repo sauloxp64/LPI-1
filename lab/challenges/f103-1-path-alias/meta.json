@@ -1,0 +1,48 @@
+{
+  "id": "f103-1-path-alias",
+  "obj": "103.1",
+  "titulo": "PATH e alias persistentes",
+  "nivel": 2,
+  "minutos": 7,
+  "params": {
+    "cmd": {
+      "escolha": [
+        "relatorio-diario",
+        "limpa-cache",
+        "resumo-disco",
+        "confere-lab",
+        "coleta-metricas"
+      ]
+    },
+    "flag": {
+      "escolha": [
+        "--resumo",
+        "--curto",
+        "--json",
+        "--verbose"
+      ]
+    },
+    "alias": {
+      "escolha": [
+        "labhoje",
+        "labpainel",
+        "labrapido",
+        "labatalho",
+        "labresumo"
+      ]
+    }
+  },
+  "enunciado": "A equipe guarda utilitários próprios em `~/lab/f103-1-path-alias/bin/`, que **não** está no `PATH`. Lá está o comando `{cmd}`.\n\nConfigure o seu ambiente para que, **em qualquer sessão nova** do terminal (ou seja, de forma permanente):\n\n1. o comando `{cmd}` possa ser chamado só pelo nome, de qualquer diretório;\n2. exista o alias `{alias}`, que executa `{cmd} {flag}`.\n\nDepois de configurar, grave em `~/lab/f103-1-path-alias/evidencia.txt` — **nesta ordem** — a saída de `type {cmd}` e a saída de `alias {alias}`.",
+  "verifica": [
+    "numa sessão nova do `aluno`, `{cmd}` é encontrado pelo `PATH` (em `~/lab/f103-1-path-alias/bin`)",
+    "numa sessão nova, `{alias}` é um alias que executa `{cmd} {flag}`",
+    "`evidencia.txt` contém o caminho completo do comando (saída de `type`) e a definição do alias, nessa ordem"
+  ],
+  "dicas": [
+    "Mudanças feitas só no terminal aberto somem quando ele fecha: o que vale para todas as sessões vai num arquivo de inicialização do Bash do seu usuário.",
+    "O arquivo clássico para shells interativos é `~/.bashrc`. Depois de editar, aplique na sessão atual com `source ~/.bashrc`.",
+    "Linhas típicas: `export PATH=\"$PATH:/caminho/da/pasta\"` e `alias nome='comando --opção'`.",
+    "`type comando > evidencia.txt` cria o arquivo; `alias nome >> evidencia.txt` acrescenta (`>>`) sem apagar a primeira linha."
+  ],
+  "solucao": "```\necho 'export PATH=\"$PATH:$HOME/lab/f103-1-path-alias/bin\"' >> ~/.bashrc\necho \"alias {alias}='{cmd} {flag}'\" >> ~/.bashrc\nsource ~/.bashrc          # aplica agora, sem abrir outro terminal\ntype {cmd}  > ~/lab/f103-1-path-alias/evidencia.txt\nalias {alias} >> ~/lab/f103-1-path-alias/evidencia.txt\n```\n`PATH` é a lista de diretórios (separados por `:`) onde o shell procura comandos digitados sem caminho; acrescentamos ao **final** para não esconder os comandos do sistema. Sem `export`, a variável não chega aos programas filhos. `export PATH=...` e `alias` digitados no prompt valem só para aquela sessão; para ficarem, vão em `~/.bashrc` (ou `~/.profile`). `source` (ou `.`) relê o arquivo na sessão atual. Pegadinha: `>` em vez de `>>` na segunda gravação apagaria a saída de `type`."
+}

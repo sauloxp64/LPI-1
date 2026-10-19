@@ -1,0 +1,269 @@
+### 101.2-001 | unica | 1
+ref: 101:p.32
+tags: BIOS, MBR, bootloader
+Em uma máquina com firmware BIOS, de onde a BIOS carrega o primeiro estágio do carregador de inicialização?
+= Do MBR do primeiro dispositivo de armazenamento na ordem de boot
+- De um arquivo .efi na partição ESP do disco
+- Do arquivo /boot/grub/grub.cfg, localizado na partição /boot do primeiro disco
+- Do initramfs, que é carregado em RAM pelo firmware
+> A BIOS assume que os primeiros bytes do primeiro dispositivo (conforme a ordem de boot do utilitário de configuração) contêm o primeiro estágio do bootloader, no MBR. Arquivos `.efi` na ESP são o mecanismo da UEFI, o `grub.cfg` só é lido pelo GRUB já em execução, e o initramfs é carregado depois, pelo carregador de boot.
+
+### 101.2-002 | multipla | 2
+ref: 101:p.32
+tags: MBR, bootstrap, tabela de partições
+O que o primeiro setor de 512 bytes (MBR) de um disco com tabela de partições DOS contém?
+= O primeiro estágio do carregador de inicialização (bootstrap)
+= A tabela de partições do disco
+- O arquivo de configuração grub.cfg com as entradas de menu
+- A imagem do kernel e o initramfs
+- Os aplicativos EFI usados pelo firmware
+> No esquema DOS, o MBR reúne o código do primeiro estágio do bootloader (a região de bootstrap, 440 bytes) e a tabela de partições. O restante (configuração, kernel, initramfs) fica em sistemas de arquivos, em geral em `/boot`, e os aplicativos EFI ficam na ESP, usada pela UEFI e não pela BIOS.
+
+### 101.2-003 | unica | 2
+ref: 101:p.32-33
+tags: UEFI, NVRAM, aplicativo EFI
+Como o firmware UEFI descobre qual programa deve executar para iniciar o sistema?
+= Lê entradas da NVRAM que apontam para aplicativos EFI na ESP
+- Executa os primeiros 440 bytes do primeiro disco, como faz a BIOS
+- Procura o arquivo /etc/fstab e monta a primeira partição que encontrar
+- Lê o parâmetro root= do kernel para localizar o carregador de boot
+> A UEFI não depende do MBR: ela consulta as definições na memória não volátil (NVRAM) da placa-mãe, que indicam os aplicativos EFI (em geral, um bootloader) na partição ESP. O `/etc/fstab` só é lido depois, pelo sistema operacional, e `root=` é um parâmetro passado ao kernel pelo bootloader.
+
+### 101.2-004 | unica | 1
+ref: 101:p.32-33
+tags: ESP, FAT32, UEFI
+Onde ficam armazenados os aplicativos EFI (como o bootloader) em uma máquina UEFI?
+= Na ESP (EFI System Partition), normalmente formatada em FAT32
+- No MBR, nos primeiros 440 bytes do disco de boot
+- Na partição /boot, obrigatoriamente formatada em ext4
+- Dentro do arquivo initramfs, em um diretório /EFI na raiz da imagem
+> Os aplicativos EFI ficam na EFI System Partition (ESP), uma partição de um dispositivo de armazenamento convencional com sistema de arquivos suportado pelo firmware (FAT12, FAT16 ou FAT32; na prática, FAT32). A ESP não é compartilhada com os sistemas de arquivos raiz e de dados. O MBR é o mecanismo da BIOS, e o ext4 não é um sistema de arquivos padrão da UEFI.
+
+### 101.2-005 | unica | 3
+ref: 101:p.32-36
+tags: sequência de boot, UEFI, kernel, initramfs, init
+Qual sequência descreve corretamente a inicialização de um PC com UEFI até o início dos serviços?
+= POST, o firmware lê a NVRAM e executa o bootloader na ESP, que carrega o kernel, e o kernel inicia o init
+- POST, o firmware executa o código do MBR, o bootloader carrega o init, e o init carrega o kernel e o initramfs
+- POST, o firmware carrega o kernel, o kernel executa o bootloader na ESP e em seguida monta o initramfs
+- POST, a NVRAM carrega o init, o init executa o bootloader da ESP, e o bootloader carrega o kernel
+> Após o POST, a UEFI lê as definições da NVRAM e executa o aplicativo EFI predefinido na ESP, geralmente o bootloader. Ele carrega o kernel (e o initramfs), e o kernel configura o hardware, usa o initramfs para acessar o sistema de arquivos raiz real e, por fim, executa o `init`. O `init` nunca carrega o kernel, e o firmware não executa o MBR em modo UEFI.
+
+### 101.2-006 | unica | 2
+ref: 101:p.33
+tags: Secure Boot, UEFI
+Qual é o efeito da Inicialização Segura (Secure Boot) da UEFI?
+= Só permite executar aplicativos EFI assinados por uma entidade autorizada
+- Criptografa o conteúdo do disco e pede uma senha de desbloqueio no início do boot
+- Impede que qualquer sistema operacional seja instalado no disco
+- Faz o firmware verificar o hardware durante o POST
+> O Secure Boot permite apenas a execução de aplicativos EFI assinados (autorizados pelo fabricante do hardware ou por chaves cadastradas). Isso protege contra software malicioso no boot, mas pode dificultar a instalação de sistemas não assinados. Não criptografa discos (isso seria dm-crypt/LUKS) e o teste de hardware é feito pelo POST, independentemente do Secure Boot.
+
+### 101.2-007 | unica | 3
+ref: 101:p.41, 101:p.44
+tags: UEFI, MBR, dual boot
+Em um computador com dois sistemas operacionais, a instalação do segundo sobrescreveu o MBR e deixou o primeiro inacessível. Por que esse problema não ocorreria em uma máquina UEFI?
+= A UEFI não usa o MBR; cada sistema grava seu aplicativo EFI na ESP e o registra na NVRAM
+- A UEFI protege o MBR contra escrita enquanto qualquer sistema operacional estiver em execução
+- A UEFI guarda uma cópia do MBR de cada sistema operacional na NVRAM e a restaura sozinha
+- A UEFI bloqueia a instalação de um segundo sistema operacional no mesmo disco
+> Em UEFI não há um primeiro estágio compartilhado no MBR para ser sobrescrito: cada sistema instala o próprio aplicativo EFI (em seu diretório dentro da ESP) e cria uma entrada na NVRAM. O firmware pode então apresentar um menu de boot com todas elas. Nada disso envolve proteger o MBR, copiá-lo para a NVRAM ou impedir várias instalações.
+
+### 101.2-008 | multipla | 2
+ref: 101:p.36
+tags: initramfs
+Quais afirmações sobre o initramfs estão corretas?
+= É um sistema de arquivos raiz temporário carregado na RAM durante o boot
+= Fornece os módulos de que o kernel precisa para acessar o sistema de arquivos raiz real
+- É o primeiro programa executado após o kernel, com PID 1
+- Armazena o primeiro estágio do bootloader no MBR
+- Contém o mapa de símbolos usado para depurar kernel panics
+> O initramfs (initial RAM filesystem) é um arquivo com um sistema raiz temporário usado na inicialização; seu principal objetivo é fornecer os módulos (por exemplo, de controladoras e sistemas de arquivos) para o kernel alcançar o sistema de arquivos raiz de verdade. O programa com PID 1 é o `init`/`systemd`, o primeiro estágio fica no MBR (BIOS) ou na ESP (UEFI), e o mapa de símbolos é o `System.map`.
+
+### 101.2-009 | unica | 3
+ref: 101:p.44
+tags: initramfs, kernel personalizado
+Qual é uma consequência comum de instalar um kernel personalizado sem fornecer uma imagem initramfs adequada?
+= O sistema de arquivos raiz pode ficar inacessível se seu suporte for um módulo externo
+- O GRUB deixa de exibir o menu de boot e passa a iniciar sempre o kernel instalado antes
+- O kernel não consegue ser carregado pelo bootloader, pois o initramfs é obrigatório
+- O init é executado, mas todos os serviços iniciam com atraso
+> O initramfs fornece, entre outros, os módulos para acessar o sistema de arquivos raiz. Se o driver da controladora de disco ou do sistema de arquivos estiver compilado como módulo e não houver initramfs, o kernel não consegue montar a raiz. Se esses suportes estiverem embutidos no kernel, o initramfs é dispensável, e por isso o bootloader não "exige" a imagem.
+
+### 101.2-010 | lacuna | 1
+ref: 101:p.36
+tags: init, kernel
+Depois que o sistema de arquivos raiz fica disponível, o kernel executa o primeiro programa do espaço de usuário, responsável por iniciar scripts e daemons. Como esse programa é chamado de forma genérica? ____
+= init
+= /sbin/init
+> O kernel monta o sistema raiz e executa o `init` (`/sbin/init`), que inicia os demais processos. Existem implementações como o SysVinit, o systemd e o Upstart; em sistemas com systemd, `/sbin/init` é um link para o executável do systemd.
+
+### 101.2-011 | lacuna | 2
+ref: 101:p.34, 101:p.43
+tags: parâmetros do kernel, root
+Qual parâmetro do kernel informa a partição do sistema de arquivos raiz, como em `____=/dev/sda3`?
+= root
+> O parâmetro `root=` indica o dispositivo que contém o sistema de arquivos raiz (por exemplo, `root=/dev/sda3`). `rootflags=` define as opções de montagem desse sistema, `ro`/`rw` controlam se a montagem inicial é somente leitura ou leitura e escrita, e `init=` troca o programa init.
+
+### 101.2-012 | unica | 2
+ref: 101:p.33-34
+tags: parâmetros do kernel, init
+O que acontece se o parâmetro `init=/bin/bash` for adicionado à linha de comando do kernel?
+= O kernel executa o /bin/bash como primeiro processo, no lugar do init padrão
+- O Bash é iniciado depois que o systemd termina de carregar todos os serviços
+- O sistema inicia no modo de usuário único com o Bash como shell de login
+- O kernel ignora o parâmetro, pois init só aceita nomes de runlevel
+> `init=` define um iniciador de sistema alternativo: o kernel passa a executar o programa indicado como PID 1. Com `init=/bin/bash` a sessão de shell começa logo após a inicialização do kernel, sem serviços (técnica comum de recuperação). Não é o mesmo que o modo single user (`1`, `S` ou `single`), que ainda passa pelo init.
+
+### 101.2-013 | unica | 2
+ref: 101:p.34
+tags: systemd.unit, parâmetros do kernel
+Em um sistema com systemd, qual parâmetro do kernel faz o boot ocorrer no alvo `multi-user.target`, sem alterar a configuração permanente?
+= systemd.unit=multi-user.target
+- init=multi-user.target
+- systemd.runlevel=multi-user
+- default.target=multi-user.target
+> `systemd.unit=<alvo>` sobrescreve a unidade a ativar no boot (o padrão é `default.target`) e vale apenas para aquela inicialização. O systemd também aceita os níveis numéricos do SysV na linha do kernel (por exemplo, `1` ou `S` para modo de manutenção). `init=` espera um executável, e `systemd.runlevel` e `default.target=` não são parâmetros reconhecidos.
+
+### 101.2-014 | multipla | 3
+ref: 101:p.34
+tags: parâmetros do kernel, mem, maxcpus
+Quais parâmetros do kernel limitam os recursos de hardware visíveis ao sistema, como RAM e processadores?
+= mem=512M
+= maxcpus=2
+- quiet
+- vga=ask
+- rootflags=ro
+> `mem=` limita a RAM disponível (útil para convidados de máquinas virtuais) e `maxcpus=` limita o número de processadores/núcleos. `quiet` oculta a maioria das mensagens de boot, `vga=ask` pede para escolher um modo de vídeo e `rootflags=` define opções de montagem do sistema de arquivos raiz.
+
+### 101.2-015 | lacuna | 1
+ref: 101:p.34
+tags: parâmetros do kernel, quiet
+Qual parâmetro do kernel oculta a maior parte das mensagens exibidas durante a inicialização?
+= quiet
+> `quiet` suprime a maioria das mensagens de boot na tela (elas continuam disponíveis no buffer do kernel, via `dmesg`). `acpi=off` desativa o ACPI e `vga=ask` lista modos de vídeo.
+
+### 101.2-016 | unica | 2
+ref: 101:p.35
+tags: GRUB, grub-mkconfig, /etc/default/grub, persistência
+Como tornar permanente, em um sistema com GRUB 2, a inclusão de um parâmetro na linha de comando do kernel?
+= Adicionar o parâmetro a GRUB_CMDLINE_LINUX em /etc/default/grub e regenerar o grub.cfg com grub-mkconfig
+- Adicionar o parâmetro ao arquivo /proc/cmdline e reiniciar o computador
+- Editar diretamente o grub.cfg, que é mantido entre as atualizações do GRUB
+- Gravar o parâmetro em /etc/default/grub e executar grub-install /dev/sda1
+> Os parâmetros devem constar da variável `GRUB_CMDLINE_LINUX` em `/etc/default/grub`, e depois é necessário gerar novo arquivo de configuração: `grub-mkconfig -o /boot/grub/grub.cfg` (ou `update-grub` no Debian/Ubuntu; no RHEL/Fedora, `grub2-mkconfig -o /boot/grub2/grub.cfg`). O `/proc/cmdline` é somente leitura, o `grub.cfg` é regenerado e perde edições manuais, e o `grub-install` grava o bootloader, não a configuração.
+
+### 101.2-017 | lacuna | 1
+ref: 101:p.35
+tags: /proc/cmdline
+Qual arquivo de `/proc` permite ler os parâmetros com que o kernel foi iniciado na sessão atual? Informe o caminho completo: ____
+= /proc/cmdline
+> `/proc/cmdline` contém a linha de comando passada ao kernel pelo bootloader nesta inicialização (testado: o arquivo existe e exibe os parâmetros em uso, como `root=`, `quiet` ou `init=`, quando presentes). A configuração persistente, por sua vez, fica em `/etc/default/grub`.
+
+### 101.2-018 | unica | 1
+ref: 101:p.37
+tags: dmesg, buffer de anel
+O que o comando `dmesg` exibe?
+= As mensagens atuais no buffer circular (ring buffer) do kernel
+- O conteúdo do arquivo /var/log/messages, formatado por data
+- Os registros de todos os serviços, em ordem cronológica, lidos de /var/log/journal
+- A lista dos módulos do kernel carregados e suas dependências
+> `dmesg` mostra as mensagens que o kernel guarda no buffer de anel, incluindo as da inicialização, com o tempo em segundos desde o início do kernel. Esse buffer é perdido ao desligar o sistema ou com `dmesg --clear`. Registros de serviços são consultados via `journalctl` ou nos arquivos de `/var/log`, e os módulos carregados vêm do `lsmod`.
+
+### 101.2-019 | lacuna | 2
+ref: 101:p.44
+tags: dmesg, -H, human
+Qual opção do `dmesg` ativa a saída legível e faz a paginação automática, dispensando o `| less`? `dmesg ____`
+= -H
+= --human
+> `dmesg -H` (`--human`) habilita a saída legível por pessoas e, por padrão, usa um paginador (`-P`/`--nopager` desativa). Para exibir os carimbos de tempo como data e hora, usa-se `-T` (`--ctime`), e `-C` (`--clear`) apaga o buffer.
+
+### 101.2-020 | unica | 2
+ref: 101:p.37-38
+tags: journalctl, -b, boot anterior
+Qual comando do systemd exibe as mensagens registradas durante a inicialização **anterior** à atual?
+= journalctl -b -1
+- journalctl -b 0
+- journalctl --list-boots
+- journalctl -k
+> `journalctl -b <offset>` seleciona uma inicialização: `-b 0` (ou `-b` sem argumento) é a atual, `-b -1` a anterior, `-b -2` a anterior a ela, e assim por diante. `--list-boots` apenas lista as inicializações, com ID e período, e `-k` mostra somente mensagens do kernel da inicialização atual (equivale a `--dmesg`).
+
+### 101.2-021 | unica | 2
+ref: 101:p.37-38
+tags: journalctl, -k, dmesg
+Qual comando do systemd exibe somente as mensagens do kernel da inicialização atual?
+= journalctl -k
+- journalctl -u kernel
+- journalctl -b -1
+- journalctl --list-boots
+> `journalctl -k` (`--dmesg`) mostra apenas as mensagens do kernel e implica `-b` (inicialização atual). `-u` filtra por unidade de serviço, e o kernel não é uma unidade; `-b -1` seleciona o boot anterior (com todas as mensagens) e `--list-boots` só lista as inicializações registradas.
+
+### 101.2-022 | lacuna | 2
+ref: 101:p.39, 101:p.44
+tags: journalctl, -D, directory
+Um disco de outra máquina foi montado em `/mnt/hd` e seus arquivos de diário estão em `/mnt/hd/var/log/journal`. Qual opção faz o `journalctl` ler esse diretório? `journalctl ____ /mnt/hd/var/log/journal`
+= -D
+= --directory
+> `journalctl -D <diretório>` (`--directory=`) lê os arquivos de diário de um diretório diferente do padrão (`/var/log/journal` ou `/run/log/journal`), o que é útil para investigar um sistema que não inicializa a partir de uma mídia alternativa.
+
+### 101.2-023 | unica | 2
+ref: 101:p.39
+tags: journalctl, journal, formato binário
+Por que é necessário usar o `journalctl` para ler os registros em `/var/log/journal`, e não `cat` ou `less`?
+= Porque o diário do systemd é armazenado em formato binário, e não em texto puro
+- Porque os arquivos do diário só podem ser lidos pelo kernel
+- Porque o journalctl descriptografa os arquivos com a senha de root
+- Porque os registros ficam em RAM e desaparecem ao abrir o arquivo
+> O journal do systemd guarda os registros de forma estruturada e binária; o `journalctl` os interpreta e permite filtrar por boot, unidade, prioridade etc. O acesso depende de permissões do arquivo (root ou grupos como `systemd-journal`), mas não envolve senha. A parte em `/run/log/journal` é volátil, porém isso não explica a necessidade do comando.
+
+### 101.2-024 | unica | 2
+ref: 101:p.36
+tags: Upstart
+Qual afirmação sobre o Upstart está correta?
+= É um substituto do init focado em acelerar o boot com a inicialização paralela de serviços, usado em versões antigas do Ubuntu
+- É o carregador de boot padrão do Ubuntu, substituído pelo GRUB em 2015
+- É um sistema de arquivos temporário usado para carregar os módulos do kernel
+- É a implementação do SysVinit que passou a ser usada em todas as distribuições
+> O Upstart é um gerenciador de inicialização (substituto do `init`) que paraleliza o carregamento de serviços. Foi usado pelo Ubuntu e deu lugar ao systemd (a partir do Ubuntu 15.04, em 2015). Não é bootloader (esse papel é do GRUB), nem sistema de arquivos temporário (initramfs), nem uma variante do SysVinit.
+
+### 101.2-025 | multipla | 2
+ref: 101:p.36
+tags: SysVinit, runlevels
+Quais níveis de execução (runlevels) do SysVinit têm o mesmo significado em todas as distribuições?
+= 0
+= 1
+= 6
+- 2
+- 3
+- 5
+> Os níveis 0 (desligar), 1 (usuário único) e 6 (reiniciar) são os únicos com definição comum a todas as distribuições. Os níveis 2 a 5 são definidos pelos mantenedores: por exemplo, o 3 costuma ser multiusuário em modo texto e o 5, multiusuário com login gráfico, mas isso varia (no Debian, os níveis 2 a 5 são equivalentes).
+
+### 101.2-026 | unica | 2
+ref: 101:p.36
+tags: systemd, SysVinit, conceitos
+Qual característica diferencia o systemd do SysVinit tradicional?
+= Inicia serviços de forma concorrente, com dependências, e usa sockets, D-Bus e cgroups
+- Executa os scripts de /etc/rc*.d um por vez, em ordem alfabética dos nomes dos links simbólicos
+- Define os serviços ativos em /etc/inittab, usando níveis de execução de 0 a 6
+- Substitui o kernel, passando a controlar diretamente o hardware
+> O systemd tem estrutura concorrente, ativa serviços por sockets e D-Bus, controla processos com cgroups e gerencia dependências entre unidades, com camada de compatibilidade para runlevels do SysV. A execução sequencial dos scripts `S*`/`K*` e o uso de `/etc/inittab` são características do SysVinit. Nenhum init substitui o kernel.
+
+### 101.2-027 | unica | 3
+ref: 101:p.40, 101:p.43
+tags: root=, initramfs, diagnóstico
+O boot de uma máquina Linux termina com a mensagem `ALERT! /dev/sda3 does not exist. Dropping to a shell!` Qual é a causa provável?
+= O kernel não encontrou o dispositivo /dev/sda3, informado como sistema de arquivos raiz
+- A BIOS não encontrou o carregador de inicialização gravado no MBR do disco de boot da máquina
+- O GRUB não localizou o arquivo grub.cfg na partição /boot
+- O init encontrou erro de sintaxe em /etc/inittab
+> A mensagem é emitida quando o kernel (via initramfs) não localiza o dispositivo indicado em `root=` (aqui, `/dev/sda3`). É preciso corrigir o parâmetro `root=` (ou o disco/driver ausente). Se a BIOS ou o GRUB falhassem, o kernel nem chegaria a ser carregado, e `/etc/inittab` só é lido pelo `init` depois que a raiz já foi montada.
+
+### 101.2-028 | unica | 1
+ref: 101:p.33
+tags: GRUB, menu, Shift, Esc
+Em uma máquina com BIOS, o GRUB mostra apenas uma contagem regressiva, sem o menu. Qual tecla deve ser mantida pressionada enquanto o GRUB é carregado para exibir a lista de sistemas?
+= Shift
+- Ctrl
+- Tab
+- F12
+> No boot por BIOS, mantém-se **Shift** pressionada enquanto o GRUB é chamado para exibir o menu oculto (em sistemas UEFI, o material da LPI indica a tecla **Esc**). `Ctrl` e `Tab` não têm essa função no GRUB, e teclas como F2, F12 ou Del dizem respeito ao utilitário de configuração do firmware, não ao menu do GRUB.

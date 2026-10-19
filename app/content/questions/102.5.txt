@@ -1,0 +1,413 @@
+### 102.5-001 | unica | 1
+ref: 101:p.137-138
+tags: rpm, instalar, -ivh
+Qual comando instala o arquivo `file-roller-3.28.1-2.el7.x86_64.rpm` com o `rpm`, exibindo mensagens detalhadas e uma barra de progresso feita de sinais `#`?
+- rpm -evh file-roller-3.28.1-2.el7.x86_64.rpm
+= rpm -ivh file-roller-3.28.1-2.el7.x86_64.rpm
+- rpm -qvh file-roller-3.28.1-2.el7.x86_64.rpm
+- rpm -ivh --test file-roller-3.28.1-2.el7.x86_64.rpm
+> `-i` instala, `-v` mostra detalhes e `-h` imprime os sinais de hash (`#`) como indicador de progresso. As opções podem ser combinadas, de modo que `-ivh` equivale a `-i -v -h`.
+> `-e` remove (erase) o pacote e `-q` é o modo de consulta (query). Com `--test`, o `rpm` apenas simula a instalação, verificando se ela seria possível, mas sem instalar nada.
+
+### 102.5-002 | lacuna | 1
+ref: 101:p.137
+tags: rpm, atualizar, -U
+Complete o comando para atualizar o `wget` para a versão do arquivo informado (e instalá-lo, caso ainda não exista no sistema):
+
+```
+# rpm ____ wget-1.14-18.el7_6.1.x86_64.rpm
+```
+= -U
+= --upgrade
+= -Uvh
+= -Uv
+= -Uh
+> `rpm -U` (`--upgrade`) atualiza o pacote se houver uma versão anterior e o instala normalmente se não houver. Costuma ser usado como `-Uvh`.
+
+### 102.5-003 | unica | 2
+ref: 101:p.137
+tags: rpm, -F, freshen
+Um diretório contém vários arquivos `.rpm` de atualização. O administrador quer atualizar somente os pacotes que **já estão instalados**, sem instalar nenhum pacote novo. Qual comando faz isso?
+- rpm -Uvh *.rpm
+- rpm -ivh *.rpm
+- rpm -ivh --replacepkgs *.rpm
+= rpm -Fvh *.rpm
+> `rpm -F` (`--freshen`) atualiza apenas pacotes que já estão instalados e ignora os demais. `rpm -U` também instalaria os que não existem no sistema.
+> `rpm -i` instala todos os pacotes dados, inclusive os novos, e recusa os que já estão instalados na mesma versão. Com `--replacepkgs`, ele também reinstala os já existentes, e continua instalando os novos.
+
+### 102.5-004 | unica | 1
+ref: 101:p.138
+tags: rpm, remover, -e
+Qual comando remove o pacote `wget` instalado, usando apenas o `rpm`?
+- rpm -r wget
+= rpm -e wget
+- rpm -e --test wget
+- rpm -R wget
+> `rpm -e` (`--erase`) remove um pacote instalado.
+> `-r` não é uma operação de remoção. Com `--test`, o `rpm -e` só simula a remoção e não apaga nada. `-R` é uma opção de consulta (`-qR`) que lista os requisitos do pacote.
+
+### 102.5-005 | unica | 3
+ref: 101:p.138-139, 101:p.144-145
+tags: rpm, yum, whatprovides, dependências
+Ao instalar um pacote, o `rpm` falha:
+
+```
+# rpm -i gimp-2.8.22-1.el7.x86_64.rpm
+error: Failed dependencies:
+        libgimpui-2.0.so.0()(64bit) is needed by gimp-2:2.8.22-1.el7.x86_64
+```
+
+Qual comando de um sistema RHEL/CentOS descobre qual pacote dos repositórios fornece essa biblioteca?
+- rpm -q --whatprovides libgimpui-2.0.so.0
+- yum search libgimpui-2.0.so.0
+= yum whatprovides libgimpui-2.0.so.0
+- rpm -ql libgimpui-2.0.so.0
+> O `rpm` não resolve dependências sozinho: apenas informa o que está faltando. O `yum whatprovides` (ou `yum provides`) consulta os repositórios e mostra qual pacote fornece o arquivo ou a biblioteca, que pode então ser instalado com `yum install`.
+> `rpm -q --whatprovides` só consulta os pacotes já instalados, e a biblioteca ausente não está entre eles. `rpm -ql` espera o nome de um pacote instalado e lista seus arquivos. `yum search` procura nos nomes e resumos dos pacotes, não nos arquivos que eles fornecem.
+
+### 102.5-006 | unica | 1
+ref: 101:p.139
+tags: rpm, -qa, listar
+Qual comando lista todos os pacotes instalados em um sistema baseado em RPM?
+- rpm -ql unzip
+- rpm -qi unzip
+= rpm -qa
+- rpm -qf /usr/bin/unzip
+> `rpm -qa` (query all) lista todos os pacotes instalados, em formato `nome-versão-release.arquitetura`, e não precisa de argumento.
+> `-ql` lista os arquivos de um pacote, `-qi` mostra informações de um pacote e `-qf` indica a qual pacote pertence um arquivo. Os três atuam sobre um pacote ou arquivo específico.
+
+### 102.5-007 | lacuna | 1
+ref: 101:p.142
+tags: rpm, -qf, arquivo
+Complete o comando para descobrir qual pacote instalado é dono do arquivo `/usr/bin/unzip`:
+
+```
+# rpm ____ /usr/bin/unzip
+```
+= -qf
+= -q -f
+= --query --file
+> `rpm -qf` (query file) informa o pacote instalado ao qual o arquivo pertence, por exemplo `unzip-6.0-19.el7.x86_64`. É o equivalente do `dpkg -S` em sistemas Debian.
+
+### 102.5-008 | unica | 2
+ref: 101:p.139-140
+tags: rpm, -qi, -ql
+O administrador precisa ver a versão, a data de instalação e o empacotador do pacote `unzip`, que já está instalado. Qual comando mostra essas informações?
+- rpm -ql unzip
+- rpm -qf /usr/bin/unzip
+= rpm -qi unzip
+- rpm -qc unzip
+> `rpm -qi` (query info) exibe os metadados: nome, versão, release, arquitetura, data de instalação, empacotador, resumo e descrição.
+> `-ql` lista os arquivos do pacote, `-qf` indica o pacote dono de um arquivo, e `-qc` lista apenas os arquivos de configuração do pacote.
+
+### 102.5-009 | unica | 2
+ref: 101:p.141
+tags: rpm, -qlp, arquivo .rpm
+O arquivo `atom.x86_64.rpm` foi baixado, mas **não** foi instalado. Qual comando lista os arquivos que ele instalaria?
+- rpm -ql atom.x86_64.rpm
+- rpm -qip atom.x86_64.rpm
+- rpm -qa | grep atom.x86_64.rpm
+= rpm -qlp atom.x86_64.rpm
+> A opção `-p` faz a consulta atuar sobre um arquivo `.rpm`, em vez de pacotes instalados. `-ql` com `-p` resulta em `-qlp`, que lista o conteúdo do arquivo.
+> Sem `-p`, `rpm -ql atom.x86_64.rpm` responde que o pacote não está instalado. `-qip` mostra as informações do pacote, não a lista de arquivos, e `-qa` lista apenas os pacotes já instalados.
+
+### 102.5-010 | unica | 2
+ref: 101:p.141
+tags: rpm, -qpR, dependências
+Antes de instalar `servidor.rpm`, o administrador quer ver de quais pacotes, bibliotecas e arquivos ele depende. Qual comando faz isso?
+- rpm -qpl servidor.rpm
+- rpm -qpi servidor.rpm
+- rpm -qp --scripts servidor.rpm
+= rpm -qpR servidor.rpm
+> `-R` (`--requires`) lista as dependências do pacote, e `-p` aplica a consulta a um arquivo `.rpm`. Para um pacote já instalado, use `rpm -qR nome`.
+> `-qpl` lista arquivos, `-qpi` mostra metadados e `-qp --scripts` mostra os scripts de instalação e remoção do pacote.
+
+### 102.5-011 | unica | 3
+ref: 101:p.139-142
+tags: rpm, -V, integridade
+O administrador verifica o pacote `openssh-server` e obtém:
+
+```
+# rpm -V openssh-server
+S.5....T.  c /etc/ssh/sshd_config
+```
+
+O que essa saída indica?
+- O arquivo `/etc/ssh/sshd_config` foi removido do disco depois da instalação do pacote e precisa ser restaurado
+- O dono, o grupo e as permissões de `/etc/ssh/sshd_config` foram alterados em relação ao que o pacote definiu
+- A assinatura GPG do pacote `openssh-server` é inválida, e por isso o pacote não deve mais ser utilizado
+= O arquivo de configuração `/etc/ssh/sshd_config` foi modificado: o tamanho, o resumo (digest) e a data diferem do pacote
+> `rpm -V` compara os arquivos instalados com os dados gravados no banco de dados do RPM. Cada letra indica uma verificação que falhou: `S` (tamanho), `5` (digest) e `T` (data de modificação). O `c` marca um arquivo de configuração, e um ponto significa que o teste passou.
+> Arquivo ausente seria exibido como `missing`. Dono e permissões apareceriam como `U`, `G` e `M`. A assinatura do pacote é verificada com `rpm -K`, e não com `-V`.
+
+### 102.5-012 | unica | 2
+ref: 101:p.141-142
+tags: rpm, -K, checksig, assinatura
+Qual comando verifica a integridade (resumos) e as assinaturas digitais do arquivo `pacote.rpm` **antes** de instalá-lo?
+- rpm -V pacote.rpm
+= rpm -K pacote.rpm
+- rpm -qip pacote.rpm
+- rpm -Vp pacote.rpm
+> `rpm -K` (`--checksig`) confere os resumos e as assinaturas GPG do arquivo `.rpm`. Para checar as assinaturas, a chave pública do fornecedor precisa estar importada (`rpm --import`).
+> `rpm -V` (e `rpm -Vp`) verifica os arquivos de pacotes já instalados, comparando-os com os metadados do RPM, e não valida as assinaturas. `rpm -qip` apenas exibe o campo `Signature`, sem validá-lo.
+
+### 102.5-013 | lacuna | 2
+ref: 101:p.141-142
+tags: rpm, --import, chave GPG
+Complete o comando para importar a chave pública GPG do fornecedor, usada na verificação de assinaturas de pacotes RPM:
+
+```
+# rpm ____ RPM-GPG-KEY-vendor
+```
+= --import
+> `rpm --import arquivo-da-chave` adiciona a chave pública ao chaveiro do RPM. Depois disso, `rpm -K` consegue validar as assinaturas de pacotes feitos com essa chave, e o `yum` pode usar `gpgcheck=1` nos repositórios.
+
+### 102.5-014 | lacuna | 2
+ref: 101:p.139-142
+tags: rpm2cpio, cpio
+Qual comando converte um `.rpm` em um fluxo `cpio`, permitindo extrair seus arquivos sem instalar o pacote?
+
+```
+$ ____ pacote.rpm | cpio -idmv
+```
+= rpm2cpio
+> `rpm2cpio` envia o conteúdo do pacote para a saída padrão em formato `cpio`. O `cpio -idmv` extrai os arquivos (criando diretórios, preservando datas e listando o que extrai) no diretório atual, sem registrar nada no banco de dados do RPM.
+
+### 102.5-015 | unica | 2
+ref: 101:p.139-142
+tags: rpm2cpio, extração
+O que faz o comando abaixo?
+
+```
+$ rpm2cpio pacote.rpm | cpio -idmv
+```
+- Instala o pacote no sistema e o registra no banco de dados do RPM
+- Converte o pacote `.rpm` em um pacote `.deb`
+- Verifica as assinaturas do arquivo e imprime o resultado
+= Extrai os arquivos do pacote no diretório atual, sem instalá-lo
+> `rpm2cpio` gera um fluxo `cpio` com o conteúdo do pacote, e `cpio -idmv` extrai esse conteúdo a partir do diretório atual (por exemplo, `./usr/bin/programa`). Nada é instalado ou registrado no sistema, e por isso é útil para inspecionar um pacote ou recuperar um único arquivo.
+> A conversão para `.deb` seria feita por outra ferramenta (`alien`), e a verificação de assinaturas é feita com `rpm -K`.
+
+### 102.5-016 | unica | 1
+ref: 101:p.146
+tags: yum, repositórios, yum.repos.d
+Em qual diretório ficam os arquivos `.repo` que descrevem os repositórios usados pelo `yum` (e também pelo `dnf`)?
+- /etc/yum/repos/
+- /var/cache/yum/
+= /etc/yum.repos.d/
+- /etc/yum.conf.d/
+> Cada repositório é descrito por um arquivo `.repo` em `/etc/yum.repos.d/` (por exemplo, `CentOS-Base.repo`). O `dnf` usa o mesmo local e a mesma sintaxe.
+> `/var/cache/yum/` guarda pacotes baixados e metadados em cache. Os outros dois diretórios não existem na estrutura padrão.
+
+### 102.5-017 | lacuna | 1
+ref: 101:p.146
+tags: yum, yum.conf
+Qual é o caminho do arquivo de configuração global do `yum`?
+= /etc/yum.conf
+> `/etc/yum.conf` contém as opções gerais do `yum`. Os repositórios ficam, em geral, em arquivos `.repo` separados em `/etc/yum.repos.d/`.
+
+### 102.5-018 | lacuna | 2
+ref: 101:p.144-145
+tags: yum, whatprovides
+Complete o comando para descobrir qual pacote fornece o arquivo `/etc/hosts`:
+
+```
+# yum ____ /etc/hosts
+```
+= whatprovides
+= provides
+> `yum whatprovides` (ou o sinônimo `yum provides`) mostra qual pacote fornece o arquivo informado, instalado ou não. No exemplo da lição, a resposta é o pacote `setup`.
+
+### 102.5-019 | unica | 2
+ref: 101:p.144
+tags: yum, check-update, update
+Qual comando do `yum` verifica se há atualizações disponíveis para todos os pacotes instalados, **sem** instalá-las?
+= yum check-update
+- yum update
+- yum list installed
+- yum info
+> `yum check-update` apenas informa as atualizações disponíveis. Se um nome de pacote for fornecido, verifica somente aquele pacote.
+> `yum update`, sem nome de pacote, atualiza todos os pacotes. `yum list installed` lista os pacotes instalados e `yum info` mostra detalhes de um pacote.
+
+### 102.5-020 | unica | 3
+ref: 101:p.146-147
+tags: yum, yum-config-manager, repolist, desabilitar
+A saída de `yum repolist all` mostra:
+
+```
+repo id               repo name                  status
+updates/7/x86_64      CentOS-7 - Updates         enabled: 2,500
+updates-source/7      CentOS-7 - Updates Sources disabled
+```
+
+Qual comando desabilita o repositório `CentOS-7 - Updates`?
+- yum-config-manager --disable updates/7/x86_64
+- yum-config-manager --disable "CentOS-7 - Updates"
+- yum-config-manager --disable updates-source
+= yum-config-manager --disable updates
+> O identificador a usar é a parte do `repo id` anterior à primeira barra (`updates`), e não o nome descritivo nem o caminho completo. Para reativar, use `yum-config-manager --enable updates`.
+> O nome longo (`repo name`) e `updates/7/x86_64` não são o ID. `updates-source` é outro repositório (já desabilitado).
+
+### 102.5-021 | unica | 2
+ref: 101:p.146-147
+tags: yum, .repo, enabled
+O arquivo `/etc/yum.repos.d/meurepo.repo` contém:
+
+```
+[meurepo]
+name=Meu repositório
+baseurl=https://repo.exemplo.com/el8/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.exemplo.com/RPM-GPG-KEY
+```
+
+Qual alteração faz o `yum` deixar de usar esse repositório, sem apagar o arquivo?
+- Trocar `gpgcheck=1` por `gpgcheck=0`
+- Apagar a linha `baseurl=`
+- Renomear a seção `[meurepo]` para `[meurepo-off]`
+= Trocar `enabled=1` por `enabled=0`
+> A diretiva `enabled=0` desativa o repositório: ele é ignorado em instalações e atualizações, como acontece com os repositórios `disabled` de `yum repolist all`. É o que `yum-config-manager --disable` faz.
+> `gpgcheck=0` só desliga a verificação de assinaturas (o repositório continua ativo e menos seguro). Sem `baseurl`, o repositório fica sem endereço e gera erro, e renomear a seção só muda o ID do repositório.
+
+### 102.5-022 | unica | 2
+ref: 101:p.150-151
+tags: zypper, instalar
+Em um openSUSE, qual comando instala o pacote `unrar`, resolvendo as dependências automaticamente?
+- zypper se unrar
+- zypper rm unrar
+- zypper info unrar
+= zypper in unrar
+> `zypper install` (abreviado `zypper in`) instala pacotes com resolução de dependências.
+> `zypper se` (`search`) apenas procura, `zypper rm` (`remove`) remove o pacote, e `zypper info` mostra os metadados do pacote sem instalá-lo.
+
+### 102.5-023 | unica | 2
+ref: 101:p.150, 101:p.160
+tags: zypper, search, instalados
+Qual comando do `zypper` verifica se o pacote `unzip` está **instalado** no sistema?
+= zypper se -i unzip
+- zypper se -u unzip
+- zypper se --provides unzip
+- zypper lu unzip
+> No `zypper search` (`se`), a opção `-i` restringe a busca aos pacotes instalados, e uma `i` na primeira coluna da saída indica que o pacote está instalado.
+> `-u` restringe aos pacotes não instalados, `--provides` procura pelo que os pacotes fornecem (arquivos e capacidades), e `lu` lista atualizações.
+
+### 102.5-024 | unica | 2
+ref: 101:p.154, 101:p.159
+tags: zypper, modifyrepo, desabilitar repositório
+Qual comando do `zypper` desabilita o repositório de alias `repo-extras` sem removê-lo?
+- zypper removerepo repo-extras
+- zypper modifyrepo -F repo-extras
+- zypper addrepo -d repo-extras
+= zypper mr -d repo-extras
+> `zypper modifyrepo` (abreviado `mr`) altera as propriedades de um repositório. Com `-d` ele é desabilitado, e `-e` o habilita de novo. O alias é a segunda coluna de `zypper repos`.
+> `removerepo` apaga o cadastro do repositório. `modifyrepo -F` desativa apenas a atualização automática (autorefresh) de metadados, mantendo o repositório habilitado, e `addrepo` exige a URL e cria um repositório novo.
+
+### 102.5-025 | unica | 3
+ref: 101:p.152, 101:p.160
+tags: zypper, search, provides
+Qual comando do `zypper` indica qual pacote fornece o arquivo `/usr/sbin/swapon`?
+- zypper search --installed-only /usr/sbin/swapon
+- zypper info /usr/sbin/swapon
+= zypper se --provides /usr/sbin/swapon
+- zypper lu /usr/sbin/swapon
+> A busca com `--provides` procura o arquivo ou a capacidade entre o que os pacotes fornecem, retornando o pacote responsável.
+> `search --installed-only` (`se -i`) só procura pelo nome do pacote entre os instalados, `info` mostra os metadados de um pacote (e não de um arquivo), e `lu` lista atualizações.
+
+### 102.5-026 | unica | 2
+ref: 101:p.149
+tags: zypper, refresh, índice
+Qual comando do `zypper` atualiza os metadados dos repositórios, de forma análoga ao `apt-get update` do Debian?
+- zypper update
+- zypper list-updates
+= zypper refresh
+- zypper clean
+> `zypper refresh` (`ref`) baixa os metadados mais recentes dos repositórios, assim como `apt-get update` atualiza o índice do APT.
+> `zypper update` instala as versões mais novas dos pacotes, o que equivale mais ao `apt-get upgrade`. `zypper list-updates` apenas lista o que pode ser atualizado, e `zypper clean` limpa caches.
+
+### 102.5-027 | unica | 2
+ref: 101:p.148
+tags: dnf, provides
+Em um Fedora, qual comando indica qual pacote fornece o arquivo `/etc/hosts`?
+- dnf search /etc/hosts
+= dnf provides /etc/hosts
+- dnf info /etc/hosts
+- dnf list --installed /etc/hosts
+> `dnf provides ARQUIVO` informa qual pacote fornece o arquivo, e é o equivalente de `yum whatprovides`.
+> `dnf search` busca nos nomes e descrições dos pacotes, `dnf info` espera um nome de pacote e `dnf list --installed` lista pacotes instalados.
+
+### 102.5-028 | multipla | 2
+ref: 101:p.140-141, 101:p.148
+tags: rpm, dnf, listar arquivos do pacote
+Quais comandos listam os arquivos fornecidos pelo pacote `unzip`?
+= rpm -ql unzip
+= rpm -qlp unzip-6.0-19.el7.x86_64.rpm
+= dnf repoquery -l unzip
+- rpm -qi unzip
+- dnf provides unzip
+> `rpm -ql` lista os arquivos de um pacote instalado, `rpm -qlp` faz o mesmo com um arquivo `.rpm`, e `dnf repoquery -l` lista os arquivos de um pacote dos repositórios.
+> `rpm -qi` mostra metadados, não arquivos. `dnf provides unzip` procura quais pacotes fornecem algo chamado `unzip`, e não lista o conteúdo do pacote.
+
+### 102.5-029 | multipla | 2
+ref: 101:p.143-144, 101:p.148, 101:p.150
+tags: yum, dnf, zypper, rpm, dependências
+Quais comandos instalam o pacote `httpd` buscando e instalando também as dependências em repositórios?
+= yum install httpd
+= dnf install httpd
+= zypper install httpd
+- rpm -ivh httpd-2.4.rpm
+- rpm -Uvh httpd-2.4.rpm
+> `yum`, `dnf` e `zypper` são gerenciadores de pacotes de alto nível: consultam os repositórios e resolvem automaticamente as dependências.
+> `rpm -i` e `rpm -U` trabalham com um arquivo `.rpm` local e apenas verificam as dependências, falhando com "Failed dependencies" se algo estiver faltando.
+
+### 102.5-030 | unica | 3
+ref: 101:p.138
+tags: rpm, remover, dependências
+Ao executar `rpm -e unzip`, o administrador obtém:
+
+```
+error: Failed dependencies:
+        /usr/bin/unzip is needed by (installed) file-roller-3.28.1-2.el7.x86_64
+```
+
+Qual é o procedimento correto?
+- Executar `rpm -e unzip` novamente com `-f` para forçar a remoção
+- Executar `rpm -U unzip` para substituir o pacote por uma versão mais nova e então tentar remover
+- Remover primeiro o arquivo `/usr/bin/unzip` com `rm`
+= Remover também `file-roller`, por exemplo com `rpm -e file-roller unzip`
+> O `rpm` recusa remover um pacote do qual outro pacote instalado depende. O correto é remover primeiro o pacote dependente (`file-roller`) ou os dois ao mesmo tempo, passando vários nomes ao `rpm -e`.
+> O `-f` não é uma opção de remoção, e `-U` é para atualizar. Apagar o arquivo manualmente deixaria `file-roller` quebrado e o banco de dados do RPM inconsistente.
+
+### 102.5-031 | multipla | 3
+ref: 101:p.139-142
+tags: rpm, -V, -K, integridade
+Quais comandos verificam a integridade de pacotes RPM?
+= rpm -V openssh-server
+= rpm -K pacote.rpm
+= rpm -Va
+- rpm -qi openssh-server
+- rpm -qa
+> `rpm -V` compara os arquivos de um pacote instalado com o banco de dados do RPM, `rpm -Va` faz o mesmo para todos os pacotes, e `rpm -K` confere os resumos e as assinaturas de um arquivo `.rpm`.
+> `rpm -qi` e `rpm -qa` são consultas: mostram metadados e a lista de pacotes, mas não verificam se algo foi modificado.
+
+### 102.5-032 | unica | 3
+ref: 101:p.137, 101:p.141-142
+tags: rpm, reinstalar, --reinstall
+O pacote `base-1.0-1.noarch` está instalado, mas o arquivo `/usr/bin/base` foi apagado por engano. O arquivo `base-1.0-1.noarch.rpm` está no diretório atual. Qual comando restaura o arquivo reinstalando o mesmo pacote?
+- rpm -Uvh base-1.0-1.noarch.rpm
+- rpm -Fvh base-1.0-1.noarch.rpm
+- rpm -ivh base-1.0-1.noarch.rpm
+= rpm --reinstall base-1.0-1.noarch.rpm
+> `rpm --reinstall` instala o pacote novamente mesmo que ele já esteja instalado na mesma versão, restaurando arquivos apagados ou alterados.
+> `-U` e `-i` respondem "package base-1.0-1.noarch is already installed" e não fazem nada, e `-F` simplesmente ignora o pacote, por não haver versão mais nova.
+
+### 102.5-033 | unica | 2
+ref: 101:p.143-144
+tags: yum, reinstalar, yum reinstall
+Qual comando do `yum` reinstala o pacote `wget`, que já está instalado na versão mais recente?
+- yum install wget
+- yum update wget
+- yum check-update wget
+= yum reinstall wget
+> `yum reinstall` baixa o pacote novamente e o instala sobre a versão existente, restaurando arquivos apagados ou corrompidos.
+> `yum install wget` e `yum update wget` informam que não há nada a fazer, pois o pacote já está instalado na versão mais recente. `yum check-update` apenas consulta se há versões novas, sem instalar.

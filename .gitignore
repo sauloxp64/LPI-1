@@ -1,0 +1,17 @@
+# Material de terceiros: NÃO versionar. Baixe os PDFs oficiais da LPI (ver README) e deixe-os na raiz do projeto.
+*.pdf
+
+# Dados e artefatos locais
+*.db
+*.db-shm
+*.db-wal
+*.log
+node_modules/
+.env
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Texto de OCR gerado a partir de PDFs de terceiros (scripts/ocr-pdf.sh)
+*.ocr.txt

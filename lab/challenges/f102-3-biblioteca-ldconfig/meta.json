@@ -1,0 +1,28 @@
+{
+  "id": "f102-3-biblioteca-ldconfig",
+  "obj": "102.3",
+  "titulo": "Biblioteca compartilhada que não carrega",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "programa": { "escolha": ["bzip2", "xz"] },
+    "apelido": { "escolha": ["compacta", "arquiva", "empacota", "comprime"] },
+    "letra": { "escolha": ["q", "k", "w", "x", "v", "j"] },
+    "pasta": { "escolha": ["ext", "terceiros", "fornecedor", "importadas"] }
+  },
+  "enunciado": "O programa `~/lab/bibliotecas/bin/{apelido}` (uma cópia de uso interno do `{programa}`) não executa: ao rodá-lo aparece um erro de **biblioteca compartilhada**. A biblioteca que falta existe em algum lugar dentro de `~/lab/bibliotecas/` — há várias versões parecidas espalhadas por lá, mas só uma tem o nome exato que o programa exige.\n\n1. Descubra o **nome (soname) da biblioteca que está faltando** e grave-o em `~/lab/bibliotecas/faltando.txt` (apenas o nome, por exemplo `libxxx.so.1`).\n2. Faça o programa funcionar **para qualquer usuário e em qualquer shell, de forma permanente**, sem copiar a biblioteca para diretórios do sistema: registre o diretório onde ela está na configuração do carregador dinâmico e atualize o cache (use `sudo`).\n\nObservação: `LD_LIBRARY_PATH` só vale na sessão atual, então não resolve o item 2.",
+  "verifica": [
+    "`faltando.txt` contém exatamente o soname ausente (o que o `ldd` mostra como `not found`)",
+    "o diretório que contém a biblioteca consta em `/etc/ld.so.conf` ou em `/etc/ld.so.conf.d/*.conf`",
+    "o cache (`ldconfig -p`) conhece a biblioteca no diretório correto",
+    "`ldd` em um shell limpo (sem `LD_LIBRARY_PATH`) não acusa mais `not found`",
+    "`{apelido}` executa para o usuário `aluno`"
+  ],
+  "dicas": [
+    "O `ldd` mostra, para cada dependência, de onde ela é carregada — procure a linha com `not found`.",
+    "`find ~/lab/bibliotecas -name 'libXXX*'` localiza as candidatas; o nome precisa ser igual ao que o `ldd` pediu (a versão do arquivo real pode ter sufixos extras, como `.4`).",
+    "Crie um arquivo `.conf` em `/etc/ld.so.conf.d/` com o caminho do diretório (uma linha) e rode `sudo ldconfig` para reconstruir o cache.",
+    "Confirme com `ldconfig -p | grep <nome>` e `ldd ~/lab/bibliotecas/bin/{apelido}`."
+  ],
+  "solucao": "```\nldd ~/lab/bibliotecas/bin/{apelido}            # a linha 'not found' mostra o soname exigido\nfind ~/lab/bibliotecas -name 'lib*'            # veja qual arquivo tem esse nome (com versão completa)\necho NOME_SONAME > ~/lab/bibliotecas/faltando.txt\necho ~/lab/bibliotecas/{pasta} | sudo tee /etc/ld.so.conf.d/lab-bibliotecas.conf\nsudo ldconfig\nldd ~/lab/bibliotecas/bin/{apelido}            # agora resolve\n```\nO carregador dinâmico procura as bibliotecas em `LD_LIBRARY_PATH`, no cache `/etc/ld.so.cache`, e em `/lib` e `/usr/lib`. O cache é construído pelo `ldconfig` a partir de `/etc/ld.so.conf` e dos arquivos de `/etc/ld.so.conf.d/`. A pegadinha da prova: editar o `.conf` **sem rodar `ldconfig`** não adianta, e `LD_LIBRARY_PATH` é temporário (útil só para testes). Só o diretório que tem a biblioteca com o soname certo resolve — `ldconfig` não entra em subdiretórios."
+}

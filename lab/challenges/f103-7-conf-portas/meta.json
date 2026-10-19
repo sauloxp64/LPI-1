@@ -1,0 +1,37 @@
+{
+  "id": "f103-7-conf-portas",
+  "obj": "103.7",
+  "titulo": "Regex em arquivo de configuração: ativas e portas",
+  "nivel": 3,
+  "minutos": 10,
+  "params": {
+    "servico": {
+      "escolha": [
+        "apache",
+        "proxy",
+        "painel",
+        "gateway"
+      ]
+    },
+    "dir": {
+      "escolha": [
+        "Listen",
+        "Escuta",
+        "Porta"
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-7-conf-portas/` está o `servidor.conf` do serviço **{servico}**. Ele mistura diretivas ativas, comentários e linhas em branco. Os comentários começam com `#`, **mas podem vir precedidos de espaços ou tabs**, e há linhas que parecem vazias mas têm espaços. A diretiva de porta é **`{dir}`** e aceita as formas `{dir} 8080` e `{dir} 10.0.0.5:8443` (endereço e porta), às vezes com um comentário no fim da linha. Existe também uma diretiva de nome parecido, que **não** é a de porta.\n\nGere, na mesma pasta, sem alterar o `servidor.conf`:\n\n1. **`ativas.txt`**: somente as linhas **ativas** — sem comentários (inclusive os indentados) e sem linhas em branco ou só com espaços — **exatamente como estão** no original (comentário no fim da linha, se houver, permanece).\n2. **`portas.txt`**: apenas o **número da porta** de cada diretiva `{dir}` **ativa**, um por linha, na ordem do arquivo (sem o endereço IP, sem o comentário do fim da linha).",
+  "verifica": [
+    "`ativas.txt` tem exatamente as linhas ativas do original (sem comentários nem linhas em branco)",
+    "`portas.txt` tem só os números das portas das diretivas `{dir}` ativas, na ordem do arquivo",
+    "`servidor.conf` continua intacto"
+  ],
+  "dicas": [
+    "Para `ativas.txt`: pense no que descreve uma linha a ser **descartada** — começa (talvez após espaços/tabs) com `#`, **ou** não tem nada. `grep -v` e a classe `[[:space:]]` ajudam; `^` e `$` são as âncoras de início e fim da linha.",
+    "Para `portas.txt` há muitos caminhos. Um é o `sed -n` com o comando `p` (imprime só o que casou) e uma troca que mantém apenas o grupo da porta.",
+    "Na troca, capture a porta entre parênteses (regex estendida, `-E`) e reutilize com `\\2` ou `\\1`. O endereço IP opcional pode ser um grupo seguido de `?`, e o resto da linha cai fora com `.*`.",
+    "Cuidado com a diretiva de nome parecido: a diretiva certa é seguida de **espaço/tab**, não de mais letras."
+  ],
+  "solucao": "```\ncd ~/lab/f103-7-conf-portas\ngrep -Ev '^[[:space:]]*(#|$)' servidor.conf > ativas.txt\nsed -nE 's/^[[:space:]]*{dir}[[:space:]]+([0-9.]+:)?([0-9]+).*/\\2/p' servidor.conf > portas.txt\n```\n**ativas:** `^[[:space:]]*(#|$)` casa linhas que, após zero ou mais espaços/tabs, têm `#` ou acabam (vazia ou só com espaços); `-v` inverte e `-E` permite a alternância `(#|$)`. **portas:** `[[:space:]]+` depois de `{dir}` garante que é a diretiva exata (a de nome parecido tem letras logo em seguida); `([0-9.]+:)?` é o grupo opcional do endereço IP; `([0-9]+)` captura a porta (`\\2`); `.*` descarta o resto, inclusive o comentário do fim da linha; `-n` com a flag `p` imprime só as linhas em que a troca ocorreu. Pegadinhas: `grep -v '^#'` deixa passar comentários indentados e linhas em branco; `grep '{dir}'` pega as comentadas e a diretiva parecida; `[0-9]+$` falha quando há comentário no fim."
+}

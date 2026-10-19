@@ -1,0 +1,241 @@
+### 101.1-001 | unica | 1
+ref: 101:p.15
+tags: lspci, PCI
+Qual comando lista os dispositivos atualmente conectados ao barramento PCI, como controladores de disco e placas de vídeo?
+= lspci
+- lsusb -v
+- lsmod | grep pci
+- lsblk -f
+> `lspci` lista os dispositivos do barramento PCI (Peripheral Component Interconnect). `lsusb` (aqui com `-v`, detalhado) faz o mesmo para o barramento USB, `lsmod | grep pci` apenas filtra módulos do kernel carregados cujo nome contém "pci", e `lsblk -f` lista dispositivos de bloco (discos e partições) com seus sistemas de arquivos.
+
+### 101.1-002 | unica | 2
+ref: 101:p.14
+tags: BIOS, UEFI, ordem de boot
+Depois que um segundo disco SATA foi instalado em um servidor, o sistema operacional deixou de iniciar, embora nenhum componente esteja com defeito. Qual é a causa mais provável?
+= A ordem de boot da BIOS/UEFI passou a apontar para o disco sem o carregador
+- O módulo do kernel do segundo disco não foi carregado pelo modprobe durante o boot
+- O arquivo /etc/fstab ainda não contém uma entrada para o novo disco instalado
+- O udev não conseguiu criar o arquivo /dev/sdb para o segundo disco SATA
+> Quando há mais de um dispositivo de armazenamento, a BIOS/UEFI usa a ordem de boot configurada para procurar o carregador de inicialização. Se o disco sem bootloader vier primeiro, o sistema não carrega. Os demais itens só ocorrem **depois** que o kernel já está em execução: módulo, `/etc/fstab` e `/dev/sdb` não impedem que o carregador de boot seja encontrado pelo firmware.
+
+### 101.1-003 | unica | 2
+ref: 101:p.28
+tags: BIOS, teclado, periféricos integrados
+Um servidor x86 antigo, com firmware BIOS, interrompe a inicialização quando não encontra um teclado conectado. Como evitar esse comportamento sem alterar o hardware?
+= Desativar, no utilitário de configuração da BIOS, a opção que interrompe o boot quando o teclado não é detectado
+- Adicionar o parâmetro nokeyboard à linha do kernel no carregador de boot
+- Colocar uma regra no diretório /etc/udev/rules.d que ignore o teclado
+- Incluir blacklist usbhid em um arquivo de /etc/modprobe.d
+> Esse bloqueio é uma verificação do **firmware** (POST), que ocorre antes de o kernel e o udev existirem. Por isso a solução está no setup da BIOS, que permite ativar e desativar periféricos integrados e opções de proteção. Parâmetros de kernel, regras udev e blacklist de módulos só atuam depois que o firmware já passou o controle ao sistema.
+
+### 101.1-004 | lacuna | 2
+ref: 101:p.17
+tags: lsusb, -d, vendor, product
+Qual opção do `lsusb` seleciona somente o dispositivo com ID de fabricante e produto `1781:0c9f`? `lsusb -v ____ 1781:0c9f`
+= -d
+> Em `lsusb`, `-d vendor:product` filtra por ID de fabricante e de produto (valores em hexadecimal). A opção `-s [[bus]:][devnum]` seleciona pelo **número do barramento e do dispositivo** (em decimal), e `-t` mostra a árvore de dispositivos.
+
+### 101.1-005 | unica | 2
+ref: 101:p.16
+tags: lspci, -k, driver
+A saída de `lspci` contém a linha `03:00.0 RAID bus controller: LSI Logic / Symbios Logic MegaRAID SAS 2208`. Qual comando mostra o módulo do kernel em uso por esse dispositivo específico?
+= lspci -s 03:00.0 -k
+- lspci -d 03:00.0 -k
+- lsmod | grep 03:00.0
+- modinfo 03:00.0
+> A opção `-s` seleciona o dispositivo pelo **endereço** (`bus:slot.função`) e `-k` mostra as linhas "Kernel driver in use" e "Kernel modules". `-v` também exibe o driver, pois implica `-k`. Já `-d` espera um ID `fabricante:dispositivo`, e `lspci -d 03:00.0` falha com "Invalid device ID" (testado). O `lsmod` lista módulos por nome (não há endereço PCI na sua saída, então o filtro não encontra nada) e o `modinfo` espera nome de módulo, e não endereço PCI.
+
+### 101.1-006 | unica | 3
+ref: 101:p.18
+tags: lsusb, -s, barramento
+Em um `lsusb`, a linha de um adaptador Bluetooth é `Bus 001 Device 020: ID 1131:1001 Integrated System Solution Corp. KY-BT100`. Qual comando exibe somente esse dispositivo, usando o número do barramento e do dispositivo?
+= lsusb -s 01:20
+- lsusb -d 01:20 -v
+- lsusb -D 01:20
+- lsusb -t 01:20
+> `lsusb -s [[bus]:][devnum]` seleciona por barramento e número do dispositivo (em decimal). Com `-d`, os valores seriam interpretados como ID de fabricante e produto, em hexadecimal. `-D` espera o **arquivo de dispositivo** em `/dev/bus/usb` (com `01:20` ocorre "Cannot open 01:20"), e `-t` apenas mostra a árvore e não aceita esse argumento.
+
+### 101.1-007 | unica | 3
+ref: 101:p.18
+tags: lsusb, -t, driver
+Observe o trecho da saída de `lsusb -t`:
+
+```
+|__ Port 3: Dev 20, If 0, Class=Wireless, Driver=btusb, 12M
+|__ Port 3: Dev 29, If 0, Class=Vendor Specific Class, Driver=, 1.5M
+```
+
+O que se conclui sobre o dispositivo `Dev 29`, cuja linha termina com `Driver=`?
+= Nenhum módulo do kernel está vinculado a ele, e um aplicativo pode acessá-lo diretamente
+- Ele não foi detectado pelo kernel e precisa ser reconectado a outra porta USB
+- Ele usa o mesmo módulo btusb do dispositivo anterior, na mesma porta física
+- Ele está bloqueado por uma entrada de blacklist em /etc/modprobe.d
+> A coluna `Driver=` mostra o módulo do kernel associado à interface. Vazio significa que nenhum módulo a controla; alguns dispositivos são acessados direto por um aplicativo em espaço de usuário. Como aparece na listagem, o dispositivo **foi** detectado. O `btusb` é o driver do `Dev 20`, e uma blacklist não é indicada por essa saída.
+
+### 101.1-008 | unica | 2
+ref: 101:p.18-19
+tags: lsmod, Used by
+Observe a saída de `lsmod`:
+
+```
+Module          Size  Used by
+rt2x00lib      67108  3 rt61pci,rt2x00pci,rt2x00mmio
+```
+
+O que informa a coluna `Used by` nessa linha?
+= Três módulos (rt61pci, rt2x00pci, rt2x00mmio) dependem do rt2x00lib
+- O rt2x00lib depende de rt61pci, rt2x00pci e rt2x00mmio, carregados antes dele
+- O rt2x00lib foi carregado 3 vezes, ocupando 67108 bytes em cada carga
+- Os módulos rt61pci, rt2x00pci e rt2x00mmio estão em blacklist
+> No `lsmod`, a coluna `Used by` mostra a contagem de uso e os módulos **dependentes** do módulo da linha. A coluna `Size` é o tamanho do módulo na memória, em bytes. Por isso o `rt2x00lib` não pode ser removido antes dos três que o utilizam. Blacklist é configuração de `/etc/modprobe.d` e não aparece no `lsmod`.
+
+### 101.1-009 | unica | 2
+ref: 101:p.20, 101:p.27
+tags: modprobe, módulo em uso
+Ao tentar descarregar o módulo `bluetooth` com `modprobe -r bluetooth`, o administrador recebe `modprobe: FATAL: Module bluetooth is in use.` Qual é a causa provável?
+= O módulo está em uso por um processo ou por outro módulo carregado
+- O módulo bluetooth está na blacklist do /etc/modprobe.d e não pode ser removido
+- O comando exige privilégios de root, e quem o executou é um usuário comum
+- O arquivo do módulo não existe em /lib/modules para o kernel em execução
+> "Module ... is in use" indica que a contagem de uso do módulo é maior que zero: há um processo ou outro módulo dependente. É preciso encerrar o usuário do módulo antes. Sem privilégio de root, o erro seria de permissão ("Operation not permitted"), e um módulo inexistente gera "Module bluetooth not found" (testado com outro módulo). A blacklist só impede o carregamento **automático**.
+
+### 101.1-010 | lacuna | 1
+ref: 101:p.20
+tags: modprobe, -r, descarregar
+Qual opção do `modprobe` descarrega um módulo (e os módulos dos quais ele depende e que ficarem sem uso)? `modprobe ____ snd-hda-intel`
+= -r
+= --remove
+> `modprobe -r` (`--remove`) remove o módulo e tenta remover também as dependências que ficaram sem uso, desde que ele não esteja em uso. Sem opções, o `modprobe` **carrega** o módulo e suas dependências.
+
+### 101.1-011 | lacuna | 2
+ref: 101:p.20
+tags: modinfo, -p, parâmetros
+Qual opção do `modinfo` exibe somente os parâmetros aceitos por um módulo? `modinfo ____ nouveau`
+= -p
+= --parameters
+= -F parm
+= --field=parm
+= --field parm
+> `modinfo -p` (`--parameters`) mostra apenas os parâmetros disponíveis, no formato `nome:descrição (tipo)`. Sem opção, `modinfo` exibe descrição, arquivo, autor, licença, dependências e parâmetros. Para tornar um parâmetro permanente, usa-se a diretiva `options` em `/etc/modprobe.d/`.
+
+### 101.1-012 | unica | 2
+ref: 101:p.21
+tags: blacklist, modprobe.d
+Qual linha, colocada em um arquivo `.conf` de `/etc/modprobe.d/`, impede o carregamento automático do módulo `nouveau`?
+= blacklist nouveau
+- disable nouveau
+- options nouveau off
+- exclude nouveau
+> A diretiva `blacklist <módulo>` em `/etc/modprobe.d/*.conf` (por exemplo, `blacklist.conf` ou `nouveau.conf`) impede que o módulo seja carregado automaticamente, o que é necessário ao instalar o driver proprietário `nvidia`. `disable` e `exclude` não existem em `modprobe.d`, e `options` serve para passar **parâmetros** ao módulo, não para desativá-lo.
+
+### 101.1-013 | unica | 3
+ref: 101:p.21
+tags: modprobe.d, options, parâmetros
+Como tornar **permanente** o parâmetro `modeset=0` do módulo `nouveau`, sem precisar repetir o comando a cada boot?
+= Escrever options nouveau modeset=0 em /etc/modprobe.d/nouveau.conf
+- Executar modprobe nouveau modeset=0 uma vez como root
+- Escrever blacklist nouveau modeset=0 em /etc/modprobe.d/blacklist.conf
+- Gravar modeset=0 no arquivo /proc/modules
+> A diretiva `options <módulo> <parâmetro>=<valor>` em `/etc/modprobe.d/*.conf` é aplicada toda vez que o módulo é carregado. `modprobe nouveau modeset=0` vale somente para aquela carga. `blacklist` não aceita parâmetros (apenas o nome do módulo) e `/proc/modules` é uma visão **somente leitura** dos módulos carregados.
+
+### 101.1-014 | multipla | 2
+ref: 101:p.21-22
+tags: /proc, interrupts, ioports, dma
+Quais arquivos de `/proc` fornecem informações sobre interrupções (IRQ), portas de entrada/saída e canais DMA em uso?
+= /proc/interrupts
+= /proc/ioports
+= /proc/dma
+- /proc/cpuinfo
+- /proc/cmdline
+- /proc/mounts
+> `/proc/interrupts` lista as interrupções por dispositivo e por CPU, `/proc/ioports` as regiões de portas de E/S registradas e `/proc/dma` os canais DMA em uso. `/proc/cpuinfo` descreve as CPUs, `/proc/cmdline` guarda os parâmetros com que o kernel foi iniciado e `/proc/mounts` lista os sistemas de arquivos montados.
+
+### 101.1-015 | lacuna | 2
+ref: 101:p.28
+tags: /proc/cpuinfo, Meltdown, bugs
+Qual arquivo do diretório `/proc` contém uma linha `bugs:` que lista os defeitos de hardware conhecidos da CPU (como `cpu_meltdown`)? Informe o caminho completo: ____
+= /proc/cpuinfo
+> O `/proc/cpuinfo` descreve cada CPU (modelo, flags etc.), e nos kernels recentes inclui a linha `bugs:` com as vulnerabilidades conhecidas do processador (testado: `bugs : spectre_v1 spectre_v2 ...`). Outra forma de consulta, fora de `/proc`, é o diretório `/sys/devices/system/cpu/vulnerabilities/`.
+
+### 101.1-016 | multipla | 3
+ref: 101:p.21-22
+tags: /proc, /sys, /dev, pseudossistemas
+Quais afirmações sobre `/proc`, `/sys` e `/dev` estão corretas?
+= /proc e /sys são pseudossistemas de arquivos mantidos na memória e existem apenas enquanto o sistema está em execução
+= Cada arquivo em /dev representa um dispositivo, e os de dispositivos removíveis são criados dinamicamente pelo udev
+- /sys armazena em disco o histórico de hardware detectado em boots anteriores
+- /proc contém apenas informações de hardware e nunca informações de processos
+- /dev guarda os módulos do kernel (arquivos .ko) que podem ser carregados com o modprobe
+> `/proc` e `/sys` são pseudossistemas de arquivos: o conteúdo é gerado pelo kernel na RAM. O `/sys` (sysfs) é voltado a dispositivos e dados de hardware do kernel, enquanto `/proc` também expõe processos e estruturas do kernel. `/dev` contém os arquivos de dispositivo, que o udev cria dinamicamente. Os módulos `.ko` ficam em `/lib/modules/<versão>/`.
+
+### 101.1-017 | unica | 2
+ref: 101:p.22
+tags: udev, /dev, hotplug, regras
+O que acontece quando um pen drive USB é conectado a um sistema Linux em execução?
+= O kernel avisa o udev, que aplica suas regras e cria os arquivos em /dev
+- O modprobe lê o /etc/fstab e monta o pen drive diretamente em /mnt
+- O lsusb é executado em segundo plano e grava o dispositivo em /proc/devices
+- O dbus cria o arquivo em /dev e o grava em disco para o próximo boot
+> O kernel detecta o hardware (hotplug) e envia o evento ao udev, que identifica o dispositivo, usa o sysfs e as regras e cria dinamicamente o arquivo em `/dev`. O mount automático depende do ambiente (não do `modprobe`), o `lsusb` é só uma ferramenta de consulta, e o `/dev` é recriado dinamicamente a cada boot.
+
+### 101.1-018 | lacuna | 2
+ref: 101:p.22
+tags: udev, rules.d
+Em qual diretório o administrador coloca regras udev **personalizadas** (as regras principais vêm da distribuição)? Informe o caminho completo: ____
+= /etc/udev/rules.d
+= /etc/udev/rules.d/
+> O udev procura regras nos arquivos `.rules` de `/etc/udev/rules.d/`, que têm precedência e são o local para regras do administrador. As regras fornecidas pelos pacotes ficam em `/usr/lib/udev/rules.d/` (em muitas distribuições também acessível como `/lib/udev/rules.d/`).
+
+### 101.1-019 | lacuna | 1
+ref: 101:p.22
+tags: hotplug, coldplug
+Como se chama a detecção e a configuração de um dispositivo enquanto o sistema está em execução, como ao inserir um pen drive USB?
+= hotplug
+= Hotplug
+= hot plug
+= hot-plug
+= Hot-plug
+= hotplugging
+> **Hotplug** é a detecção/configuração com o sistema em execução. Já a detecção **coldplug** trata dos dispositivos que já estavam presentes durante a inicialização. Nas distribuições atuais, o udev cuida das duas situações.
+
+### 101.1-020 | unica | 2
+ref: 101:p.22
+tags: dbus, conceitos
+Em sistemas Linux modernos, o que é o D-Bus (dbus)?
+= Um barramento de mensagens para comunicação entre processos e serviços, usado, por exemplo, pelo systemd
+- Um barramento de hardware que liga a placa-mãe aos dispositivos de armazenamento
+- Um pseudossistema de arquivos montado em /sys que expõe os dispositivos
+- Um módulo do kernel que cria os arquivos de dispositivo em /dev
+> O D-Bus é um sistema de comunicação entre processos (IPC): serviços e aplicações trocam mensagens e solicitações por meio de um barramento de software, e o systemd o utiliza na ativação de serviços. O pseudossistema `/sys` é o sysfs, e quem cria dinamicamente os arquivos em `/dev` é o udev. Um barramento físico seria, por exemplo, o PCI ou o USB.
+
+### 101.1-021 | multipla | 3
+ref: 101:p.23
+tags: /dev, partições, nvme, mmcblk
+Quais caminhos representam **partições** (e não discos inteiros) em um sistema Linux moderno?
+= /dev/sdb3
+= /dev/nvme0n1p2
+= /dev/mmcblk1p1
+- /dev/nvme0n1
+- /dev/mmcblk0
+- /dev/sda
+> Discos SATA/SCSI/USB usam `sdX` e as partições recebem número (`/dev/sdb3`). Em NVMe o disco é `/dev/nvme0n1` e as partições levam `p<número>` (`/dev/nvme0n1p2`). Em cartões SD o disco é `/dev/mmcblk0` e as partições são `/dev/mmcblk0p1` etc. `/dev/sda`, `/dev/nvme0n1` e `/dev/mmcblk0` são os dispositivos de bloco inteiros.
+
+### 101.1-022 | unica | 1
+ref: 101:p.23
+tags: /dev, IDE, hdc
+Em um sistema legado com discos IDE, a que corresponde o dispositivo `/dev/hdc`?
+= Ao dispositivo master do segundo canal IDE
+- Ao dispositivo slave do primeiro canal IDE da placa-mãe
+- Ao dispositivo master do primeiro canal IDE
+- À terceira partição do primeiro disco IDE
+> No IDE legado, `/dev/hda` e `/dev/hdb` são o master e o slave do primeiro canal, enquanto `/dev/hdc` e `/dev/hdd` são o master e o slave do segundo canal. O número que segue o nome (como `hda1`) indica a partição, e `/dev/hdc` não tem número. Kernels atuais identificam IDE, SATA, SSD e USB como `sdX`.
+
+### 101.1-023 | unica | 2
+ref: 101:p.28
+tags: lspci, ARM, Raspberry Pi
+Em um Raspberry Pi (arquitetura ARM) o comando `lspci` normalmente não está disponível ou não mostra nada. Por quê?
+= A maioria dessas placas não tem barramento PCI, e o lspci só lista dispositivos PCI
+- O lspci só funciona em kernels compilados sem suporte a hotplug de dispositivos
+- A arquitetura ARM não tem o pseudossistema /sys, e o lspci depende dele para operar
+- O lspci foi substituído pelo lsusb em todas as arquiteturas desde o kernel 3.0
+> O `lspci` lista dispositivos do barramento PCI. Placas ARM como o Raspberry Pi geralmente não possuem esse barramento, então não há o que listar. O sysfs (`/sys`) existe em todas as arquiteturas suportadas, o hotplug é suportado desde o kernel 2.6 e o `lsusb` lista apenas dispositivos USB.

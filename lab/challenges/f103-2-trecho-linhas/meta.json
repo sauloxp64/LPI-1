@@ -1,0 +1,34 @@
+{
+  "id": "f103-2-trecho-linhas",
+  "obj": "103.2",
+  "titulo": "Recortar um trecho de um log",
+  "nivel": 1,
+  "minutos": 4,
+  "params": {
+    "ini": {
+      "faixa": [
+        10,
+        45
+      ]
+    },
+    "qtd": {
+      "faixa": [
+        6,
+        14
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-2-trecho-linhas/` está o `servico.log`, um log de sistema com algumas centenas de linhas. Um incidente começou na **linha {ini}** e o analista pediu o trecho que cobre o incidente.\n\n1. Grave em `trecho.txt` (na mesma pasta) **{qtd} linhas consecutivas, começando na linha {ini}** (inclusive). Nada além dessas linhas.\n2. Grave em `total.txt` o **número total de linhas** de `servico.log` (só o número, ou o formato padrão do comando que conta).\n\nNão altere o `servico.log`.",
+  "verifica": [
+    "`trecho.txt` tem exatamente as {qtd} linhas a partir da linha {ini} de `servico.log`",
+    "`total.txt` traz o total de linhas do `servico.log`",
+    "`servico.log` continua intacto"
+  ],
+  "dicas": [
+    "Pense em dois filtros em pipe: um que descarta o começo do arquivo e outro que fica só com as primeiras linhas do que sobrou.",
+    "`head -n N` mostra as N primeiras linhas; `tail -n +K` mostra a partir da linha K.",
+    "Outra opção: o `sed` com `-n` e o comando `p` aceita faixas de endereço, como `sed -n '10,20p'`.",
+    "Para contar linhas: `wc -l < arquivo` (com `<` o `wc` não imprime o nome do arquivo)."
+  ],
+  "solucao": "```\ncd ~/lab/f103-2-trecho-linhas\ntail -n +{ini} servico.log | head -n {qtd} > trecho.txt\nwc -l < servico.log > total.txt\n```\n`tail -n +{ini}` começa a imprimir **na** linha {ini} (o `+` significa \"a partir de\", não \"últimas\"), e `head -n {qtd}` corta depois de {qtd} linhas. Alternativa com um só comando: `sed -n \"{ini},FIMp\" servico.log`, em que FIM = {ini} + {qtd} - 1 (conte com cuidado: as duas pontas entram). Pegadinha: errar por um (off-by-one) no ponto de partida ou no tamanho."
+}

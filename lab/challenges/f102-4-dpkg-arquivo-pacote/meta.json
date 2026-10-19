@@ -1,0 +1,22 @@
+{
+  "id": "f102-4-dpkg-arquivo-pacote",
+  "obj": "102.4",
+  "titulo": "De qual pacote veio este arquivo?",
+  "nivel": 1,
+  "minutos": 5,
+  "params": {
+    "arquivo": { "escolha": ["/usr/bin/lsusb", "/usr/bin/lspci", "/usr/bin/tree", "/usr/bin/bc", "/usr/bin/zip", "/usr/bin/unzip", "/usr/bin/dig", "/usr/bin/tmux", "/usr/bin/lsof", "/usr/bin/file", "/usr/bin/curl", "/usr/sbin/logrotate"] }
+  },
+  "enunciado": "Um colega perguntou de onde veio o arquivo `{arquivo}` neste sistema Debian. Usando as ferramentas do sistema de pacotes (`dpkg`, `dpkg-query`, `apt-cache`...), grave em `~/lab/pacotes/`:\n\n* `pacote.txt` — apenas o **nome do pacote** que contém esse arquivo;\n* `versao.txt` — apenas a **versão instalada** desse pacote;\n* `arquivos.txt` — a **lista de todos os arquivos** que o pacote instala (um caminho por linha).\n\nA pasta `~/lab/pacotes/` já existe.",
+  "verifica": [
+    "`pacote.txt` contém o nome do pacote dono de `{arquivo}`",
+    "`versao.txt` contém a versão instalada do pacote",
+    "`arquivos.txt` lista todos os arquivos do pacote e nada além deles (a saída direta do `dpkg -L` serve)"
+  ],
+  "dicas": [
+    "Há uma opção do `dpkg` que procura, entre os arquivos instalados, o pacote a que um caminho pertence.",
+    "`dpkg -S caminho` descobre o pacote; `dpkg -L pacote` lista seus arquivos; `dpkg -s pacote` mostra o campo Version.",
+    "Para a versão, `dpkg -s pacote | grep ^Version` ou `apt-cache policy pacote` (linha 'Instalado'); redirecione cada saída com `>` para o arquivo pedido."
+  ],
+  "solucao": "```\ndpkg -S {arquivo}                      # mostra 'pacote: /caminho'\ndpkg -S {arquivo} | cut -d: -f1 > ~/lab/pacotes/pacote.txt\ndpkg -s PACOTE | grep '^Version'       # ou: apt-cache policy PACOTE\necho VERSAO > ~/lab/pacotes/versao.txt\ndpkg -L PACOTE > ~/lab/pacotes/arquivos.txt\n```\n`dpkg -S` consulta a base local (`/var/lib/dpkg/info/*.list`) e responde qual pacote instalou o caminho; `dpkg -L` faz o contrário (pacote -> arquivos). Para pacotes **não instalados** seria preciso `apt-file` ou `dpkg -c arquivo.deb`. Pegadinha: `dpkg -S` compara o caminho exatamente como foi registrado; no Debian 12, um comando registrado como `/bin/xxx` não é achado como `/usr/bin/xxx` — use o caminho que o `dpkg -S` realmente conhece ou um padrão (`dpkg -S '*/bzip2'`)."
+}

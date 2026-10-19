@@ -1,0 +1,7 @@
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Laboratório LPIC-1 · Debian 12 · sem systemd                │
+  │  Você é "aluno" (sudo sem senha). Este container é descartável│
+  │  e nada aqui afeta o seu computador. Tente: man, info, --help │
+  └──────────────────────────────────────────────────────────────┘
+

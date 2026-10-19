@@ -1,0 +1,27 @@
+{
+  "id": "f109-3-portas-escuta",
+  "obj": "109.3",
+  "titulo": "Descobrir quem escuta em quais portas e encerrar um serviço",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "s1": { "escolha": ["lpx-relay", "lpx-fila", "lpx-cache"] },
+    "s2": { "escolha": ["lpx-sync", "lpx-api", "lpx-feed"] },
+    "s3": { "escolha": ["lpx-radar", "lpx-hub", "lpx-coleta"] },
+    "su": { "escolha": ["lpx-medidor", "lpx-tick", "lpx-eco"] },
+    "base": { "faixa": [20000, 40000] }
+  },
+  "enunciado": "Um colega subiu quatro serviços de teste neste servidor e esqueceu de anotar as portas. Os processos se chamam **`{s1}`**, **`{s2}`**, **`{s3}`** (escutam em **TCP**) e **`{su}`** (escuta em **UDP**), todos em portas altas aleatórias. Os processos são do `root`: você vai precisar de `sudo` para ver o nome do processo dono de cada socket.\n\n1. Grave em `~/lab/portas/tcp.txt` **uma linha por serviço TCP**, no formato `nome porta` (por exemplo `meu-servico 8080`), para `{s1}`, `{s2}` e `{s3}`.\n2. Grave em `~/lab/portas/udp.txt` **uma única linha** `porta pid` com a porta UDP e o **PID** do processo `{su}`.\n3. Depois de anotar, **encerre apenas o serviço `{s2}`** (os outros três devem continuar rodando).\n\nAtenção à ordem: depois que `{s2}` for encerrado a porta dele não aparece mais.",
+  "verifica": [
+    "`tcp.txt` tem as portas corretas de `{s1}`, `{s2}` e `{s3}` (inclusive a de `{s2}`, anotada antes de encerrá-lo)",
+    "`udp.txt` tem a porta UDP e o PID reais de `{su}`",
+    "o processo `{s2}` não está mais rodando e `{s1}`, `{s3}` e `{su}` continuam rodando"
+  ],
+  "dicas": [
+    "O `ss` lista sockets: `-l` só os que escutam, `-t` TCP, `-u` UDP, `-n` números em vez de nomes, `-p` mostra o processo (precisa de root para processos de outros usuários).",
+    "`sudo ss -ltnp` (TCP) e `sudo ss -lunp` (UDP) mostram `users:((\"nome\",pid=N,fd=F))` na última coluna. Alternativa: `sudo lsof -i -P -n` ou `sudo lsof -iTCP -sTCP:LISTEN -P -n`.",
+    "Para a porta, olhe a coluna `Local Address:Port` (o número depois dos dois-pontos). Para encerrar um processo pelo nome: `sudo pkill -x NOME`, ou `sudo kill PID`.",
+    "Grave primeiro (`tcp.txt` e `udp.txt`), confira com `cat`, e só então encerre `{s2}`."
+  ],
+  "solucao": "```\nsudo ss -ltnp          # TCP: porta em 'Local Address:Port', nome/PID em 'users:'\nsudo ss -lunp          # UDP\n# (ou: sudo lsof -i -P -n | grep lpx)\n\n# grave no formato pedido, por exemplo:\necho \"{s1} <porta>\" >  ~/lab/portas/tcp.txt\necho \"{s2} <porta>\" >> ~/lab/portas/tcp.txt\necho \"{s3} <porta>\" >> ~/lab/portas/tcp.txt\necho \"<porta> <pid>\" > ~/lab/portas/udp.txt\n\nsudo pkill -x {s2}      # ou: sudo kill <pid>\nsudo ss -ltnp           # confirme que só {s2} sumiu\n```\n`ss` (substituto moderno do `netstat`) lê os sockets do kernel: `-l` listening, `-t`/`-u` protocolo, `-n` sem resolução de nomes, `-p` processo dono. Sem `sudo` o processo de outro usuário aparece em branco. `lsof -i` é a visão por arquivo aberto (`-P` e `-n` evitam resolver portas e nomes). A pegadinha da prova costuma ser confundir porta local com remota e esquecer `-n`/`-p`; o PID também pode ser achado com `pgrep -x NOME`."
+}

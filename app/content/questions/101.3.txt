@@ -1,0 +1,358 @@
+### 101.3-001 | lacuna | 1
+ref: 101:p.49
+tags: /etc/inittab, initdefault, runlevel padrão
+No SysVinit, o runlevel padrão é definido em `/etc/inittab` por uma entrada como `id:3:____:`. Qual é a ação que completa a linha?
+= initdefault
+> A entrada `id:x:initdefault:` define o runlevel `x` em que o sistema entra se nenhum outro for informado pelo kernel. O número nunca deve ser 0 ou 6, pois isso desligaria ou reiniciaria o sistema ao fim do boot.
+
+### 101.3-002 | unica | 2
+ref: 101:p.49-50
+tags: /etc/inittab, wait, ações
+Em um SysVinit, existe a linha abaixo em `/etc/inittab`:
+
+```
+l3:3:wait:/etc/init.d/rc 3
+```
+
+O que significa a ação `wait`?
+= Ao entrar no runlevel 3, o init executa o comando e aguarda o término antes de continuar
+- O comando é executado só durante o boot, e o init aguarda o término ignorando o campo de runlevels
+- O comando é reiniciado automaticamente pelo init sempre que o processo for encerrado
+- O comando é executado quando o init recebe o sinal SIGINT disparado por Ctrl+Alt+Del
+> O formato é `id:runlevels:ação:processo`. Em `wait`, o processo roda nos runlevels listados e o `init` espera sua conclusão. A descrição de execução só no boot (ignorando runlevels) corresponde a `bootwait`, a de reinício automático a `respawn` e a de Ctrl+Alt+Del a `ctrlaltdel`.
+
+### 101.3-003 | unica | 3
+ref: 101:p.49-50
+tags: /etc/inittab, respawn, getty
+O que faz a seguinte linha de `/etc/inittab`?
+
+```
+1:23:respawn:/sbin/getty tty1 VC linux
+```
+
+= Mantém um getty em tty1 nos runlevels 2 e 3, reiniciando-o sempre que for encerrado
+- Executa o getty uma vez, no runlevel 1, e aguarda o término para continuar o boot
+- Executa o getty em tty1 somente durante o boot, ignorando o campo dos runlevels
+- Reinicia o sistema no runlevel 23 quando o processo getty termina
+> No campo `id` vale `1` (identificador de até quatro caracteres), o campo de runlevels `23` significa "níveis 2 e 3" e `respawn` manda o init recriar o processo se ele terminar, de modo que o login no console esteja sempre disponível. O `1` inicial não é um runlevel e `23` não é um runlevel único.
+
+### 101.3-004 | unica | 2
+ref: 101:p.49-50
+tags: /etc/inittab, ctrlaltdel, shutdown
+Considere a entrada de `/etc/inittab`:
+
+```
+ca::ctrlaltdel:/sbin/shutdown -r now
+```
+
+O que ocorre quando o init recebe o sinal SIGINT, disparado por Ctrl+Alt+Del?
+= O sistema é reiniciado imediatamente
+- O sistema é desligado imediatamente
+- O sistema muda para o runlevel 1 (usuário único)
+- Nada acontece, pois o init ignora o sinal SIGINT
+> A ação `ctrlaltdel` é executada quando o init recebe SIGINT. Como o comando é `shutdown -r now` (`-r` = reboot, `now` = imediatamente), o sistema reinicia. Para desligar, seria `-h`, e para ir ao modo de manutenção, runlevel 1; o init não ignora o sinal.
+
+### 101.3-005 | lacuna | 2
+ref: 101:p.50
+tags: telinit, q, /etc/inittab
+Depois de editar `/etc/inittab`, qual argumento faz o `init` reler o arquivo, sem reiniciar o sistema? `telinit ____`
+= q
+= Q
+= telinit q
+= telinit Q
+> `telinit q` (ou `Q`) pede ao init que recarregue sua configuração; isso deve ser feito sempre que `/etc/inittab` for modificado. Os argumentos numéricos e `S` mudam de runlevel.
+
+### 101.3-006 | unica | 3
+ref: 101:p.49
+tags: /etc/inittab, initdefault, runlevel 6
+Um administrador altera `/etc/inittab` para `id:6:initdefault:` e reinicia a máquina. O que acontece?
+= O sistema reinicia ao fim da inicialização e entra em um ciclo contínuo de reinicializações
+- O sistema inicia normalmente no modo gráfico com rede e multiusuário
+- O sistema inicia em modo de usuário único, com o shell de manutenção
+- O init ignora a entrada por ser inválida e pergunta o runlevel no console
+> O runlevel 6 é o de reinicialização (e o 0 é o de desligamento). Como o padrão passa a ser 6, ao terminar o boot o init entra nesse nível e reinicia, repetidamente. Por isso o runlevel padrão nunca deve ser 0 ou 6. O modo gráfico é o runlevel 5 e o modo de usuário único é o runlevel 1.
+
+### 101.3-007 | unica | 2
+ref: 101:p.50, 101:p.61
+tags: rc1.d, K, S, links simbólicos
+O que ocorre com o serviço associado ao link `/etc/rc1.d/K90network` quando o sistema entra no runlevel 1?
+= O serviço é encerrado (parado)
+- O serviço é iniciado depois dos de prefixo S
+- O serviço é iniciado, com prioridade 90
+- O serviço é reiniciado, com atraso de 90 segundos
+> Nos diretórios `/etc/rcN.d/`, os links simbólicos apontam para scripts de `/etc/init.d/`. Nomes iniciados em `K` (kill) são parados ao entrar no runlevel, e os iniciados em `S` (start) são iniciados. O número (90) apenas define a ordem de execução. O runlevel 1 não tem rede, por isso há vários links `K` de serviços de rede em `/etc/rc1.d/`.
+
+### 101.3-008 | lacuna | 1
+ref: 101:p.50
+tags: /etc/init.d, scripts de serviço
+Em qual diretório ficam os scripts reais dos serviços do SysVinit, para os quais os links de `/etc/rcN.d/` apontam? Informe o caminho: ____
+= /etc/init.d
+= /etc/init.d/
+= /etc/rc.d/init.d
+= /etc/rc.d/init.d/
+> Os scripts ficam em `/etc/init.d/`, e cada runlevel tem um diretório (`/etc/rc0.d/` a `/etc/rc6.d/`) com links simbólicos para eles. Não confundir com `/etc/init/`, usado pelos jobs do Upstart.
+
+### 101.3-009 | unica | 2
+ref: 101:p.51
+tags: runlevel, N
+Um administrador executa o comando `runlevel` e obtém a saída `N 3`. O que isso significa?
+= Não houve runlevel anterior desde o boot, e o atual é o 3
+- O runlevel anterior era o N e o atual é o 3
+- O sistema está no runlevel 3 e a rede (Network) está inativa
+- O sistema passou pelo runlevel 3 e agora está no nível normal (N)
+> O comando `runlevel` imprime o runlevel anterior e o atual, separados por espaço. A letra `N` indica que não houve runlevel anterior, ou seja, o nível não mudou desde a última inicialização. Aqui o sistema está no runlevel 3.
+
+### 101.3-010 | multipla | 2
+ref: 101:p.51
+tags: telinit, init, modo single user
+Quais comandos levam um sistema SysVinit em execução ao modo de usuário único (runlevel 1)?
+= telinit 1
+= telinit S
+= init 1
+- telinit 0
+- telinit 6
+- telinit q
+> Em SysVinit, `telinit` (e `init`, quando chamado depois do boot) troca o runlevel sem reiniciar: `1`, `s` ou `S` levam ao modo de usuário único. `telinit 0` desliga, `telinit 6` reinicia e `telinit q` apenas recarrega o `/etc/inittab`.
+
+### 101.3-011 | unica | 2
+ref: 101:p.53-54
+tags: systemctl, set-default, default.target
+Qual comando define o `multi-user.target` como destino de boot padrão de forma permanente em um sistema com systemd?
+= systemctl set-default multi-user.target
+- systemctl isolate multi-user.target
+- systemctl get-default multi-user.target
+- systemctl enable multi-user.target --default
+> `systemctl set-default <alvo>` altera o link simbólico `default.target` e vale para os próximos boots (consulta-se com `systemctl get-default`). `isolate` muda de alvo na hora, mas não altera o padrão. `get-default` só mostra o valor atual e não aceita argumento, e `--default` não é opção do `enable`.
+
+### 101.3-012 | lacuna | 2
+ref: 101:p.53, 101:p.62
+tags: default.target, /etc/systemd/system
+Qual é o caminho completo do link simbólico que indica o destino de boot padrão e que o `systemctl set-default` altera? ____
+= /etc/systemd/system/default.target
+> O link `/etc/systemd/system/default.target` aponta para o arquivo da unidade escolhida como destino padrão (testado: `systemctl set-default multi-user.target` cria o link para `multi-user.target`). Quando ele não existe, vale o padrão da distribuição (por exemplo, `default.target` em `/lib/systemd/system`, que aponta para `graphical.target` no Debian).
+
+### 101.3-013 | unica | 3
+ref: 101:p.53
+tags: systemctl, isolate, multi-user.target
+Um servidor está em `graphical.target`. Qual comando coloca o sistema imediatamente em modo multiusuário sem interface gráfica, encerrando as unidades que só pertencem ao alvo gráfico e sem alterar o destino padrão?
+= systemctl isolate multi-user.target
+- systemctl set-default multi-user.target
+- systemctl start multi-user.target
+- systemctl restart graphical.target
+> `isolate` inicia o alvo e suas dependências e **para todas as outras** unidades, o que remove o ambiente gráfico. `set-default` só vale para o próximo boot e não muda o estado atual. `start multi-user.target` apenas acrescenta unidades e mantém o `graphical.target` ativo, e `restart graphical.target` não sai do alvo gráfico.
+
+### 101.3-014 | unica | 1
+ref: 101:p.53
+tags: multi-user.target, runlevel 3
+Qual runlevel do SysV é o equivalente aproximado do `multi-user.target` do systemd?
+= Nível 3
+- Nível 1 (usuário único)
+- Nível 5 (login gráfico)
+- Nível 6 (reinicialização)
+> `multi-user.target` agrupa as unidades do ambiente multiusuário e corresponde ao runlevel 3 (os alvos `runlevel3.target` e também `runlevel2.target` e `runlevel4.target` são links para ele). O `graphical.target` corresponde ao 5, o `rescue.target` ao 1 e o `reboot.target` ao 6 (testado nos links de `/lib/systemd/system`).
+
+### 101.3-015 | lacuna | 2
+ref: 101:p.53
+tags: systemctl, is-enabled, código de retorno
+Se a unidade está habilitada para iniciar com o sistema, qual valor o comando `systemctl is-enabled sshd.service` deixa na variável `$?`? ____
+= 0
+> `systemctl is-enabled` devolve o código 0 quando a unidade está habilitada e um valor diferente de zero (1) caso contrário, além de imprimir `enabled`, `disabled` etc. (testado com unidades habilitadas, que retornam 0, e desabilitadas, que retornam 1).
+
+### 101.3-016 | unica | 2
+ref: 101:p.53
+tags: systemctl, enable, start
+O que acontece imediatamente após executar `systemctl enable sshd.service`, sem outras opções?
+= A unidade passa a ser iniciada nos próximos boots, mas não é iniciada agora
+- A unidade é iniciada agora e também será iniciada nos próximos boots
+- A unidade é iniciada agora, mas não será iniciada nos próximos boots
+- O sistema reinicia para aplicar a habilitação da unidade
+> `enable` apenas cria os links necessários para que a unidade seja iniciada com o sistema; para iniciá-la na hora usa-se `systemctl start` (ou `enable --now`). A ação inversa é `systemctl disable`, e o estado de habilitação é consultado com `is-enabled`.
+
+### 101.3-017 | lacuna | 2
+ref: 101:p.52, 101:p.61
+tags: systemctl, is-active
+Qual subcomando do `systemctl` exibe apenas `active` ou `inactive` para informar se uma unidade está em execução? `systemctl ____ sshd.service`
+= is-active
+> `systemctl is-active <unidade>` imprime o estado de forma resumida. O `systemctl status` mostra o estado detalhado (incluindo logs recentes) e o `is-enabled` informa se a unidade inicia com o sistema, e não se está rodando agora.
+
+### 101.3-018 | unica | 3
+ref: 101:p.54
+tags: systemctl, list-unit-files, list-units
+Qual comando lista os arquivos de unidade do tipo service instalados, mostrando se cada um está habilitado (`enabled`/`disabled`) para iniciar no boot?
+= systemctl list-unit-files --type=service
+- systemctl list-units --type=service --all
+- systemctl list-unit-files --type=target
+- systemctl status --type=service
+> `list-unit-files` lista os arquivos de unidade instalados com seu estado de habilitação, e `--type=service` restringe aos serviços (`--type=target` lista os alvos). Já `list-units` mostra as unidades **carregadas/ativas na sessão atual** (colunas LOAD/ACTIVE/SUB), e não o estado de habilitação. O `status` mostra o estado detalhado de uma unidade (ou do sistema) e não serve para listar arquivos de unidade.
+
+### 101.3-019 | multipla | 1
+ref: 101:p.51-52
+tags: unidades systemd, tipos
+Quais destes são tipos de unidade do systemd?
+= socket
+= target
+= mount
+- runlevel
+- daemon
+- script
+> Os tipos de unidade incluem `service`, `socket`, `device`, `mount`, `automount`, `target` (grupo de unidades) e `snapshot` (estado salvo do gerenciador, hoje removido das versões atuais do systemd), entre outros. "Runlevel", "daemon" e "script" são conceitos do SysV (ou termos genéricos), e não tipos de unidade do systemd (os runlevels são emulados por alvos `runlevelN.target`).
+
+### 101.3-020 | unica | 2
+ref: 101:p.54, 101:p.62
+tags: /etc/systemd/system, unidades, diretórios
+Em um sistema com systemd, em qual diretório o administrador deve colocar uma unidade própria (ou uma cópia modificada) que tenha precedência sobre as fornecidas pela distribuição?
+= /etc/systemd/system
+- /usr/lib/systemd/system
+- /etc/systemd/units
+- /etc/init.d
+> `/etc/systemd/system/` é o diretório de configuração local, que tem precedência sobre `/usr/lib/systemd/system/` (ou `/lib/systemd/system/` no Debian), onde os pacotes instalam as unidades. `/etc/systemd/units` não existe e `/etc/init.d/` guarda scripts do SysV. O diretório `/etc/systemd/` contém, ainda, arquivos de configuração do próprio systemd (`system.conf`, `logind.conf` etc.).
+
+### 101.3-021 | unica | 3
+ref: 101:p.54
+tags: logind.conf, suspend, hibernate, systemd
+Em qual arquivo se define como o systemd reage a eventos de energia, como suspender ao fechar a tampa do notebook?
+= /etc/systemd/logind.conf
+- /etc/systemd/system.conf
+- /etc/acpi/events/lidswitch
+- /etc/systemd/power-management.conf
+> As ações dos eventos de energia tratados pelo systemd (via `systemd-logind`) são definidas em `/etc/systemd/logind.conf` ou em arquivos `.conf` de `/etc/systemd/logind.conf.d/`. O `system.conf` configura o gerenciador de serviços (o próprio systemd), `/etc/acpi/events/` pertence ao acpid, outro gerenciador de energia, e `power-management.conf` não existe.
+
+### 101.3-022 | unica | 2
+ref: 101:p.54
+tags: acpid, ACPI, energia
+Qual daemon é tradicionalmente usado para tratar eventos de energia ACPI, como fechar a tampa do notebook, bateria fraca ou botão de energia, executando ações definidas pelo administrador?
+= acpid
+- systemd-udevd
+- crond
+- atd
+> O `acpid` (ACPI daemon) é o gerenciador de energia clássico do Linux e permite ajustes mais refinados das ações para esses eventos. Segundo o material, os recursos de energia do systemd só são usados quando não há outro gerenciador de energia em execução, como o `acpid`. O `systemd-udevd` trata eventos de dispositivos, o `crond` agenda tarefas periódicas e o `atd` executa tarefas únicas agendadas.
+
+### 101.3-023 | unica | 2
+ref: 101:p.54-55
+tags: Upstart, initctl
+Em um sistema que usa Upstart, qual comando lista os serviços (jobs) e mostra seu estado e, se existir, o PID?
+= initctl list
+- systemctl list-units
+- service --status-all
+- telinit list
+> No Upstart, `initctl list` mostra cada job com estados como `start/running, process 1123` ou `stop/waiting`. Os jobs individuais são controlados com `start`, `stop` e `status`, e ficam descritos em `/etc/init/`. `systemctl list-units` é do systemd, `service --status-all` consulta scripts SysV, e o `telinit` não tem a opção `list`.
+
+### 101.3-024 | unica | 2
+ref: 101:p.56
+tags: shutdown, SIGTERM, SIGKILL
+Quando o `shutdown` é executado, como os processos em execução são tratados?
+= Recebem SIGTERM e, depois, SIGKILL os que não terminaram
+- Recebem SIGKILL imediatamente, sem chance de gravar dados
+- Recebem SIGHUP e depois SIGSTOP até o desligamento
+- Recebem SIGINT, e só os processos do root são encerrados
+> O `shutdown` avisa os usuários, bloqueia novos logins e envia SIGTERM a todos os processos (dando a chance de salvar arquivos e encerrar de forma limpa); em seguida, SIGKILL aos que continuarem vivos, e o sistema é desligado ou muda de runlevel.
+
+### 101.3-025 | unica | 2
+ref: 101:p.56
+tags: shutdown, +m, mensagem
+Qual comando agenda o desligamento (power off) do computador para daqui a 15 minutos e avisa os usuários logados com a mensagem "Manutencao"?
+= shutdown -h +15 "Manutencao"
+- shutdown -r +15 "Manutencao"
+- shutdown -k +15 "Manutencao"
+- shutdown -h 15m "Manutencao"
+> No `shutdown [opção] tempo [mensagem]`, `-h` indica parada/desligamento, `+15` significa "daqui a 15 minutos" e o texto final é a mensagem enviada às sessões. `-r` reiniciaria, `-k` apenas envia o aviso, sem desligar, e `15m` não é um formato de tempo válido (aceitam-se `hh:mm`, `+m` e `now`; o comando exibe erro, testado).
+
+### 101.3-026 | lacuna | 1
+ref: 101:p.62
+tags: shutdown, -c, cancelar
+Qual opção do `shutdown` cancela um desligamento ou reinicialização que foi agendado? `shutdown ____`
+= -c
+> `shutdown -c` cancela um shutdown pendente (agendado com tempo diferente de `now`). Um shutdown com `now` não fica pendente, portanto não pode ser cancelado.
+
+### 101.3-027 | unica | 3
+ref: 101:p.56
+tags: shutdown, sysvinit, single user
+No SysVinit clássico, o que ocorre ao executar `shutdown now`, sem as opções `-h` nem `-r`?
+= O sistema muda para o runlevel 1 (modo de usuário único)
+- O sistema é desligado e a energia é cortada
+- O sistema é reiniciado imediatamente
+- O comando falha por exigir uma das opções -h ou -r
+> No `shutdown` do sysvinit, sem `-h` ou `-r` o sistema vai ao runlevel 1 (manutenção), conforme o material da LPI e a página de manual. Atenção: no `shutdown` do systemd (Debian 12 e outras distribuições atuais, em que `/sbin/shutdown` é um link para o `systemctl`), o padrão passou a ser desligar (poweroff). Para o modo de manutenção, usa-se `systemctl rescue`.
+
+### 101.3-028 | unica | 1
+ref: 101:p.57
+tags: wall, mensagem
+Qual comando envia uma mensagem a todos os usuários logados em terminais, por exemplo para avisar de manutenção sem desligar o sistema?
+= wall
+- write
+- mesg
+- notify-send
+> `wall` (write all) envia o conteúdo de um arquivo ou do texto digitado para os terminais de todos os usuários logados. `write` envia a um único usuário, `mesg` controla se o seu terminal aceita mensagens e `notify-send` mostra notificações no desktop de uma sessão gráfica.
+
+### 101.3-029 | multipla | 3
+ref: 101:p.57, 101:p.61
+tags: systemctl, reboot, shutdown, telinit
+Em um sistema com systemd, quais comandos reiniciam a máquina?
+= systemctl reboot
+= shutdown -r now
+= telinit 6
+- systemctl poweroff
+- shutdown -h now
+- systemctl suspend
+> `systemctl reboot`, `shutdown -r now` e `telinit 6` (camada de compatibilidade com o SysV) reiniciam o sistema. `systemctl poweroff` e `shutdown -h now` desligam, e `systemctl suspend` coloca o sistema em baixo consumo, mantendo os dados na memória.
+
+### 101.3-030 | unica | 2
+ref: 101:p.59, 101:p.62
+tags: /sbin/init, systemd, link simbólico
+Em um sistema baseado em systemd, para qual executável o arquivo `/sbin/init` costuma apontar?
+= Para o binário principal do systemd (/lib/systemd/systemd)
+- Para o programa de linha de comando systemctl (/bin/systemctl)
+- Para o script de runlevels do SysV (/etc/init.d/rc)
+- Para o gerenciador do Upstart (/sbin/upstart)
+> Nesses sistemas `/sbin/init` é um link simbólico para o executável do systemd, `/lib/systemd/systemd` (que é `/usr/lib/systemd/systemd` em distribuições com a "usr merge"; testado no Debian 12). É o `systemd` que roda como PID 1. O `systemctl` é apenas o cliente de controle, e `/etc/init.d/rc` e o Upstart são de outros gerenciadores.
+
+### 101.3-031 | unica | 3
+ref: 101:p.59, 101:p.62
+tags: SysVinit, parâmetro do kernel, runlevel
+Em um sistema SysVinit, o `/etc/inittab` define `id:3:initdefault:`, mas a máquina sempre inicia no runlevel 1. Qual é a causa provável?
+= O parâmetro 1 ou S está presente na linha de comando do kernel
+- A entrada initdefault só vale para sistemas com systemd
+- O runlevel 3 não pode ser usado como padrão
+- O comando telinit q precisa ser executado a cada boot
+> Parâmetros como `1`, `S` ou `single` na linha de comando do kernel têm precedência sobre o `initdefault` do `/etc/inittab`. Basta removê-los na tela do bootloader ou na configuração dele. O runlevel 3 é um padrão comum, o systemd não usa `/etc/inittab` e `telinit q` apenas recarrega o arquivo, não sendo necessário a cada boot.
+
+### 101.3-032 | lacuna | 1
+ref: 101:p.48
+tags: PID 1, init, systemd
+O gerenciador de serviços (init/systemd) é o primeiro programa lançado pelo kernel. Qual é o seu número de identificação de processo (PID)? ____
+= 1
+> O primeiro processo iniciado pelo kernel, o init (SysVinit, Upstart) ou systemd, sempre tem PID 1 e é o ancestral de todos os demais processos.
+
+### 101.3-033 | unica | 2
+ref: 101:p.54
+tags: /usr/lib/systemd, unidades, Red Hat
+Em distribuições Red Hat/Fedora, onde os pacotes instalam os arquivos de unidade do systemd (que o administrador não deve editar diretamente)?
+= /usr/lib/systemd/system
+- /etc/systemd/system
+- /run/systemd/system
+- /var/lib/systemd/units
+> Os pacotes instalam as unidades em `/usr/lib/systemd/system/` (no Debian/Ubuntu, `/lib/systemd/system/`, que é o mesmo local em sistemas com a "usr merge"). O administrador coloca suas unidades e substituições em `/etc/systemd/system/`, que tem precedência. `/run/systemd/system/` é usado apenas para unidades transitórias, criadas em tempo de execução, e `/var/lib/systemd/units` não é um diretório padrão de unidades.
+
+### 101.3-034 | multipla | 2
+ref: 101:p.52-53
+tags: systemctl, start, stop, restart, enable
+Quais subcomandos do `systemctl` alteram imediatamente o estado de execução de uma unidade (ou seja, iniciam, param ou reiniciam o serviço agora)?
+= start
+= stop
+= restart
+- enable
+- disable
+- is-enabled
+> `start`, `stop` e `restart` atuam sobre o serviço **agora**. Já `enable` e `disable` apenas configuram se a unidade será iniciada com o sistema (não iniciam nem param o serviço imediatamente, a não ser com `--now`), e `is-enabled` só consulta essa configuração.
+
+### 101.3-035 | multipla | 3
+ref: 101:p.49
+tags: /etc/inittab, ações, runlevels ignorados
+Em `/etc/inittab`, para quais ações o campo de runlevels é ignorado?
+= boot
+= bootwait
+= sysinit
+- wait
+- respawn
+- initdefault
+> Para `boot`, `bootwait` e `sysinit` o processo é executado na inicialização do sistema, independentemente do runlevel, e por isso o campo é ignorado. Em `wait` e `respawn` o processo só roda nos runlevels listados, e em `initdefault` esse campo contém justamente o runlevel padrão.

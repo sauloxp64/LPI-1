@@ -1,0 +1,24 @@
+{
+  "id": "f109-3-ip-nc",
+  "obj": "109.3",
+  "titulo": "Ler a configuração de rede e abrir um listener com nc",
+  "nivel": 1,
+  "minutos": 6,
+  "params": {
+    "arquivo": { "escolha": ["info-rede.txt", "diagnostico.txt", "interface.txt"] },
+    "porta": { "faixa": [20000, 45000] }
+  },
+  "enunciado": "Dois diagnósticos rápidos de rede neste container (você não precisa de `sudo` para nenhum deles):\n\n1. Descubra a configuração **real** da interface que sai para a internet e grave em `~/lab/diagrede/{arquivo}` as linhas abaixo (formato `chave=valor`, sem espaços):\n   * `interface` = nome da interface usada pela **rota padrão**;\n   * `ip` = endereço IPv4 dessa interface (sem a máscara);\n   * `prefixo` = tamanho do prefixo (somente o número, sem `/`);\n   * `gateway` = endereço do gateway da rota padrão;\n   * `rede` = endereço da rede em notação CIDR (`A.B.C.D/NN`);\n   * `mtu` = MTU da interface.\n2. Deixe em execução, em segundo plano, um **listener TCP com o `nc` na porta `{porta}`** (em todas as interfaces) que **continue escutando** depois de atender uma conexão. O verificador conecta duas vezes na porta e espera que ela responda às duas.",
+  "verifica": [
+    "`{arquivo}` tem `interface`, `ip`, `prefixo`, `gateway`, `rede` e `mtu` iguais aos reais deste container",
+    "há um processo `nc` escutando em TCP na porta `{porta}` (em todas as interfaces)",
+    "o listener aceita mais de uma conexão seguida (não encerra na primeira)"
+  ],
+  "dicas": [
+    "O pacote `iproute2`: `ip addr` (ou `ip -4 -br addr`) mostra endereços e MTU; `ip route` mostra a rota padrão (`default via ... dev ...`) e a rede conectada.",
+    "No `ip route`, a linha `default via X dev IFACE` tem o gateway e a interface; a linha com `proto kernel scope link` tem a rede em CIDR. O MTU aparece em `ip link` / `ip addr` (`mtu 1500`).",
+    "`nc -l PORTA` escuta (variante OpenBSD). Por padrão ele encerra quando a primeira conexão termina; a opção `-k` o mantém escutando. Termine o comando com `&` para deixá-lo em segundo plano.",
+    "Para conferir: `ss -ltn` mostra a porta em `LISTEN`; teste com `nc -z 127.0.0.1 PORTA` (duas vezes)."
+  ],
+  "solucao": "```\nip route                      # default via GW dev IFACE ; REDE/NN dev IFACE ... src IP\nip -4 addr show dev IFACE     # inet IP/NN ... ; ip link show IFACE -> mtu\n\ncat > ~/lab/diagrede/{arquivo} <<EOF\ninterface=eth0\nip=...\nprefixo=...\ngateway=...\nrede=.../...\nmtu=...\nEOF\n\nnc -k -l {porta} &            # -k: continua escutando após cada conexão\nss -ltn | grep {porta}\nnc -z 127.0.0.1 {porta}; nc -z 127.0.0.1 {porta}\n```\n`ip addr`, `ip route` e `ip link` (iproute2) substituem `ifconfig`, `route` e `netstat -r` do net-tools. A rota padrão (`default via`) define o gateway e a interface de saída; a rota com `scope link` é a rede diretamente conectada. O `nc` do Debian (OpenBSD) sem `-k` atende **uma** conexão e sai — a pegadinha de usar `nc -z` para testar o próprio listener e matá-lo sem querer. Como o container não tem `NET_ADMIN`, `ip addr add` e `ip route add` não funcionam aqui; em um host real os comandos são `sudo ip addr add IP/NN dev IFACE` e `sudo ip route add default via GW`."
+}

@@ -1,0 +1,27 @@
+{
+  "id": "f104-2-e2fsck-superbloco",
+  "obj": "104.2",
+  "titulo": "Superbloco principal destruído: recupere o ext4",
+  "nivel": 3,
+  "minutos": 9,
+  "params": {
+    "img": { "escolha": ["clientes", "pedidos", "notas", "fotos"] },
+    "label": { "escolha": ["clientes-fs", "pedidos-fs", "notas-fs", "fotos-fs"] },
+    "bloco": { "escolha": [1024, 2048, 4096] }
+  },
+  "enunciado": "Depois de uma queda de energia, o sistema de arquivos ext4 da imagem `~/lab/recuperacao/{img}.img` (rótulo `{label}`) deixou de ser reconhecido: `dumpe2fs` e `blkid` não enxergam mais nada nela. O **superbloco principal** foi danificado, mas as cópias de segurança espalhadas pelo disco estão boas.\n\n1. **Recupere o sistema de arquivos** sem recriá-lo (os dados, o rótulo e o UUID precisam continuar os mesmos). Deixe-o consistente: um `e2fsck -fn` posterior não pode achar erros.\n2. Grave em `~/lab/recuperacao/backup-sb.txt` o **número do primeiro superbloco de backup** (o bloco onde fica a primeira cópia, o mesmo valor que se passaria a `e2fsck -b`).\n3. Grave em `~/lab/recuperacao/inodes-usados.txt` **quantos inodes estão em uso** no sistema de arquivos (apenas o número).\n\nOs arquivos da imagem são seus: não precisa de `sudo`.",
+  "verifica": [
+    "o `dumpe2fs` volta a ler o superbloco principal e o `e2fsck -fn` não acha erros",
+    "rótulo `{label}` e UUID originais preservados (nada de `mke2fs` de novo)",
+    "os 4 arquivos que estavam na imagem continuam íntegros",
+    "`backup-sb.txt` com o primeiro superbloco de backup",
+    "`inodes-usados.txt` com o total de inodes em uso (Inode count − Free inodes)"
+  ],
+  "dicas": [
+    "O ext2/3/4 guarda cópias do superbloco em alguns grupos de blocos. O `e2fsck` consegue usá-las; `dumpe2fs` (depois de reparar) lista onde elas ficam.",
+    "Rode `e2fsck -f -y arquivo.img`: ao ver o superbloco inválido ele tenta os backups sozinho. Também dá para indicar um backup à mão com `-b NÚMERO` (e `-B tamanho_do_bloco`).",
+    "`dumpe2fs arquivo.img | grep -i 'backup superblock'` mostra os locais; o primeiro é o que se usa. Os inodes em uso são `Inode count` menos `Free inodes` em `dumpe2fs -h` (ou o primeiro número de 'N/M files' na última linha do e2fsck).",
+    "Depois do reparo, confirme com `e2fsck -fn arquivo.img` (deve sair com código 0)."
+  ],
+  "solucao": "```\ncd ~/lab/recuperacao\ndumpe2fs {img}.img                       # falha: bad magic number in super-block\ne2fsck -f -y {img}.img                   # usa um superbloco de backup automaticamente\n# ou, manualmente:  e2fsck -f -y -b 8193 -B 1024 {img}.img   (valores dependem do tamanho do bloco)\ndumpe2fs {img}.img | grep -i 'backup superblock' | head -1     # primeiro backup\ndumpe2fs -h {img}.img | grep -E 'Inode count|Free inodes'      # usados = total - livres\ne2fsck -fn {img}.img; echo $?            # 0 = consistente\n```\nO superbloco primário fica no byte 1024; cópias ficam no início dos grupos 1, 3, 5, 7, 9, 25, 27... (`sparse_super`). Com blocos de 1 KiB o primeiro backup é o bloco 8193; com 2 KiB, 16384; com 4 KiB, 32768 — por isso, para usar `-b`, é preciso conhecer o tamanho do bloco (`-B`) ou consultá-lo com `mke2fs -n`. O `e2fsck` copia o backup de volta e corrige contadores de blocos/inodes. Nunca rode `mke2fs` para \"consertar\": ele destrói os dados."
+}

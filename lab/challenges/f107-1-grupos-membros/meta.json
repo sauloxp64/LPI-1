@@ -1,0 +1,34 @@
+{
+  "id": "f107-1-grupos-membros",
+  "obj": "107.1",
+  "titulo": "Renomear o grupo do projeto e ajustar os membros",
+  "nivel": 3,
+  "minutos": 9,
+  "params": {
+    "grupo": { "escolha": ["projeto-atlas", "projeto-boreal", "projeto-cumulus", "projeto-delta"] },
+    "antigo": { "escolha": ["piloto-atlas", "piloto-boreal", "piloto-cumulus", "piloto-delta"] },
+    "gid": { "faixa": [4100, 4899] },
+    "m1": { "escolha": ["lucio", "marta", "nilson", "olivia", "paulo", "renata", "silvio"] },
+    "m2": { "escolha": ["lucio", "marta", "nilson", "olivia", "paulo", "renata", "silvio"] },
+    "m3": { "escolha": ["lucio", "marta", "nilson", "olivia", "paulo", "renata", "silvio"] },
+    "m4": { "escolha": ["lucio", "marta", "nilson", "olivia", "paulo", "renata", "silvio"] },
+    "ex1": { "escolha": ["vpn-lab", "wiki-lab", "ci-lab"] },
+    "ex2": { "escolha": ["docs-lab", "chat-lab", "deploy-lab"] }
+  },
+  "distintos": [["m1", "m2", "m3", "m4"]],
+  "enunciado": "O piloto acabou e o grupo `{antigo}` vira o grupo oficial do projeto. Hoje ele tem como membros `{m3}` e `{m4}`. As contas `{m1}`, `{m2}`, `{m3}` e `{m4}` já existem; `{m2}` também pertence aos grupos `{ex1}` e `{ex2}`, e `{m4}` ao grupo `{ex2}`. Use `sudo` e deixe o sistema assim:\n\n* o grupo `{antigo}` passa a se chamar **`{grupo}`** e a ter o **GID `{gid}`** (não crie um grupo novo do zero: renomeie o existente);\n* **`{m4}`** deixa de ser membro do grupo (a conta continua existindo e mantém os outros grupos dele);\n* **`{m1}`** e **`{m2}`** passam a ser membros; `{m2}` **não pode perder** `{ex1}` nem `{ex2}`;\n* **`{m1}`** vira o **administrador** do grupo (e só ele).\n\nNo fim, os membros de `{grupo}` devem ser exatamente `{m1}`, `{m2}` e `{m3}`, e o nome `{antigo}` não pode mais existir.",
+  "verifica": [
+    "o grupo `{grupo}` existe com GID `{gid}` e o grupo `{antigo}` não existe mais",
+    "membros de `{grupo}` exatamente: `{m1}`, `{m2}`, `{m3}`",
+    "`{m2}` continua nos grupos `{ex1}` e `{ex2}`; `{m4}` continua em `{ex2}`",
+    "as quatro contas continuam existindo",
+    "o administrador de `{grupo}` (campo do `/etc/gshadow`) é somente `{m1}`"
+  ],
+  "dicas": [
+    "Há uma ferramenta para alterar o grupo (`groupmod`) e outra para gerenciar membros e administradores de um grupo (`gpasswd`). `usermod` também mexe em grupos de um usuário.",
+    "`groupmod -n NOVO ANTIGO` renomeia; `groupmod -g GID NOME` troca o GID. Para membros: `gpasswd -d usuario grupo` remove e `gpasswd -a usuario grupo` adiciona; `gpasswd -A usuario grupo` define administradores.",
+    "Cuidado com `usermod -G grupo usuario` **sem** `-a`: ele substitui todos os grupos suplementares do usuário. Para acrescentar use `usermod -aG`.",
+    "Confira com `getent group {grupo}`, `id {m2}` e `sudo getent gshadow {grupo}`."
+  ],
+  "solucao": "```\nsudo groupmod -n {grupo} {antigo}\nsudo groupmod -g {gid} {grupo}\nsudo gpasswd -d {m4} {grupo}\nsudo usermod -aG {grupo} {m1}\nsudo usermod -aG {grupo} {m2}        # ou: sudo gpasswd -a {m2} {grupo}\nsudo gpasswd -A {m1} {grupo}\n\ngetent group {grupo}\nid {m2}\nsudo getent gshadow {grupo}\n```\nA pegadinha clássica: `usermod -G {grupo} {m2}` (sem `-a`) **troca** a lista de grupos suplementares e faria `{m2}` perder `{ex1}` e `{ex2}`. `groupmod -n` mantém o GID e os membros, só troca o nome (arquivos continuam com o mesmo GID); com `-g` o GID muda, e arquivos antigos com o GID anterior ficariam órfãos, por isso na vida real convém rodar `find / -gid ANTIGO` antes. Os administradores do grupo ficam no 3º campo do `/etc/gshadow`; os membros, no 4º campo do `/etc/group`."
+}

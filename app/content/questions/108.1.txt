@@ -1,0 +1,386 @@
+### 108.1-001 | unica | 1
+ref: 102:p.262
+tags: hwclock, rtc
+Qual comando, executado como root, exibe a hora mantida pelo relógio de hardware (RTC) da placa-mãe?
+- date -u
+- timedatectl set-time
+= hwclock
+- chronyc tracking
+- ntpq -p
+> `hwclock` lê e mostra o RTC (exige privilégios de root).
+> `date -u` mostra o relógio do **sistema** em UTC, não o RTC. `timedatectl set-time` serve para alterar a hora (sem argumentos, `timedatectl` até exibe o campo "RTC time", mas esse subcomando não exibe nada). `chronyc tracking` e `ntpq -p` mostram o estado da sincronização NTP.
+
+### 108.1-002 | unica | 1
+ref: 102:p.264-265
+tags: fuso horário, localtime, zoneinfo
+Em qual caminho o Linux mantém o link simbólico (ou cópia) que aponta para o arquivo de regras do fuso horário local em `/usr/share/zoneinfo/`?
+= /etc/localtime
+- /etc/timezone
+- /etc/adjtime
+- /etc/sysconfig/clock
+> `/etc/localtime` é lido sempre que o sistema precisa converter UTC para a hora local; normalmente é um link para algo como `/usr/share/zoneinfo/America/Sao_Paulo`.
+> `/etc/timezone` (Debian/Ubuntu) é apenas um arquivo de texto com o **nome** do fuso. `/etc/adjtime` guarda os dados de deriva do `hwclock` e se o RTC está em UTC ou hora local. `/etc/sysconfig/clock` era um arquivo de texto (`ZONE=...`) de versões antigas do RHEL, e não um link.
+
+### 108.1-003 | lacuna | 1
+ref: 102:p.260
+tags: date, utc
+Complete o comando para exibir a hora atual em UTC, e não na hora local: `date ____`
+= -u
+= --utc
+= --universal
+> A opção `-u` (também `--utc` ou `--universal`) faz o `date` mostrar o horário UTC. Sem ela, o `date` aplica o fuso horário e o horário de verão configurados em `/etc/localtime`.
+
+### 108.1-004 | lacuna | 1
+ref: 102:p.261
+tags: date, época unix
+Em `date +____`, qual sequência de formato (incluindo o caractere `%`) imprime o tempo Unix, isto é, o número de segundos decorridos desde 1º de janeiro de 1970 (UTC)?
+= %s
+= +%s
+> A sequência `%s` mostra os segundos desde a Época Unix (`date +%s`). Já `%Y-%m-%d` e `%T`, por exemplo, formatam ano-mês-dia e hora:minuto:segundo.
+
+### 108.1-005 | unica | 2
+ref: 102:p.261
+tags: date, época unix, --date
+Qual é a saída do comando abaixo?
+
+```
+$ TZ=UTC date --date=@86400 +%Y-%m-%d
+```
+- 1970-01-01
+= 1970-01-02
+- 1969-12-31
+- 1970-03-02
+> `--date=@N` interpreta N como segundos desde a Época (1970-01-01 00:00:00 UTC). 86400 segundos equivalem a exatamente um dia, logo a data é 1970-01-02.
+> `1970-01-01` seria a saída de `@0`; `1969-12-31` seria a de `@-86400`; `1970-03-02` corresponde a 86400 **minutos** (60 dias), o que é uma confusão de unidade. Lembre-se de que `--date` apenas formata a data: não altera nenhum relógio.
+
+### 108.1-006 | unica | 2
+ref: 102:p.265-266
+tags: date, -s, --set
+Qual comando, executado como root, **ajusta** o relógio do sistema para 11 de novembro de 2011, 11:11:11?
+- date --date="11 Nov 2011 11:11:11"
+- hwclock --set --date "11 Nov 2011 11:11:11"
+= date --set="11 Nov 2011 11:11:11"
+- date -u "11 Nov 2011 11:11:11"
+> `date --set` (ou `-s`) altera o relógio do sistema.
+> `date --date` apenas **exibe** a data informada, sem mudar nada. `hwclock --set --date` altera o relógio de **hardware**, não o do sistema. `date -u "..."` com um operando solto tenta interpretá-lo como o formato curto `MMDDhhmm` e falha com "invalid date" (testado).
+
+### 108.1-007 | unica | 3
+ref: 102:p.261-262
+tags: date, formato de data, pegadinha
+O que acontece ao executar o comando abaixo em um sistema com o locale padrão?
+
+```
+$ date --date='31/12/2020'
+```
+- Exibe o dia 31 de dezembro de 2020, pois dia/mês/ano é o formato padrão
+= Exibe um erro de data inválida, pois com barras se espera mês/dia/ano
+- Altera o relógio do sistema para 31/12/2020 às 00:00
+- Exibe a data de hoje e ignora o argumento que não foi entendido
+> O `date` interpreta datas numéricas com barras como **mês/dia/ano**. O mês "31" não existe, então o resultado é `date: invalid date '31/12/2020'` (testado, código de saída 1). `date --date='12/31/2020'` e `date --date='2020-12-31'` funcionam.
+> `--date` nunca altera o relógio (para isso existe `-s`/`--set`), e o `date` não ignora silenciosamente um valor inválido.
+
+### 108.1-008 | lacuna | 2
+ref: 102:p.261-262
+tags: date, depuração
+Complete o comando para ver, passo a passo, como a string de data foi interpretada (linhas como "parsed date part" e "parsed time part"): `date ____ --date="12/20/20 0:10 -3"`
+= --debug
+> `date --debug --date="..."` imprime as etapas de análise, inclusive avisos como "value 20 has less than 4 digits. Assuming MM/DD/YY[YY]". É útil para descobrir por que uma data foi rejeitada ou entendida de forma errada.
+
+### 108.1-009 | unica | 2
+ref: 102:p.265
+tags: hwclock, systohc
+Depois de acertar o relógio do sistema com `date -s`, qual comando grava essa hora no relógio de hardware?
+= hwclock --systohc
+- hwclock --hctosys
+- hwclock --adjust
+- hwclock --show --utc
+> `--systohc` ("system to hardware clock") copia a hora do sistema para o RTC.
+> `--hctosys` faz o caminho inverso (RTC para o sistema). `--adjust` apenas aplica ao RTC a correção de deriva sistemática registrada em `/etc/adjtime`. `--show` só exibe a hora do RTC (mesmo com `--utc`).
+
+### 108.1-010 | lacuna | 2
+ref: 102:p.266-267
+tags: hwclock, hctosys
+Complete o comando que define a hora do **sistema** a partir do relógio de hardware (RTC): `hwclock ____`
+= --hctosys
+= -s
+> `--hctosys` ("hardware clock to system") lê o RTC e ajusta o relógio do sistema; a forma curta é `-s`. O oposto é `--systohc` (`-w`).
+
+### 108.1-011 | lacuna | 2
+ref: 102:p.262, 102:p.265
+tags: hwclock, utc
+Complete o comando para gravar a hora do sistema no RTC informando que o relógio de hardware deve ficar em UTC: `hwclock --systohc ____`
+= --utc
+= -u
+> A opção `--utc` (`-u`) indica ao `hwclock` que o RTC mantém UTC; o oposto é `--localtime` (`-l`). Manter o RTC em UTC é a prática recomendada no Linux: o sistema aplica fuso e horário de verão por cima da hora UTC.
+
+### 108.1-012 | unica | 3
+ref: 102:p.263
+tags: timedatectl, rtc, utc
+Considere a saída de `timedatectl`:
+
+```
+               Local time: Thu 2019-12-05 11:08:05 EST
+           Universal time: Thu 2019-12-05 16:08:05 UTC
+                 RTC time: Thu 2019-12-05 16:08:05
+                Time zone: America/Toronto (EST, -0500)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+```
+
+Em que escala de tempo está configurado o relógio de hardware?
+- Hora local de Toronto (EST), como em muitos PCs com Windows
+= UTC, a configuração recomendada para o RTC
+- Hora local de Toronto com o horário de verão aplicado (EDT)
+- Tempo Unix, em segundos desde a Época
+> `RTC in local TZ: no` e o fato de `RTC time` (16:08:05) ser igual a `Universal time` mostram que o RTC guarda UTC.
+> Se o RTC estivesse em hora local, o campo seria `yes` e `RTC time` seria igual a `Local time` (11:08:05). O RTC não guarda tempo Unix em segundos nem aplica horário de verão.
+
+### 108.1-013 | multipla | 2
+ref: 102:p.264-265
+tags: fuso horário, timedatectl, localtime
+Quais comandos, executados como root, definem o fuso horário do sistema como `America/Sao_Paulo` de forma persistente e para todos os usuários?
+= timedatectl set-timezone America/Sao_Paulo
+- export TZ=America/Sao_Paulo
+= ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+- tzselect
+- hwclock --set --date America/Sao_Paulo
+- date --set=America/Sao_Paulo
+> `timedatectl set-timezone` (systemd) e o link simbólico `/etc/localtime` apontando para o arquivo em `/usr/share/zoneinfo/` são as duas formas ensinadas pela LPI.
+> `export TZ=...` vale apenas para o shell atual e seus processos filhos. O `tzselect` só ajuda a identificar o nome do fuso (a man page diz que ele não altera o fuso do sistema). `hwclock --set --date` e `date --set` esperam uma data e hora, não o nome de um fuso.
+
+### 108.1-014 | unica | 2
+ref: 102:p.265
+tags: /etc/timezone, fuso horário
+Em distribuições Debian/Ubuntu, o que normalmente contém o arquivo `/etc/timezone`?
+- Uma cópia binária das regras de fuso horário e de horário de verão
+- O deslocamento numérico em relação ao UTC, como `-0300`
+= O nome do fuso horário em texto, como `America/Sao_Paulo`
+- A lista de servidores NTP usados para sincronizar o relógio
+> `/etc/timezone` é uma representação em texto do fuso (por exemplo `America/Sao_Paulo`; no laboratório, `Etc/UTC`) e pode ser lido com `cat`. Nem todas as distribuições o usam: no RHEL/Fedora, por exemplo, só existe `/etc/localtime`.
+> As regras binárias ficam em `/usr/share/zoneinfo/` (e `/etc/localtime` aponta para elas); os servidores NTP ficam em `/etc/ntp.conf` ou `/etc/chrony.conf`.
+
+### 108.1-015 | unica | 2
+ref: 102:p.265
+tags: fuso horário, ln, zoneinfo
+Um administrador quer definir o fuso `America/Sao_Paulo` manualmente, sem usar `timedatectl`. Qual comando faz isso corretamente?
+- ln -sf /etc/localtime /usr/share/zoneinfo/America/Sao_Paulo
+- echo America/Sao_Paulo > /etc/localtime
+- ln -sf /usr/share/zoneinfo/america/sao_paulo /etc/localtime
+= ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+- cp -f /etc/localtime /usr/share/zoneinfo/America/Sao_Paulo
+> Em `ln -s ALVO NOME`, o primeiro argumento é o arquivo de regras (o alvo) e o segundo é o link a criar: `/etc/localtime`. Testado: depois do comando, `date` passa a mostrar o fuso `-03`.
+> Inverter os argumentos tenta criar o link dentro de `/usr/share/zoneinfo`; `cp` nesse sentido sobrescreveria o arquivo de regras com o fuso atual; `echo ... > /etc/localtime` grava texto onde o sistema espera um arquivo binário de regras (e, se `/etc/localtime` for um link, escreveria sobre o arquivo apontado). Caminhos em minúsculas não existem, pois o Linux diferencia maiúsculas de minúsculas.
+
+### 108.1-016 | lacuna | 1
+ref: 102:p.263
+tags: timedatectl, list-timezones
+Complete o comando que lista todos os fusos horários válidos em um sistema com systemd: `timedatectl ____`
+= list-timezones
+> `timedatectl list-timezones` mostra os nomes aceitos por `set-timezone` (`Africa/Cairo`, `America/Sao_Paulo`...). A lista é longa, então costuma-se filtrar com `grep`, por exemplo `timedatectl list-timezones | grep -i eucla`.
+
+### 108.1-017 | unica | 2
+ref: 102:p.264
+tags: timedatectl, set-timezone
+Qual comando define corretamente o fuso horário do Cairo no systemd?
+- timedatectl set-timezone africa/cairo
+= timedatectl set-timezone Africa/Cairo
+- timedatectl set-timezone Cairo
+- timedatectl set-time Africa/Cairo
+- timedatectl set-timezone "Cairo, Egypt (EET, +0200)"
+> O nome do fuso deve ser **exato**, no formato `Continente/Cidade` como listado por `timedatectl list-timezones` e como existe em `/usr/share/zoneinfo/` (que diferencia maiúsculas de minúsculas).
+> `africa/cairo` e `Cairo` não existem como fusos válidos (testado: não há `/usr/share/zoneinfo/africa/cairo` nem `/usr/share/zoneinfo/Cairo`). `set-time` espera data e hora, não um fuso. Uma descrição livre, como a que aparece na saída do `timedatectl`, também não é um nome de fuso aceito.
+
+### 108.1-018 | lacuna | 2
+ref: 102:p.264
+tags: timedatectl, ntp
+Complete o comando que desativa a sincronização automática de hora via NTP no systemd: `timedatectl ____ no`
+= set-ntp
+> `timedatectl set-ntp no` (ou `false`) desliga a sincronização automática; `set-ntp yes` a liga de novo. Depois disso, `timedatectl` mostra "NTP enabled: no" / "NTP synchronized: no".
+
+### 108.1-019 | unica | 3
+ref: 102:p.263
+tags: timedatectl, set-time, ntp
+Com a sincronização NTP ativa, o comando `timedatectl set-time '2011-11-25 14:00:00'` é recusado com a mensagem "Automatic time synchronization is enabled". Qual é o procedimento correto para ajustar a hora manualmente?
+- Executar `timedatectl set-timezone` antes, porque o fuso horário bloqueia a alteração
+- Executar `hwclock --hctosys` para destravar o relógio do sistema
+= Desativar o NTP com `timedatectl set-ntp no` e repetir o `set-time`
+- Editar `/etc/localtime` para que ele reflita a nova hora
+> O systemd só aceita ajuste manual da hora quando a sincronização automática está desligada. Com `set-ntp no`, o `set-time` passa a funcionar (o formato é `AAAA-MM-DD HH:MM:SS`; também se pode passar só `HH:MM:SS`).
+> O fuso horário não tem relação com esse bloqueio; `hwclock --hctosys` apenas copia a hora do RTC para o sistema; `/etc/localtime` define o fuso, não a hora. (Comportamento do `timedated` do systemd; o laboratório Docker não tem systemd, então esta questão se baseia no material e na documentação.)
+
+### 108.1-020 | lacuna | 1
+ref: 102:p.279
+tags: ntp, porta
+Qual número de porta o protocolo NTP usa por padrão (responda apenas com o número)?
+= 123
+> O NTP usa a porta **123** (transporte UDP). Se a sincronização falha, vale conferir se o firewall permite essa porta. Observação: o texto da lição fala em "porta TCP 123", mas o padrão do NTP (RFC 5905) é UDP.
+
+### 108.1-021 | unica | 2
+ref: 102:p.276-277
+tags: ntp, estrato
+Um desktop sincroniza seu relógio diretamente com um servidor NTP de estrato 2. Qual é o estrato do desktop?
+- 1
+- 2
+= 3
+- 16 (não sincronizado)
+> O estrato indica a distância (em saltos) até um relógio de referência. O estrato 0 é o relógio de referência (atômico, GPS), o estrato 1 é o servidor ligado a ele, e cada nível abaixo soma 1. Quem sincroniza com um servidor de estrato 2 fica no estrato 3. (O valor 16 é usado para indicar um relógio não sincronizado.)
+
+### 108.1-022 | unica | 2
+ref: 102:p.277
+tags: ntp, step, slew, offset
+Segundo a lição, como o `ntpd` (com a configuração padrão) corrige um deslocamento (offset) de 2 segundos entre o relógio local e o do servidor?
+- Por ajuste gradual (slew), pois o desvio é inferior a 17 minutos
+- Não corrige: o ntpd só ajusta desvios inferiores a 1 segundo
+= Com um salto único no relógio (step), pois o desvio supera 128 ms
+- Com um salto no próximo boot, depois de ler o relógio de hardware
+> Para deslocamentos **maiores que 128 ms**, o NTP faz um *step* (salto único). Abaixo de 128 ms ele faz *slew* (acelera ou atrasa o relógio gradualmente). Se o deslocamento passar de cerca de 17 minutos, o relógio é considerado "insano" e o daemon não o ajusta sozinho.
+
+### 108.1-023 | unica | 3
+ref: 102:p.277, 102:p.281
+tags: ntpdate, ntpd, relógio insano
+Um servidor recém-instalado está com o relógio várias horas fora do horário. O `ntpd` está ativo, mas não corrige a diferença, porque o deslocamento passa do limite que ele aceita ajustar (relógio "insano"). Qual procedimento a lição indica?
+- Manter o ntpd ativo e executar `ntpdate pool.ntp.org` para corrigir o relógio em segundo plano
+- Adicionar mais linhas `server` em `/etc/ntp.conf` e recarregar o serviço
+= Parar o ntpd, executar `ntpdate pool.ntp.org` uma vez e depois iniciar o ntpd
+- Executar `hwclock --adjust` para que o ntpd compense o desvio sozinho
+> O limite é de cerca de 17 minutos (1000 s). Acima disso é preciso intervenção manual: parar o `ntpd`, fazer uma sincronização única com `ntpdate pool.ntp.org` (pode ser necessário repetir) e religar o serviço.
+> Com o `ntpd` em execução, o `ntpdate` não consegue usar a porta 123 e falha. Mais servidores no `ntp.conf` não resolvem um desvio acima do limite, e `hwclock --adjust` só corrige a deriva sistemática do RTC. (O `ntpdate` está obsoleto em muitas distribuições; `ntpd -gq` e `chronyc makestep` são alternativas modernas.)
+
+### 108.1-024 | unica | 1
+ref: 102:p.280, 102:p.285
+tags: ntp.conf, chrony.conf, arquivos
+Qual alternativa associa corretamente cada daemon NTP ao seu arquivo de configuração principal, conforme a LPI?
+- ntpd usa /etc/chrony.conf e chronyd usa /etc/ntp.conf
+= ntpd usa /etc/ntp.conf e chronyd usa /etc/chrony.conf
+- ntpd usa /etc/ntpd.conf e chronyd usa /etc/chronyd.conf
+- ntpd e chronyd compartilham o mesmo arquivo, /etc/ntp.conf
+> O `ntpd` lê `/etc/ntp.conf` e o `chronyd` lê `/etc/chrony.conf`. Atenção: em algumas distribuições o caminho varia (no Debian, por exemplo, o chrony usa `/etc/chrony/chrony.conf`, como verificado no laboratório), mas a LPI cobra `/etc/chrony.conf`.
+
+### 108.1-025 | lacuna | 1
+ref: 102:p.280
+tags: ntp.conf, server
+Complete a linha de `/etc/ntp.conf` que faz o `ntpd` consultar o servidor de hora interno 192.168.0.101: `____ 192.168.0.101`
+= server
+> No `ntp.conf` (e também no `chrony.conf`), `server <endereço ou nome>` define uma fonte de hora; a diretiva `pool` indica um nome DNS que resolve para vários servidores. Opções como `iburst` vêm depois do endereço.
+
+### 108.1-026 | unica | 1
+ref: 102:p.280-281
+tags: pool.ntp.org
+O que é o pool.ntp.org?
+- Um único servidor NTP de estrato 0, ligado a um relógio atômico em um laboratório de metrologia
+= Um projeto voluntário que reúne muitos servidores NTP e divide as consultas entre eles
+- Um serviço comercial pago de sincronização de hora, com garantia contratual de precisão
+- Um protocolo alternativo ao NTP, criado para redes que não dispõem de serviço DNS
+> O pool.ntp.org é um projeto de código aberto mantido por voluntários: o nome DNS devolve servidores diferentes a cada consulta, distribuindo a carga. A própria documentação do projeto recomenda cautela quando a hora correta é crítica (nesse caso, prefira o servidor do provedor ou equipamentos dedicados).
+> O estrato 0 é formado por relógios de referência, que não ficam expostos diretamente na rede.
+
+### 108.1-027 | unica | 3
+ref: 102:p.281-282
+tags: ntpq, peers
+Considere a saída de `ntpq -p`:
+
+```
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
++ntp2.example.net 193.204.114.233  2 u   82  128  377  143.885   -8.105   8.478
+*ntp1.example.net 121.131.112.137  2 u   17  128  377  112.878  -23.619   7.959
+ ntp3.example.net 18.26.4.105      2 u  484  128   10   34.907   -0.811  16.123
+```
+
+Qual servidor o ntpd está usando como fonte principal de sincronização?
+- ntp2.example.net
+- ntp3.example.net
+- Nenhum: o ntpd ainda não conseguiu sincronizar
+= ntp1.example.net
+> O asterisco (`*`) no início da linha marca o par escolhido como fonte principal (o *system peer*). O sinal `+` indica um candidato aceitável, combinado com a fonte principal. Uma linha sem símbolo (como `ntp3`) não foi selecionada; seu `reach` de 10 (octal) mostra que respondeu a poucas das últimas consultas, ao contrário dos 377 dos demais, que indicam resposta a todas as últimas oito.
+
+### 108.1-028 | unica | 2
+ref: 102:p.282
+tags: ntpq, delay, offset
+Na saída de `ntpq -p`, o que representa a coluna `delay`?
+- A diferença, em milissegundos, entre a hora do sistema e a hora do servidor NTP
+- O número de segundos transcorridos desde a última consulta feita ao servidor
+= O tempo, em ms, entre o envio da consulta e a resposta do servidor
+- O intervalo, em segundos, entre duas consultas consecutivas ao servidor
+> `delay` é o tempo de ida e volta da consulta, em milissegundos. A diferença entre o relógio local e o do servidor é a coluna `offset`; `when` conta os segundos desde a última consulta; `poll` é o intervalo entre consultas. `reach` é um registro das últimas oito tentativas (377 em octal = todas bem-sucedidas), `st` é o estrato e `jitter` a variação das medidas.
+
+### 108.1-029 | lacuna | 1
+ref: 102:p.281-282
+tags: ntpq, -p
+Complete o comando que imprime um resumo dos servidores (pares) consultados pelo ntpd: `ntpq ____`
+= -p
+= --peers
+> `ntpq -p` (peers) mostra a tabela de pares, e `-n` faz o programa exibir endereços IP em vez de resolver nomes (`ntpq -pn`). Sem opções, o `ntpq` abre o modo interativo, onde `?` lista os comandos.
+
+### 108.1-030 | multipla | 2
+ref: 102:p.278-279, 102:p.282
+tags: ntpd, chronyd, timesyncd, sntp
+Quais componentes abaixo são daemons capazes de sincronizar o relógio por NTP e também de fornecer a hora a outras máquinas da rede?
+= ntpd
+- systemd-timesyncd
+= chronyd
+- ntpdate
+- hwclock
+> `ntpd` e `chronyd` implementam o NTP completo: monitoram várias fontes e podem atuar como servidores de hora.
+> O `systemd-timesyncd` (usado pelo `timedatectl`) é só um cliente **SNTP**: sincroniza a própria máquina com uma única fonte e não serve hora a outras. `ntpdate` faz um acerto único e termina; `hwclock` apenas lê ou grava o RTC.
+
+### 108.1-031 | unica | 2
+ref: 102:p.278
+tags: timedatectl, timesyncd, sntp
+Qual comando exibe detalhes do cliente SNTP do `systemd-timesyncd`, como servidor em uso, intervalo de consulta e jitter?
+- timedatectl list-timezones --all
+- ntpq -p --show-timesync
+- chronyc tracking
+= timedatectl show-timesync --all
+> `timedatectl show-timesync --all` mostra as propriedades do `systemd-timesyncd`: `ServerName`, `PollIntervalUSec`, `NTPMessage` (com `Stratum`, `Jitter`) etc. Já `chronyc tracking` se aplica ao chrony e `ntpq -p` ao ntpd; `list-timezones` apenas lista nomes de fusos.
+
+### 108.1-032 | unica | 2
+ref: 102:p.283-284
+tags: chronyc, tracking
+Qual comando do chrony exibe dados como "System time", "RMS offset", "Frequency" (em ppm) e "Skew" da sincronização atual?
+- chronyc sources
+- chronyc makestep 1.0 3
+= chronyc tracking
+- chronyc ntpdata
+> `chronyc tracking` resume o estado do relógio em relação à fonte selecionada: estrato, `System time`, `Last offset`, `RMS offset`, `Frequency`, `Skew`, `Leap status` etc.
+> `chronyc sources` lista as fontes configuradas; `chronyc makestep` força um salto imediato do relógio; `chronyc ntpdata` mostra detalhes da última resposta NTP de uma fonte, mas não essas medidas do relógio local.
+
+### 108.1-033 | lacuna | 2
+ref: 102:p.286
+tags: chronyc, makestep
+Complete o comando que faz o chronyd cancelar a correção gradual e saltar o relógio do sistema imediatamente para a hora correta: `chronyc ____`
+= makestep
+> `chronyc makestep` executa o acerto imediato (salto). Em seguida, `chronyc tracking` permite conferir o resultado. Cuidado: alguns programas não toleram saltos no tempo, por isso o chrony normalmente usa ajuste gradual.
+
+### 108.1-034 | unica | 3
+ref: 102:p.285-286
+tags: chrony.conf, makestep
+No arquivo de configuração do chrony, o que significa a diretiva `makestep 1.0 3`?
+- Saltar o relógio a cada 3 atualizações do relógio em que o desvio seja inferior a 1,0 s, em qualquer momento
+- Consultar o servidor a cada 1,0 segundo, repetindo a consulta no máximo 3 vezes por minuto
+= Saltar o relógio se o ajuste passar de 1,0 s, mas só nas 3 primeiras atualizações
+- Corrigir o relógio de forma gradual, à razão de 1,0 s por hora, durante as 3 primeiras horas
+> Com `makestep <limiar> <limite>`, o chronyd faz um salto (em vez de ajuste gradual) se o desvio for maior que o limiar em segundos, mas apenas nas primeiras *limite* atualizações do relógio depois de iniciado. Assim se corrige um relógio muito desajustado no boot, sem saltos posteriores.
+
+### 108.1-035 | unica | 2
+ref: 102:p.285
+tags: chrony.conf, pool, iburst
+Na linha `pool 2.debian.pool.ntp.org iburst` do chrony.conf, qual é o efeito da opção `iburst`?
+- Cifrar as requisições com a chave pública do servidor, para impedir a adulteração da hora
+- Usar somente endereços IPv6 dos servidores do pool, ignorando os endereços IPv4
+= Enviar uma rajada de requisições na partida, para a primeira sincronização ocorrer mais cedo
+- Manter o servidor sempre marcado como online, mesmo que ele deixe de responder
+> Segundo a man page do `chrony.conf`, com `iburst` o chronyd começa com uma rajada de 4 a 8 requisições para fazer a primeira atualização do relógio mais cedo. A mesma opção é aceita em `server` e `pool` do `ntp.conf`. A diretiva `pool` indica um nome DNS que resolve para vários servidores.
+
+### 108.1-036 | multipla | 3
+ref: 102:p.282-285
+tags: chronyc, chrony, ntpq
+Quando o chrony é o daemon NTP em uso, quais comandos exibem informações sobre a sincronização?
+- ntpq -p
+= chronyc tracking
+- hwclock --adjust
+= chronyc sources
+- timedatectl list-timezones
+> `chronyc tracking` mostra o estado do relógio local (estrato, desvios, frequência) e `chronyc sources` lista as fontes de hora com seu estado (`^*` indica a fonte selecionada).
+> `ntpq -p` consulta um `ntpd` e não funciona com o chronyd; `hwclock --adjust` corrige a deriva do RTC e `timedatectl list-timezones` apenas lista fusos horários.

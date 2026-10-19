@@ -1,0 +1,399 @@
+### 110.2-001 | unica | 1
+ref: 102:p.538
+tags: passwd, shadow
+Em um sistema com senhas shadow ativadas, qual valor aparece no segundo campo de cada linha do arquivo `/etc/passwd`?
+- `*`
+= `x`
+- `!`
+- o hash da senha, iniciado por `$6$`
+> Com shadow ativado, o campo de senha de `/etc/passwd` contém apenas um `x` minúsculo, que indica "o hash está em `/etc/shadow`". O hash iniciado por `$6$` seria o conteúdo desse campo em sistemas sem shadow (ou em `/etc/shadow`, onde ele realmente fica). `*` e `!` são valores do campo de hash em `/etc/shadow` (conta sem senha utilizável ou bloqueada), não de `/etc/passwd`.
+
+### 110.2-002 | lacuna | 1
+ref: 102:p.537
+tags: passwd
+Cada linha de `/etc/passwd` é dividida em ____ campos separados por dois-pontos (login, senha, UID, GID, comentário/GECOS, diretório pessoal e shell).
+= 7
+= sete
+> São sete campos: `login:x:UID:GID:comentário:diretório-pessoal:shell`. Já o `/etc/shadow` tem nove campos (login, hash, última troca, mínimo, máximo, aviso, inatividade, expiração e um campo reservado).
+
+### 110.2-003 | unica | 2
+ref: 102:p.538
+tags: shadow, permissões
+Qual é a principal razão para os hashes de senha terem sido movidos de `/etc/passwd` para `/etc/shadow`?
+- O `/etc/shadow` guarda as senhas em texto claro, o que simplifica a recuperação pelo root
+- O `/etc/passwd` tem tamanho máximo por linha e não comporta os hashes modernos
+= O `/etc/passwd` precisa ser legível por todos, e o `/etc/shadow` tem leitura restrita
+- O `/etc/shadow` é um arquivo binário, de modo que o `cat` não consegue exibi-lo
+> `/etc/passwd` precisa ser legível por qualquer usuário (programas como `ls -l` e `id` convertem UID em nome consultando-o), então não é lugar para hashes, que poderiam ser copiados e atacados offline. `/etc/shadow` fica com permissões restritivas (no Debian `-rw-r----- root:shadow`; no RHEL, modo `000`). Ele não guarda texto claro (só hashes) e é texto simples, legível por quem tem permissão.
+
+### 110.2-004 | unica | 2
+ref: 102:p.538
+tags: shadow, chage
+Considere esta entrada de `/etc/shadow` (o hash foi abreviado):
+
+```
+emma:$6$k9Xq$Zr0...:18400:2:90:14:7:19000:
+```
+
+O que representa o campo de valor `90`?
+= O número máximo de dias de validade da senha antes da troca obrigatória
+- O número mínimo de dias que deve separar duas trocas de senha
+- O número de dias de aviso antes de a senha expirar
+- O número de dias de tolerância após a expiração até desativar a conta
+> A ordem dos campos é `login:hash:última-troca:mínimo:máximo:aviso:inatividade:expiração:reservado`. Portanto: 18400 = última troca (dias desde 01/01/1970), 2 = mínimo (`chage -m`), 90 = máximo (`chage -M`), 14 = aviso (`chage -W`), 7 = inatividade (`chage -I`) e 19000 = data de expiração da conta (`chage -E`).
+
+### 110.2-005 | unica | 2
+ref: 102:p.538-539
+tags: shadow, passwd -l
+Observe a saída:
+
+```
+# grep emma /etc/shadow
+emma:!$6$Zk3v$Qm...:20100:0:99999:7:::
+```
+
+O que indica o caractere `!` no início do campo de hash?
+- A conta expirou e não aceita mais nenhum tipo de login
+- A usuária precisa trocar a senha no próximo login
+= A senha da conta está bloqueada, como após `passwd -l emma`
+- A conta não tem senha e aceita login sem digitar nada
+> `passwd -l` (ou `usermod -L`) coloca um `!` na frente do hash, o que o torna impossível de casar com qualquer senha digitada; `passwd -u` remove o `!` e restaura o hash original. Conta expirada é indicada pelo campo 8 (`chage -E`), troca obrigatória pelo campo 3 igual a 0 (`chage -d 0`) e conta sem senha pelo campo de hash vazio.
+
+### 110.2-006 | lacuna | 2
+ref: 102:p.538, 102:p.551
+tags: chage
+Complete o comando para que a conta de `emma` volte a não ter data de expiração (`chage -l emma` passa a mostrar `Account expires : never`):
+
+`chage -E ____ emma`
+= -1
+> `chage -E -1` remove a data de expiração da conta (campo 8 de `/etc/shadow` volta a ficar vazio). Use `chage -l emma` para conferir. Atenção: `chage -E 0` faria o contrário, expirando a conta em 01/01/1970, ou seja, imediatamente.
+
+### 110.2-007 | unica | 2
+ref: 102:p.538
+tags: chage, expiração
+Considere que a data atual é posterior a 26/03/2020. Qual é o efeito do comando `chage -E 2020-03-26 emma`?
+- A senha de `emma` é bloqueada com `!`, mas a conta continua válida
+- `emma` é obrigada a trocar a senha no próximo login
+= A conta de `emma` fica expirada e ela não consegue mais fazer login
+- A data de 26/03/2020 é gravada como a da última troca de senha
+> `-E` define a data de expiração da conta (campo 8 de `/etc/shadow`, gravado em dias desde 1970; o teste gerou `18347` para essa data). Com a data no passado, o login é recusado com a mensagem "Your account has expired; please contact your system administrator". Bloquear a senha é função de `passwd -l`; forçar a troca é `chage -d 0`; a data da última troca é definida por `-d`.
+
+### 110.2-008 | lacuna | 1
+ref: 102:p.539, 102:p.551
+tags: passwd, desbloquear
+Complete o comando para desbloquear a senha da conta `emma`, anteriormente bloqueada com `passwd -l`:
+
+`passwd ____ emma`
+= -u
+= --unlock
+> `passwd -u` remove o `!` do início do hash em `/etc/shadow` e restaura a senha anterior. `-l` bloqueia, `-d` apaga a senha (deixa a conta sem senha) e `-e` força a expiração da senha.
+
+### 110.2-009 | unica | 1
+ref: 102:p.539, 102:p.552
+tags: nologin
+O arquivo `/etc/nologin` existe e contém a mensagem "Manutenção até as 18h". Quem consegue fazer login no sistema?
+- Somente membros do grupo `sudo`, que veem a mensagem como aviso
+= Somente o root; os demais veem a mensagem e são recusados
+- Ninguém, nem mesmo o root, até que o arquivo seja removido
+- Todos, pois o conteúdo do arquivo serve apenas como informação
+> Conforme `nologin(5)`, enquanto `/etc/nologin` existir e for legível, só o root consegue entrar; os demais usuários veem o conteúdo do arquivo e têm o login recusado. A checagem é feita pelo módulo PAM `pam_nologin` (presente em `/etc/pam.d/login` e `/etc/pam.d/sshd` no Debian), então vale também para logins por chave SSH. Para liberar de novo, basta remover o arquivo.
+
+### 110.2-010 | unica | 2
+ref: 102:p.539
+tags: nologin, shell
+Qual é a diferença entre criar o arquivo `/etc/nologin` e definir o shell `/sbin/nologin` para uma conta (`usermod -s /sbin/nologin emma`)?
+- O arquivo barra somente o root; o shell barra todos os usuários comuns do sistema
+= O arquivo barra todos os usuários comuns; o shell barra só a conta alterada
+- Os dois são equivalentes e diferem apenas no local onde a recusa é exibida
+- O arquivo vale só para logins pela rede; o shell vale só para o console local
+> O arquivo `/etc/nologin` é uma trava geral e temporária: bloqueia todos os logins de não-root. O comando `nologin` usado como shell de uma conta específica a impede de obter um shell interativo: ele exibe "This account is currently not available." e sai com código diferente de zero (testado: código 1). No Debian o binário fica em `/usr/sbin/nologin` (com `/sbin` apontando para o mesmo diretório); em outras distribuições pode ser `/sbin/nologin`.
+
+### 110.2-011 | unica | 3
+ref: 102:p.539
+tags: nologin, manutenção
+Um administrador precisa impedir temporariamente o login de todos os usuários comuns durante uma manutenção, exibindo o aviso "Sistema em manutenção até as 18h", sem alterar nenhuma conta. Qual abordagem atende a isso?
+- Executar `chage -E 0` para cada usuário e `chage -E -1` ao terminar
+= Criar `/etc/nologin` com o texto do aviso e removê-lo ao terminar
+- Executar `passwd -l` para cada usuário e `passwd -u` ao terminar
+- Escrever `ALL: ALL` em `/etc/hosts.deny` e apagar a linha ao terminar
+> `/etc/nologin` não toca em nenhuma conta, mostra seu conteúdo a quem tenta entrar e preserva o acesso do root. `chage -E 0` e `passwd -l` alteram cada conta (e nenhum dos dois exibe aviso personalizado). `ALL: ALL` em `hosts.deny` afeta apenas serviços de rede que usam TCP wrappers, não bloqueia o login no console e também não mostra mensagem.
+
+### 110.2-012 | unica | 2
+ref: 102:p.546
+tags: tcp wrappers, hosts.allow, hosts.deny
+Um cliente casa com uma linha de `/etc/hosts.allow` e também com uma linha de `/etc/hosts.deny` para o mesmo daemon. Qual é o resultado?
+= Acesso permitido: `hosts.allow` é lido primeiro e a busca para no primeiro casamento
+- Acesso negado: `hosts.deny` sempre prevalece sobre `hosts.allow`
+- Acesso negado: o casamento nos dois arquivos é tratado como conflito
+- O resultado depende de qual dos dois arquivos foi alterado por último
+> Segundo `hosts_access(5)`, a consulta segue uma ordem fixa e para no primeiro casamento: (1) se o par (daemon, cliente) casa com `hosts.allow`, o acesso é concedido; (2) senão, se casa com `hosts.deny`, é negado; (3) senão, é concedido. Testado com `tcpdmatch`: com `sshd: ALL` em `hosts.allow` e `sshd: 10.0.0.5` em `hosts.deny`, o cliente 10.0.0.5 é aceito.
+
+### 110.2-013 | unica | 3
+ref: 102:p.546
+tags: tcp wrappers, LOCAL
+Um servidor tem a seguinte configuração de TCP wrappers:
+
+```
+# /etc/hosts.deny
+sshd: ALL
+
+# /etc/hosts.allow
+sshd: LOCAL
+```
+
+Qual é o efeito sobre as conexões ao `sshd`?
+- O `sshd` recusa todas as conexões, pois `ALL` em `hosts.deny` anula a exceção
+- O `sshd` aceita conexões de qualquer host, pois `LOCAL` equivale a `ALL`
+= O `sshd` aceita só clientes com nome sem ponto (como `pc1`) e recusa os demais
+- O `sshd` aceita apenas conexões feitas a partir da própria máquina, via loopback
+> `hosts.allow` é consultado antes de `hosts.deny`. O curinga `LOCAL` casa com qualquer host cujo nome não contenha ponto (nomes curtos da rede local); `ALL` em `hosts.deny` recusa todo o resto. Testado com `tcpdmatch`: `localhost` foi aceito e `8.8.8.8` foi recusado. `LOCAL` não significa "somente loopback" nem "todos". As alterações valem na hora, sem reiniciar o sshd.
+
+### 110.2-014 | unica | 2
+ref: 102:p.546
+tags: tcp wrappers, padrão
+Os arquivos `/etc/hosts.allow` e `/etc/hosts.deny` existem, mas contêm apenas linhas de comentário. Um cliente tenta se conectar a um daemon que obedece a TCP wrappers. Qual é o resultado?
+- Acesso negado, pois sem regra explícita em `hosts.allow` o padrão é recusar
+- O daemon registra um erro e encerra, pois os arquivos não têm regras válidas
+= Acesso permitido, pois nenhuma regra casa e o padrão é conceder
+- Acesso permitido somente ao root e aos clientes da rede local
+> A última regra do algoritmo de `hosts_access(5)` é "do contrário, o acesso é concedido". Um arquivo inexistente ou sem regras equivale a um arquivo vazio, então o controle de acesso fica desligado (testado com `tcpdmatch`: `access: granted`). Para uma política "tudo negado por padrão", é preciso escrever `ALL: ALL` em `hosts.deny` e liberar o necessário em `hosts.allow`.
+
+### 110.2-015 | unica | 2
+ref: 102:p.546, 102:p.551
+tags: tcp wrappers, libwrap, ldd
+Como verificar se o daemon `/usr/sbin/sshd` foi compilado com suporte a TCP wrappers?
+- `grep sshd /etc/hosts.allow /etc/hosts.deny`
+- `ss -ltnp | grep libwrap`
+= `ldd /usr/sbin/sshd | grep libwrap`
+- `systemctl status sshd | grep wrap`
+> Um programa só obedece a `hosts.allow` e `hosts.deny` se for ligado à biblioteca `libwrap`; `ldd` lista as bibliotecas dinâmicas do binário, e a presença de `libwrap.so.0` confirma o suporte (verificado no `sshd` do Debian 12). `grep` nos arquivos só mostra as regras, `ss` lista sockets (não bibliotecas) e `systemctl status` não informa dependências de bibliotecas. O mesmo teste vale para outros daemons, como o nginx. Em distribuições recentes da Red Hat o suporte foi removido.
+
+### 110.2-016 | lacuna | 1
+ref: 102:p.546
+tags: tcp wrappers, hosts.allow
+A política `sshd: ALL` foi colocada em `/etc/hosts.deny`. Informe o caminho completo do arquivo onde se deve escrever `sshd: LOCAL` para abrir uma exceção para a rede local:
+= /etc/hosts.allow
+> As exceções vão em `/etc/hosts.allow`, que é consultado antes de `/etc/hosts.deny`. O nome do daemon usado nas regras é o do processo (`sshd`), não o do serviço no systemd (`ssh`).
+
+### 110.2-017 | multipla | 2
+ref: 102:p.546
+tags: tcp wrappers
+Quais afirmações sobre TCP wrappers estão corretas?
+= O daemon só obedece às regras se tiver sido compilado com a biblioteca `libwrap`
+= As alterações em `hosts.allow` e `hosts.deny` valem na hora, sem reiniciar o serviço
+- O arquivo `hosts.deny` é consultado antes de `hosts.allow` e prevalece sobre ele
+- Todo daemon de rede do Linux obedece a esses arquivos, qualquer que seja a compilação
+- Após editar os arquivos, é obrigatório executar `systemctl restart` no serviço protegido
+= Distribuições recentes da Red Hat, como o Fedora 29, removeram o suporte a TCP wrappers
+> O material da LPI destaca que as mudanças entram em vigor imediatamente (os arquivos são lidos a cada conexão), que o programa precisa de `libwrap` e que o suporte foi removido de distribuições Red Hat recentes (muitos programas atuais já não o usam; por isso, firewall é a defesa principal hoje). A ordem de consulta é `hosts.allow` primeiro, depois `hosts.deny`.
+
+### 110.2-018 | lacuna | 1
+ref: 102:p.539, 102:p.544
+tags: systemd.socket, superdaemon
+Em sistemas com systemd, as unidades que fazem papel semelhante ao do superdaemon xinetd (escutam a porta e ativam o serviço sob demanda) têm o tipo ____ (informe a extensão do arquivo da unidade, como em `ssh.service`).
+= .socket
+= socket
+= systemd.socket
+> Unidades `.socket` (documentadas em `systemd.socket(5)`) são as sucessoras dos serviços iniciados por superdaemons: o systemd mantém a porta aberta e só inicia o serviço quando chega uma conexão. Exemplo: `ssh.socket`, ao lado de `ssh.service`.
+
+### 110.2-019 | lacuna | 2
+ref: 102:p.541-542
+tags: xinetd, xinetd.conf
+O arquivo `/etc/xinetd.conf` termina com a linha abaixo para carregar a configuração individual de cada serviço. Qual diretiva ocupa o lugar de `____`?
+
+`____ /etc/xinetd.d`
+= includedir
+> `includedir /etc/xinetd.d` faz o xinetd ler todos os arquivos desse diretório, um por serviço. O arquivo principal `/etc/xinetd.conf` só traz os valores padrão (`defaults`) e esta diretiva.
+
+### 110.2-020 | unica | 2
+ref: 102:p.542
+tags: xinetd, xinetd.d
+Em `/etc/xinetd.d/` há quatro arquivos com definições válidas de serviço. Qual deles o xinetd ignora?
+- `ssh`
+- `daytime-udp`
+= `daytime.conf`
+- `servers`
+> O xinetd ignora arquivos de `/etc/xinetd.d/` cujo nome contenha um ponto (`.`) ou termine em til (`~`). Testado: com a definição do `daytime` salva em `daytime.conf` ou `daytime~`, a porta 13 não abriu; salva como `daytime`, abriu. Hífens, como em `daytime-udp`, são permitidos. Por convenção, o arquivo leva o nome do serviço.
+
+### 110.2-021 | unica | 2
+ref: 102:p.542, 102:p.552
+tags: xinetd, daytime, disable
+Os arquivos-modelo de `/etc/xinetd.d/`, como o do serviço legado `daytime`, vêm com `disable = yes`. Qual conjunto de passos ativa o serviço?
+- Mudar para `wait = yes` no arquivo do serviço e executar `systemctl start daytime`
+= Mudar para `disable = no` em `/etc/xinetd.d/daytime` e reiniciar o xinetd
+- Mudar para `disable = no` em `/etc/xinetd.conf` e recarregar o sshd
+- Apagar `/etc/xinetd.d/daytime`, para o xinetd usar a configuração padrão
+> `disable = no` ativa o serviço; `yes` o mantém desligado. Depois de editar o arquivo do serviço é preciso reiniciar o xinetd (`systemctl restart xinetd.service`, ou `service xinetd restart` em SysV init). A verificação pode ser feita com `nc localhost daytime` (testado: a hora é devolvida). `wait` define o modo de tratamento da conexão, e o `daytime` não é um serviço do systemd; o `xinetd.conf` não é o lugar da definição do serviço.
+
+### 110.2-022 | unica | 3
+ref: 102:p.541-543
+tags: xinetd, sshd, server_args
+Observe o arquivo `/etc/xinetd.d/ssh`:
+
+```
+service ssh
+{
+    disable     = no
+    socket_type = stream
+    protocol    = tcp
+    wait        = no
+    user        = root
+    server      = /usr/sbin/sshd
+    server_args = -i
+}
+```
+
+Para que serve a opção `-i` em `server_args`?
+- Fazer o sshd ignorar o `sshd_config` e usar apenas os argumentos
+- Restringir o sshd a conexões IPv4, como a diretiva `flags = IPv4`
+- Iniciar o sshd em modo interativo, com prompt no terminal
+= Fazer o sshd tratar a conexão recebida do xinetd, em vez de abrir sua própria porta
+> `-i` informa ao `sshd` que ele está sendo executado a partir de um superdaemon (modo inetd, conforme `sshd(8)`): a conexão já aceita chega pela entrada padrão, e o sshd não escuta na porta 22. Em `server_args`, o xinetd repassa opções ao programa; a restrição a IPv4 é feita por `flags = IPv4` (ou `-4` no sshd), e o `sshd_config` continua sendo lido normalmente.
+
+### 110.2-023 | unica | 3
+ref: 102:p.540-541
+tags: xinetd, lsof, porta 22
+Em um servidor, o `sshd.service` foi parado e o xinetd foi reiniciado com o arquivo `/etc/xinetd.d/ssh` ativo (`disable = no`). Então se executa:
+
+```
+# lsof -i :22
+```
+
+Qual processo aparece na coluna COMMAND como o que escuta na porta 22?
+- `sshd`
+- `systemd`
+= `xinetd`
+- `tcpd`
+> O superdaemon é quem mantém a porta aberta e só inicia o `sshd` quando chega uma conexão, então o `lsof` mostra `xinetd` no estado LISTEN (testado com o serviço `daytime` na porta 13). `sshd` só apareceria se estivesse rodando de forma autônoma; `systemd` seria o dono do socket apenas com uma unidade `.socket` ativa; `tcpd` é o wrapper que consulta `hosts.allow`/`hosts.deny`, e não escuta portas.
+
+### 110.2-024 | unica | 2
+ref: 102:p.544
+tags: systemd.socket, ssh.socket
+Em um sistema com systemd, o administrador quer que o systemd mantenha a porta 22 aberta e só inicie o `sshd` quando houver uma conexão, sem usar xinetd. Supondo que o `ssh.service` esteja parado, qual comando inicia essa escuta?
+- `systemctl start ssh.target`
+- `systemctl start ssh.timer`
+= `systemctl start ssh.socket`
+- `systemctl isolate ssh.service`
+> A unidade `ssh.socket` (em algumas distribuições, `sshd.socket`) é o equivalente moderno da configuração do xinetd: o systemd (PID 1) fica escutando na porta e inicia o serviço sob demanda. Os tipos `.target` e `.timer` agrupam unidades ou agendam execuções, e `isolate` troca o conjunto de unidades ativas (não aplicável a um serviço comum).
+
+### 110.2-025 | unica | 3
+ref: 102:p.544-545
+tags: ss, serviços de rede, hardening
+Um servidor hospeda um site (nginx com banco MariaDB local) e é administrado por SSH. Ninguém imprime nele. A saída de `ss -ltnp` é:
+
+```
+State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+LISTEN 0      128          0.0.0.0:22        0.0.0.0:*     users:(("sshd",pid=812,fd=3))
+LISTEN 0      5            0.0.0.0:631       0.0.0.0:*     users:(("cupsd",pid=640,fd=7))
+LISTEN 0      151        127.0.0.1:3306      0.0.0.0:*     users:(("mariadbd",pid=701,fd=22))
+LISTEN 0      511          0.0.0.0:80        0.0.0.0:*     users:(("nginx",pid=733,fd=6))
+```
+
+Qual serviço desnecessário está exposto à rede e deveria ser desativado?
+- `sshd`, na porta 22
+= `cupsd`, na porta 631
+- `mariadbd`, na porta 3306
+- `nginx`, na porta 80
+> O `cupsd` (impressão, porta 631/ipp) escuta em `0.0.0.0` e não tem função nesse servidor. O `sshd` é o acesso administrativo e o `nginx` é o site. O `mariadbd` escuta só em `127.0.0.1`, ou seja, não está acessível pela rede e é usado localmente pela aplicação. Em `ss -ltnp`: `-l` listening, `-t` TCP, `-n` portas numéricas, `-p` processo. Para desativar de forma permanente: `systemctl disable cups.service --now`.
+
+### 110.2-026 | unica | 2
+ref: 102:p.545, 102:p.551
+tags: systemctl, disable
+Em um sistema com systemd, qual comando interrompe imediatamente o serviço `cups` e também impede que ele seja iniciado na próxima inicialização?
+- `systemctl stop cups.service`
+- `systemctl restart cups.service`
+= `systemctl disable --now cups.service`
+- `systemctl disable cups.service`
+> `disable --now` combina as duas ações: remove o serviço da inicialização automática e o para na hora. `stop` para só até o próximo boot; `disable` sozinho não encerra o processo que já está rodando; `restart` o reinicia. Para conferir depois, use `ss -l | grep ":ipp "` ou `netstat -l | grep ":ipp "`.
+
+### 110.2-027 | multipla | 2
+ref: 102:p.544-545
+tags: sysv, update-rc.d, chkconfig
+Quais comandos impedem que o serviço `cups` seja iniciado no boot em sistemas com SysV init?
+= `update-rc.d cups remove` (Debian e derivadas)
+= `chkconfig cups off` (Red Hat e derivadas)
+- `service cups stop`
+- `chkconfig cups on`
+- `update-rc.d cups defaults`
+> `update-rc.d NOME remove` remove os links de runlevel em `/etc/rc?.d` (sistemas baseados em Debian), e `chkconfig NOME off` faz o equivalente em sistemas Red Hat. `service cups stop` só para o serviço naquele momento. `chkconfig cups on` e `update-rc.d cups defaults` fazem o oposto: criam os links de inicialização.
+
+### 110.2-028 | multipla | 3
+ref: 102:p.538, 102:p.548, 102:p.552
+tags: shadow, permissões, chage
+A usuária comum `emma`, sem usar `sudo`, executa os comandos abaixo no Debian. Quais terminam com sucesso (código de saída 0)?
+= `grep root /etc/passwd`
+- `grep emma /etc/shadow`
+= `chage -l emma`
+- `cat /etc/gshadow`
+- `chage -l root`
+= `passwd -S emma`
+> `/etc/passwd` tem leitura liberada para todos. Já `/etc/shadow` e `/etc/gshadow` (`-rw-r----- root:shadow`) negam leitura a `emma` ("Permission denied"). Um usuário comum pode consultar as próprias informações de senha com `chage -l` e `passwd -S`, mas não as de outro usuário (`chage -l root` falha com "Permission denied"). Todos esses resultados foram testados.
+
+### 110.2-029 | unica | 2
+ref: 102:p.536
+tags: inittab, sysv
+Qual é o formato de cada entrada ativa do arquivo `/etc/inittab` no SysV init?
+- `runlevel:id:process:action`
+- `action:runlevels:id:process`
+= `id:runlevels:action:process`
+- `id:process:runlevels:action`
+> Cada linha de `/etc/inittab` tem quatro campos separados por dois-pontos: um identificador único de 1 a 4 caracteres, os runlevels em que vale, a ação (`respawn`, `wait`, `once`, `initdefault`, `sysinit`, `ctrlaltdel` etc.) e o processo a executar. Exemplo: `1:2345:respawn:/sbin/getty 38400 tty1`. Linhas começadas por `#` são comentários. Em sistemas com systemd o arquivo não é usado.
+
+### 110.2-030 | unica | 2
+ref: 102:p.536
+tags: inittab, initdefault, runlevel
+Em um sistema com SysV init, o arquivo `/etc/inittab` contém a linha `id:3:initdefault:`. Qual é o efeito dela?
+- Inicia o processo de identificador `3` em todos os runlevels
+- Define o runlevel 3 como o usado só em modo de manutenção
+= Define o runlevel 3 como o padrão após a inicialização
+- Executa um getty no terminal tty3 durante o boot
+> A ação `initdefault` indica o runlevel em que o sistema entra após o boot; o campo de processo é ignorado (por isso está vazio). Por ser entrada de `initdefault`, o `3` aqui é o runlevel, e não o identificador do getty. A execução de getty em tty3 seria uma linha como `3:23:respawn:/sbin/getty 38400 tty3`.
+
+### 110.2-031 | lacuna | 1
+ref: 102:p.536, 102:p.544
+tags: sysv, init.d
+Qual é o diretório que guarda os scripts de inicialização dos serviços no SysV init (como o script `ssh`, usado com `start` e `stop`)? Informe o caminho completo:
+= /etc/init.d
+= /etc/init.d/
+> Os scripts de serviço ficam em `/etc/init.d/` e podem ser chamados diretamente (`/etc/init.d/ssh stop`, testado) ou pelo comando `service`. Os links `S??nome` e `K??nome` em `/etc/rc?.d/` apontam para esses scripts e definem o que inicia ou para em cada runlevel.
+
+### 110.2-032 | lacuna | 1
+ref: 102:p.545
+tags: ss, netstat
+Complete o comando moderno que substitui o `netstat` e lista os sockets TCP e UDP em escuta: `____ -ltu`
+= ss
+> `ss -ltu` é o equivalente de `netstat -ltu` (do pacote net-tools, hoje legado). Em ambos, `-l` mostra apenas sockets em escuta, `-t` TCP e `-u` UDP. O `ss` ainda traz mais detalhes sobre os sockets.
+
+### 110.2-033 | lacuna | 2
+ref: 102:p.544
+tags: service, sysv
+Complete o comando que mostra o estado de todos os serviços em um sistema com SysV init: `service ____`
+= --status-all
+> `service --status-all` lista cada script de `/etc/init.d/` com um marcador: `[ + ]` em execução, `[ - ]` parado e `[ ? ]` sem informação de estado (formato testado no Debian 12). Serve para revisar quais serviços estão ativos e desativar os desnecessários.
+
+### 110.2-034 | lacuna | 2
+ref: 102:p.543-544
+tags: systemd.socket, ListenStream
+No arquivo `/lib/systemd/system/ssh.socket`, a seção `[Socket]` define a porta em que o systemd escuta:
+
+```
+[Socket]
+____=22
+Accept=no
+```
+
+Qual diretiva completa a linha?
+= ListenStream
+> `ListenStream=` define o endereço/porta de um socket TCP (stream) na unidade `.socket`; `ListenDatagram=` seria o equivalente para UDP. `Accept=no` faz o systemd passar o próprio socket de escuta ao serviço, em vez de criar uma instância por conexão. É o análogo, no systemd, das diretivas `socket_type`, `protocol` e `wait` do xinetd.
+
+### 110.2-035 | multipla | 1
+ref: 102:p.539
+tags: superdaemon, xinetd, inetd
+Quais destes são superdaemons ou mecanismos equivalentes, que escutam portas de rede e iniciam o serviço apropriado sob demanda?
+= `xinetd`
+- `crond`
+= `inetd`
+- `rsyslogd`
+= unidades `.socket` do systemd
+- `atd`
+> Um superdaemon escuta conexões em nome de vários serviços e inicia o programa certo quando elas chegam. `inetd` e `xinetd` são os clássicos; no systemd, as unidades `.socket` fazem esse papel. `crond` e `atd` agendam tarefas e `rsyslogd` trata registros de log: nenhum deles escuta conexões para iniciar outros serviços.

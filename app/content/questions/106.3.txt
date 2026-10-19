@@ -1,0 +1,223 @@
+### 106.3-001 | unica | 1
+ref: 102:p.170
+tags: leitor de tela, Orca
+Qual é o leitor de tela mais popular nos sistemas Linux, normalmente instalado por padrão, que usa voz sintetizada para descrever os eventos na tela e ler o texto sob o cursor?
+- Konsole
+- Onboard
+- KMagnifier
+= Orca
+- KMouseTool
+> O Orca é o leitor de tela mais usado no Linux, independentemente do ambiente de desktop. KMagnifier é uma lupa, o Onboard é um teclado virtual, o KMouseTool gera cliques automáticos e o Konsole é o emulador de terminal do KDE.
+
+### 106.3-002 | unica | 2
+ref: 102:p.170
+tags: Orca, display Braille
+Além de voz sintetizada, o leitor de tela Orca também pode se comunicar com qual tipo de dispositivo?
+- Projetores de imagem para ampliação
+- Microfones para ditado de texto
+- Mouses com cliques programáveis
+- Teclados virtuais em tela sensível ao toque
+= Visores braille atualizáveis
+> O Orca funciona com visores braille atualizáveis, dispositivos que formam caracteres em braille levantando pequenos pinos que o usuário sente com a ponta dos dedos, o que permite ler o texto sem a tela gráfica.
+
+### 106.3-003 | unica | 1
+ref: 102:p.167
+tags: teclas de aderência, sticky keys
+Um usuário não consegue pressionar duas teclas ao mesmo tempo, como Ctrl+C. Qual recurso de acessibilidade permite digitar o atalho uma tecla por vez?
+- Teclas de repercussão (bounce keys)
+- Teclas lentas (slow keys)
+- Teclas de alternância (toggle keys)
+= Teclas de aderência (sticky keys)
+- Alto contraste
+> Com as teclas de aderência ativadas, o usuário pressiona e solta Ctrl e depois pressiona C, sem precisar manter as duas ao mesmo tempo. As teclas de repercussão e as lentas tratam de toques repetidos ou acidentais, e as de alternância avisam por som quando teclas de trava são ligadas ou desligadas.
+
+### 106.3-004 | unica | 2
+ref: 102:p.167
+tags: teclas de repercussão, bounce keys
+Um usuário com tremores nas mãos frequentemente aciona a mesma tecla várias vezes quando pretendia pressioná-la uma só vez. Qual recurso de acessibilidade ajuda nesse caso?
+= Teclas de repercussão (bounce keys)
+- Teclado virtual
+- Mouse por teclado (mouse keys)
+- Leitor de tela
+- Teclas de aderência (sticky keys), para atalhos
+> As teclas de repercussão aceitam um novo pressionamento somente depois de um intervalo definido desde o anterior, evitando repetições involuntárias. As teclas de aderência ajudam em atalhos com várias teclas, o mouse por teclado move o ponteiro com o teclado numérico e o leitor de tela lê o conteúdo em voz alta.
+
+### 106.3-005 | unica | 2
+ref: 102:p.168
+tags: teclas lentas, slow keys
+Qual recurso de acessibilidade exige que a tecla seja mantida pressionada por um tempo determinado antes de ser aceita, evitando toques acidentais?
+- Teclas de repercussão (bounce keys)
+- Repetição automática de teclas
+= Teclas lentas (slow keys)
+- Teclas de alternância (toggle keys)
+- Teclas de aderência (sticky keys)
+> As teclas lentas só aceitam o caractere depois que a tecla ficou pressionada pelo tempo configurado. As de repercussão impõem um intervalo entre pressionamentos sucessivos, enquanto a repetição automática define a taxa com que uma tecla mantida pressionada se repete.
+
+### 106.3-006 | unica | 3
+ref: 102:p.168
+tags: gestos de ativação, teclas lentas, teclas de aderência
+Com os gestos de ativação de acessibilidade habilitados, qual ação liga o recurso de teclas lentas?
+- Pressionar a tecla Caps Lock oito vezes seguidas
+= Manter a tecla Shift pressionada por oito segundos
+- Pressionar Shift e Ctrl ao mesmo tempo por um segundo
+- Pressionar a tecla Shift cinco vezes seguidas
+- Manter a tecla Ctrl pressionada por cinco segundos
+> Os gestos de ativação permitem ligar recursos pelo teclado: cinco toques consecutivos em Shift ativam as teclas de aderência, e manter Shift pressionada por oito segundos ativa as teclas lentas. A opção correspondente chama-se "Usar gestos para ativar..." no KDE e "Habilitar por Teclado" no Gnome.
+
+### 106.3-007 | lacuna | 2
+ref: 102:p.174
+tags: gestos de ativação, teclas de aderência
+Com os gestos de ativação habilitados, quantas vezes seguidas a tecla Shift deve ser pressionada para ligar as teclas de aderência?
+Responda apenas com o número.
+= 5
+= cinco
+> Cinco pressionamentos consecutivos de Shift ativam as teclas de aderência (sticky keys). Para as teclas lentas, é preciso manter Shift pressionada por oito segundos.
+
+### 106.3-008 | unica | 2
+ref: 102:p.168
+tags: mouse por teclado, teclas no mouse
+Com o recurso Mouse por teclado habilitado, o teclado numérico controla o ponteiro. Qual par de teclas move o cursor, respectivamente, para a esquerda e para baixo (nessa ordem), e qual tecla faz o clique esquerdo por padrão?
+- 4 e 2 movem; a tecla 0 clica
+- 1 e 3 movem; a tecla 5 clica
+- 8 e 2 movem; a tecla 7 clica
+= 4 e 2 movem; 5 clica
+- 6 e 8 movem; a tecla 5 clica
+> O teclado numérico é organizado como uma grade: 4 move para a esquerda, 6 para a direita, 8 para cima, 2 para baixo, e as diagonais ficam nos cantos (7 é noroeste, 1 é sudoeste e 3 é sudeste), então o par pedido é 4 e 2. Por padrão, a tecla 5 corresponde ao clique esquerdo.
+
+### 106.3-009 | lacuna | 2
+ref: 102:p.175
+tags: KMouseTool, cliques, KDE
+No KDE, qual aplicativo ajuda pessoas com lesões por esforço repetitivo gerando cliques do mouse quando o cursor fica parado por um instante?
+= KMouseTool
+= kmousetool
+> O KMouseTool oferece essas facilidades no KDE. No Gnome, o recurso equivalente é o "Clique flutuante", que dispara um clique quando o ponteiro é mantido parado.
+
+### 106.3-010 | unica | 2
+ref: 102:p.169
+tags: clique secundário simulado, Gnome
+Um usuário do Gnome tem dificuldade em pressionar o botão direito do mouse. Qual opção de assistência de clique simula esse clique quando ele mantém o botão esquerdo pressionado?
+- Mouse por teclado
+= Clique secundário simulado
+- Clique flutuante
+- Intervalo do clique duplo
+- Teclas de repercussão
+> O "Clique secundário simulado" gera o clique do botão direito quando o botão esquerdo é mantido pressionado. O "Clique flutuante" dispara um clique quando o ponteiro permanece parado; o mouse por teclado move o ponteiro com o teclado numérico e as teclas de repercussão tratam de toques repetidos no teclado.
+
+### 106.3-011 | multipla | 1
+ref: 102:p.169
+tags: alto contraste, texto grande, visão reduzida
+Quais ajustes visuais podem ajudar um usuário com visão reduzida a enxergar melhor a área de trabalho?
+- Teclas de aderência
+= Texto grande
+- Teclas lentas
+- Clique secundário simulado
+= Alto contraste
+= Tamanho maior do cursor
+> A seção "Visão" das configurações de acesso universal do Gnome oferece alto contraste (janelas e botões em cores mais contrastadas), texto grande (fonte maior) e tamanho do cursor. Teclas de aderência, teclas lentas e clique simulado são auxílios de entrada para quem tem mobilidade reduzida.
+
+### 106.3-012 | unica | 2
+ref: 102:p.170
+tags: lupa, KMagnifier, ampliação
+Qual programa do KDE amplia partes da tela para quem tem dificuldade de visão, de forma equivalente ao recurso "Ampliação" do Gnome?
+- Orca
+- KMouseTool (cliques automáticos)
+- Onboard
+- Konsole
+= KMagnifier
+> O KMagnifier é a lupa (ampliador de tela) do KDE e está disponível como aplicativo comum no inicializador (em muitas distribuições o pacote se chama `kmag`). No Gnome, o recurso se chama Ampliação, com ajustes de taxa de ampliação, posição e cores. O Orca é o leitor de tela e o Onboard, um teclado virtual.
+
+### 106.3-013 | unica | 2
+ref: 102:p.168-169
+tags: teclado virtual, onboard
+Qual pacote pode ser instalado manualmente para oferecer um teclado virtual simples em qualquer ambiente de desktop, como o KDE?
+= `onboard`
+- `orca`
+- `xkbset`
+- `kmagnifier`
+- `kmousetool`
+> O Onboard é um teclado virtual independente do ambiente: depois de instalado, aparece como um aplicativo normal no inicializador. O Orca é leitor de tela, o KMouseTool automatiza cliques, o `xkbset` ajusta o AccessX pela linha de comando e o KMagnifier é a lupa do KDE.
+
+### 106.3-014 | unica | 2
+ref: 102:p.165
+tags: teclas de alternância, toggle keys
+Qual recurso de acessibilidade emite um sinal sonoro quando teclas de trava, como Caps Lock e Num Lock, são ligadas ou desligadas?
+- Teclas de repercussão (bounce keys) do teclado
+= Teclas de alternância (toggle keys)
+- Mouse por teclado (mouse keys)
+- Teclas de aderência (sticky keys)
+- Teclas lentas (slow keys)
+> As teclas de alternância avisam, geralmente por um bipe, quando uma tecla de trava muda de estado, o que ajuda quem não vê os indicadores luminosos. Aderência, lentas e repercussão tratam de como os pressionamentos são interpretados, e o mouse por teclado move o ponteiro pelo teclado numérico.
+
+### 106.3-015 | unica | 1
+ref: 102:p.165
+tags: reconhecimento de fala
+Qual tecnologia assistiva converte a fala do usuário em texto ou em comandos, sendo útil para quem tem dificuldade em usar teclado e mouse?
+- Leitor de tela (voz sintetizada)
+- Display braille
+- Teclado virtual
+= Reconhecimento de fala
+- Lupa
+> O reconhecimento de fala transforma a voz em texto ou em comandos do computador. O leitor de tela faz o caminho oposto (sintetiza voz a partir do conteúdo na tela), o display braille apresenta o texto em relevo, a lupa amplia a imagem e o teclado virtual permite digitar clicando em teclas na tela.
+
+### 106.3-016 | unica | 2
+ref: 102:p.167
+tags: sino visual, alerta visual
+Qual recurso substitui o alerta sonoro do sistema por um alerta visual, ajudando usuários com deficiência auditiva, e é chamado de "sino visual" no KDE?
+- Alto contraste
+- Leitor de tela
+- Clique flutuante
+- Teclas de alternância
+= Alerta visual
+> O Gnome oferece o alerta visual em Acesso universal, e no KDE o mesmo recurso se chama sino visual. Ele faz a tela (ou a janela) piscar quando o sistema emitiria um som de aviso.
+
+### 106.3-017 | lacuna | 3
+ref: 102:p.168
+tags: AccessX, xkbset, XKB
+Qual comando de linha permite alterar as configurações do AccessX (teclas lentas, de aderência, de repercussão e mouse por teclado) fornecidas pela extensão X Keyboard do X Window System?
+= xkbset
+> O AccessX é um recurso da extensão X Keyboard e suas configurações podem ser alteradas na linha de comando com o `xkbset`. Já o `setxkbmap` troca layouts e modelos de teclado, mas não controla o AccessX.
+
+### 106.3-018 | unica | 3
+ref: 102:p.167-168
+tags: teclas lentas, teclas de repercussão, diferença
+Qual afirmação distingue corretamente as teclas lentas das teclas de repercussão?
+- Lentas avisam por som as teclas de trava; repercussão amplia o texto da tela
+= Lentas exigem manter a tecla pressionada; repercussão impõe um intervalo entre toques
+- Lentas permitem atalhos tecla por tecla; repercussão move o ponteiro pelo teclado
+- Lentas impõem um intervalo entre toques; repercussão exige manter a tecla pressionada
+- Lentas simulam o botão direito do mouse; repercussão ativa o alto contraste
+> As teclas lentas (slow keys) só aceitam a tecla depois que ela ficou pressionada por um tempo. As de repercussão (bounce keys) aceitam um novo pressionamento somente após um período desde o anterior. Atalhos tecla por tecla são as teclas de aderência, o aviso das teclas de trava é função das teclas de alternância e o clique simulado é um recurso do mouse.
+
+### 106.3-019 | multipla | 2
+ref: 102:p.167-168
+tags: teclado, mobilidade reduzida, teclas de aderência, teclas lentas, teclas de repercussão
+Quais recursos de acessibilidade do teclado ajudam usuários com mobilidade reduzida nas mãos?
+= Teclas de aderência
+- Lupa
+- Alto contraste
+= Teclas de repercussão
+= Teclas lentas
+- Leitor de tela
+> Aderência (atalhos sem pressionar várias teclas ao mesmo tempo), lentas e repercussão (evitam toques acidentais ou repetidos) tratam de dificuldades motoras no teclado. Alto contraste e lupa auxiliam a visão e o leitor de tela dá retorno por voz.
+
+### 106.3-020 | unica | 2
+ref: 102:p.170
+tags: Xfce, ampliação, zoom
+No Xfce, qual ação permite aumentar e diminuir o zoom da tela para quem tem dificuldade de visão, sem instalar um programa de ampliação separado?
+= Girar a roda do mouse com a tecla Alt pressionada
+- Pressionar a tecla Shift cinco vezes seguidas
+- Manter a tecla Shift pressionada por oito segundos
+- Pressionar Alt+F2 e digitar `zoom`
+- Pressionar a tecla Caps Lock duas vezes seguidas
+> Segundo o material, o Xfce permite ampliar e reduzir a tela girando a roda de rolagem do mouse enquanto a tecla Alt está pressionada (o recurso depende do compositor de janelas estar ativo). Os gestos com Shift ligam teclas de aderência e teclas lentas, não ampliam a tela; Alt+F2 abre a janela "Executar programa", e não há um comando `zoom` para isso.
+
+### 106.3-021 | unica | 2
+ref: 102:p.168
+tags: teclado virtual, Gnome, acesso universal
+No Gnome, com a opção Teclado virtual de Acesso universal habilitada, quando o teclado em tela é exibido?
+= Sempre que o cursor estiver em campo de texto
+- Somente quando o usuário pressiona a tecla Shift cinco vezes seguidas
+- Somente depois de instalar manualmente o pacote `onboard`
+- Somente quando as teclas lentas estão ligadas
+- Sempre que a tecla Caps Lock é ligada
+> Com a opção habilitada, o Gnome mostra o teclado na tela sempre que o cursor está em um campo de texto, e o usuário digita clicando nas teclas com o mouse ou com os dedos em uma tela de toque. O pacote `onboard` é necessário em ambientes como o KDE, que nem sempre trazem teclado virtual por padrão; as demais opções não têm relação com o teclado virtual.

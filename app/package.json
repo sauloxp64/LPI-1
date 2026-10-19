@@ -1,0 +1,14 @@
+{
+  "name": "lpic1-estudos",
+  "version": "1.0.0",
+  "description": "Área de estudos LPIC-1 (101-500 / 102-500): simulados aleatórios, laboratório e acompanhamento do curso",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test",
+    "lint:questions": "node tools/lint-questions.mjs",
+    "verify:generators": "node tools/verify-generators.mjs"
+  }
+}

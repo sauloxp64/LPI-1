@@ -1,0 +1,55 @@
+{
+  "id": "f103-3-dd-setores",
+  "obj": "103.3",
+  "titulo": "dd: extrair setores, zerar e gravar sem truncar",
+  "nivel": 3,
+  "minutos": 9,
+  "params": {
+    "setor": {
+      "faixa": [
+        20,
+        90
+      ]
+    },
+    "qtd": {
+      "faixa": [
+        2,
+        6
+      ]
+    },
+    "mib": {
+      "faixa": [
+        2,
+        6
+      ]
+    },
+    "offset": {
+      "faixa": [
+        60000,
+        120000
+      ]
+    },
+    "tag": {
+      "escolha": [
+        "LPIC1LAB",
+        "FIRMW123",
+        "BOOTMARK",
+        "DISKTAG7",
+        "RELEASE9"
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-3-dd-setores/` está `disco.img`, uma imagem de 128 KiB (256 setores de 512 bytes) que representa um disco de testes. Use o `dd` para três tarefas:\n\n1. **Extrair um trecho:** grave em `trecho.bin` **{qtd} setores** de 512 bytes, começando no **setor {setor}** de `disco.img` (o primeiro setor da imagem é o setor 0).\n2. **Criar um disco vazio:** crie `vazio.img` com exatamente **{mib} MiB** preenchidos com zeros.\n3. **Gravar uma marca no lugar:** escreva o texto `{tag}` (sem quebra de linha) em `disco.img`, a partir do **byte {offset}** (a contagem de bytes começa em 0). O restante da imagem deve ficar **intacto** e o arquivo deve continuar com **131072 bytes**.",
+  "verifica": [
+    "`trecho.bin` = {qtd} setores a partir do setor {setor} de `disco.img`",
+    "`vazio.img` tem exatamente {mib} MiB, só com zeros",
+    "`disco.img` tem `{tag}` a partir do byte {offset}, tamanho original e o resto sem alteração"
+  ],
+  "dicas": [
+    "O `dd` copia em blocos: `bs=` define o tamanho do bloco, `count=` quantos blocos copiar e `skip=`/`seek=` quantos blocos pular na entrada/saída.",
+    "Para as tarefas 1 e 2 use `if=` (entrada) e `of=` (saída); `/dev/zero` é uma fonte infinita de zeros. Com `bs=512`, `skip=` conta setores.",
+    "Para a tarefa 3, a entrada do `dd` pode vir de um pipe (`printf` ou `echo -n`), `bs=1` faz `seek=` contar bytes, e a opção `conv=notrunc` impede que o `dd` corte o arquivo de saída.",
+    "Confira com `ls -l`, `cmp` e `od -c` (ex.: `od -c -j OFFSET -N 8 disco.img`)."
+  ],
+  "solucao": "```\ncd ~/lab/f103-3-dd-setores\ndd if=disco.img of=trecho.bin bs=512 skip={setor} count={qtd}\ndd if=/dev/zero of=vazio.img bs=1M count={mib}\nprintf '%s' '{tag}' | dd of=disco.img bs=1 seek={offset} conv=notrunc\n```\n`skip` pula blocos de **entrada** e `seek` pula blocos de **saída**; ambos são medidos em `bs` (aqui 512 bytes no primeiro comando e 1 byte no terceiro). A pegadinha da prova: sem `conv=notrunc`, o `dd` **trunca** o arquivo de saída logo depois do que gravou, destruindo o resto da imagem; use `printf`/`echo -n` para não gravar um `\\n` extra. `bs=1M` usa potências de 1024 (MiB); `bs=1MB` seria 1.000.000."
+}

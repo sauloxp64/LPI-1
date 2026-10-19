@@ -1,0 +1,35 @@
+{
+  "id": "f104-1-gpt-tipos-nomes",
+  "obj": "104.1",
+  "titulo": "Disco GPT para um sistema UEFI",
+  "nivel": 3,
+  "minutos": 10,
+  "params": {
+    "disco": { "escolha": ["notebook", "servidor", "estacao", "laboratorio"] },
+    "tam": { "escolha": [256, 320, 384] },
+    "esp": { "faixa": [20, 48] },
+    "raiz": { "faixa": [40, 80] },
+    "sw": { "faixa": [8, 24] },
+    "n1": { "escolha": ["efi-boot", "esp-lab", "EFI-Sys"] },
+    "n2": { "escolha": ["raiz", "sistema", "root-lab"] },
+    "n3": { "escolha": ["troca", "swap-lab", "memoria"] },
+    "n4": { "escolha": ["dados", "home-lab", "usuarios"] }
+  },
+  "enunciado": "Prepare o particionamento de uma máquina UEFI. Crie a imagem de disco `~/lab/particoes-gpt/{disco}.img` com **{tam} MiB** e grave nela uma tabela de partições **GPT** com **4 partições**, nesta ordem, cada uma com o **tipo** e o **nome** (rótulo GPT, o campo *name*) indicados:\n\n| nº | tamanho | tipo | nome |\n|----|---------|------|------|\n| 1 | {esp} MiB | **EFI System** | `{n1}` |\n| 2 | {raiz} MiB | **Linux filesystem** | `{n2}` |\n| 3 | {sw} MiB | **Linux swap** | `{n3}` |\n| 4 | todo o espaço restante, até o último setor utilizável | **Linux home** | `{n4}` |\n\nAs partições devem começar em múltiplos de 1 MiB (alinhamento) e a tabela precisa estar íntegra (inclusive a cópia de backup no fim do disco). Aceita-se diferença de até 1 MiB nos tamanhos. Use `gdisk`, `sgdisk`, `fdisk` (em modo GPT), `parted` ou `sfdisk`. Não formate as partições.",
+  "verifica": [
+    "a imagem existe, tem {tam} MiB e a tabela é GPT",
+    "exatamente 4 partições",
+    "partição 1: tipo EFI System, nome `{n1}`, ~{esp} MiB",
+    "partição 2: tipo Linux filesystem, nome `{n2}`, ~{raiz} MiB",
+    "partição 3: tipo Linux swap, nome `{n3}`, ~{sw} MiB",
+    "partição 4: tipo Linux home, nome `{n4}`, indo até o último setor utilizável",
+    "início alinhado em 1 MiB, ordem sem sobreposição e `sgdisk --verify` sem problemas"
+  ],
+  "dicas": [
+    "Crie o arquivo com `truncate -s` e use uma ferramenta GPT sobre ele. Na GPT cada tipo é um GUID; as ferramentas mostram nomes legíveis (`l` no fdisk, `L` no gdisk).",
+    "No `gdisk`: `o` (nova GPT), `n` (nova partição; digite o código de tipo, ex.: `ef00`), `c` (renomear a partição), `w` (gravar). No `fdisk`, `g` cria a GPT, `t` muda o tipo e `x` + `n` define o nome.",
+    "Com `sgdisk` tudo cabe em uma linha: `-n NUM:INICIO:FIM` (`0` = padrão, `+30M` = tamanho), `-t NUM:CODIGO` (EF00, 8300, 8200, 8302) e `-c NUM:NOME`.",
+    "Confira com `sfdisk -d disco.img` (mostra tipo e `name=`) e `sgdisk --verify disco.img`."
+  ],
+  "solucao": "```\ntruncate -s {tam}M ~/lab/particoes-gpt/{disco}.img\nsgdisk -n 1:0:+{esp}M -t 1:EF00 -c 1:{n1} \\\n       -n 2:0:+{raiz}M -t 2:8300 -c 2:{n2} \\\n       -n 3:0:+{sw}M  -t 3:8200 -c 3:{n3} \\\n       -n 4:0:0       -t 4:8302 -c 4:{n4} ~/lab/particoes-gpt/{disco}.img\nsgdisk -p ~/lab/particoes-gpt/{disco}.img      # confere\n```\nNo GPT o tipo é um GUID (códigos do `gdisk`: `EF00` = EFI System, `8300` = Linux filesystem, `8200` = Linux swap, `8302` = Linux /home) e cada partição pode ter um **nome** próprio, diferente do rótulo do sistema de arquivos. `-n 4:0:0` usa o padrão para início e fim, isto é, o maior espaço livre até o último setor utilizável (os últimos 33 setores guardam a cópia de backup da tabela). Diferente do MBR, não existem partições estendidas/lógicas: até 128 entradas primárias."
+}

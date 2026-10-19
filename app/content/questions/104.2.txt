@@ -1,0 +1,447 @@
+### 104.2-001 | lacuna | 1
+ref: 101:p.460
+tags: du, -h
+Qual opção do `du` apresenta os tamanhos em formato legível para humanos (K, M, G)? `du ____ /var/log`
+= -h
+= --human-readable
+> `-h` converte os valores para K, M ou G. Sem ela, o `du` mostra o uso em blocos de 1 KiB.
+
+### 104.2-002 | unica | 2
+ref: 101:p.460-461
+tags: du, subdiretórios, -S
+O comando `du` executado em um diretório produz esta saída (em KiB):
+
+```
+404	./data
+304	./logs/old
+508	./logs
+1036	.
+```
+
+Quantos KiB ocupam apenas os arquivos (e a entrada do próprio diretório) em `./logs`, sem contar `./logs/old`?
+= 204
+- 508, o valor mostrado na linha de `./logs`
+- 304, o valor mostrado na linha de `./logs/old`
+- 812, a soma dos valores de `./logs` e `./logs/old`
+> Por padrão, o `du` soma os subdiretórios no total de cada diretório: os 508 KiB de `./logs` já incluem os 304 KiB de `./logs/old`. Portanto, `508 - 304 = 204`, que é exatamente o que o `du -S` (separar) mostraria para `./logs`.
+
+### 104.2-003 | unica | 3
+ref: 101:p.461, 101:p.477
+tags: du, -S, -d, -h
+Qual comando mostra, em uma única linha legível, quanto espaço ocupam **apenas** os arquivos do diretório atual, sem os subdiretórios?
+= `du -Shd 0`
+- `du -sh .`
+- `du -h -d 1`
+- `du -ch .`
+> `-S` não inclui o tamanho dos subdiretórios no total do pai, e `-d 0` limita a saída ao próprio diretório; `-h` deixa o valor legível. O `du -sh .` soma tudo, inclusive os subdiretórios; `-d 1` lista também cada subdiretório; e `-c` apenas acrescenta uma linha de total geral.
+
+### 104.2-004 | unica | 2
+ref: 101:p.461-462
+tags: du, profundidade, -d
+Com os subdiretórios `./data` (404K), `./logs` (508K) e `./logs/old` (304K), um `du -h` mostra, além de `.` (1.1M), as três linhas. Quais linhas aparecem com `du -h -d 1`?
+= `./data`, `./logs` e `.`; `./logs` segue em 508K
+- Somente `.`, mostrando apenas o total de 1.1M do diretório
+- `./data`, `./logs/old` e `.`, omitindo a linha de `./logs`
+- `./data`, `./logs` e `.`, mas com `./logs` em 204K
+> `-d N` limita a profundidade **exibida**, mas o cálculo dos tamanhos continua incluindo tudo o que está abaixo; por isso `./logs` segue com 508K mesmo sem a linha de `./logs/old`. Somente `.` aparece com `-d 0` (ou `-s`), e o valor 204K de `./logs` é resultado de `-S`.
+
+### 104.2-005 | unica | 2
+ref: 101:p.462
+tags: du, --exclude
+Qual comando mostra o uso total do diretório atual desconsiderando os arquivos `.bin`?
+= `du -sh --exclude="*.bin" .`
+- `du -sh --ignore-glob="*.bin" .`
+- `du -sh --one-file-system "*.bin" .`
+- `du -sh --exclude-from="*.bin" .`
+> `--exclude="PADRÃO"` retira do cálculo os arquivos que casam com o padrão (o total deixa de contar esses arquivos). O `--ignore-glob` não existe no `du`; `--one-file-system` (`-x`) apenas restringe o `du` a um único sistema de arquivos; e `--exclude-from` (`-X`) exige um arquivo com a lista de padrões.
+
+### 104.2-006 | unica | 1
+ref: 101:p.462-463
+tags: df, du
+Qual comando informa tamanho total, espaço usado e espaço disponível de cada sistema de arquivos **montado**?
+= `df`
+- `du`
+- `fdisk -l`
+- `tune2fs -l`
+> `df` ("disk free") trabalha no nível dos sistemas de arquivos montados. O `du` trabalha no nível de arquivos e diretórios, o `fdisk -l` lista partições (não o uso) e o `tune2fs -l` mostra parâmetros de um único ext2/3/4.
+
+### 104.2-007 | lacuna | 1
+ref: 101:p.463
+tags: df, inodes, -i
+Qual opção do `df` exibe o uso de inodes em vez do uso de blocos? `df ____ /var`
+= -i
+= --inodes
+> Com `-i`, o `df` troca as colunas de blocos por `Inodes`, `IUsed`, `IFree` e `IUse%`. Um sistema de arquivos pode ficar sem inodes mesmo tendo muito espaço livre em blocos.
+
+### 104.2-008 | unica | 2
+ref: 101:p.463, 101:p.466
+tags: df, inodes, diagnóstico
+Uma aplicação falha com "No space left on device" ao criar arquivos em `/var`, apesar de:
+
+```
+$ df -h /var
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda3        50G   12G   36G  25% /var
+$ df -i /var
+Filesystem      Inodes   IUsed IFree IUse% Mounted on
+/dev/sda3      3276800 3276800     0  100% /var
+```
+
+Qual é a causa?
+= Os inodes se esgotaram, provavelmente por muitos arquivos pequenos
+- Os blocos de dados se esgotaram, pois o disco está completamente cheio
+- O sistema de arquivos foi remontado somente leitura pelo kernel
+- A partição `/var` está desmontada, e a gravação cai na raiz
+> O `df -h` mostra 25% de uso de blocos, mas o `df -i` revela 100% dos inodes usados: sem inodes livres, não é possível criar novos arquivos, e o erro enganoso é o mesmo de disco cheio. A solução é apagar muitos arquivos pequenos ou, em ext2/3/4, recriar o sistema de arquivos com mais inodes (`mke2fs -N` ou `-i`).
+
+### 104.2-009 | unica | 2
+ref: 101:p.464-465
+tags: df, -t, -T, -x
+Qual comando mostra, em formato legível, **somente** os sistemas de arquivos do tipo ext4?
+= `df -ht ext4`
+- `df -hT ext4`
+- `df -hx ext4`
+- `df -h --type`
+> `-t TIPO` filtra e mostra apenas aquele tipo, e `-x TIPO` exclui o tipo. Já `-T` (maiúsculo) apenas acrescenta a coluna do tipo e não recebe argumento; em `df -hT ext4`, a palavra `ext4` é entendida como um arquivo ou ponto de montagem e gera erro ("No such file or directory"). `--type` precisa de um valor.
+
+### 104.2-010 | unica | 3
+ref: 101:p.465-466, 101:p.477
+tags: df, --output, inodes
+Qual comando lista, para cada sistema de arquivos ext4, nesta ordem: dispositivo, ponto de montagem, total de inodes, inodes **disponíveis** e a porcentagem de uso de **blocos**?
+= `df -t ext4 --output=source,target,itotal,iavail,pcent`
+- `df -t ext4 --output=source,target,itotal,iused,pcent`
+- `df -t ext4 --output=source,target,itotal,iavail,ipcent`
+- `df -t ext4 --output=target,source,itotal,iavail,pcent`
+> Os campos são `source` (dispositivo), `target` (ponto de montagem), `itotal` (total de inodes), `iavail` (inodes livres) e `pcent` (porcentagem de uso de blocos). A segunda opção lista inodes **usados** (`iused`); a terceira mostra a porcentagem de uso de **inodes** (`ipcent`); e a quarta inverte a ordem das duas primeiras colunas.
+
+### 104.2-011 | unica | 2
+ref: 101:p.466
+tags: df, --output, cabeçalho
+Qual cabeçalho de colunas é exibido por `df --output=source,fstype,itotal,iused,ipcent`?
+= `Filesystem Type Inodes IUsed IUse%`
+- `Filesystem Type Size Used Use%`
+- `Filesystem Type Inodes IFree IUse% Mounted on`
+- `Source Fstype Itotal Iused Ipcent`
+> Os campos de `--output` são nomes de seleção, e o `df` imprime cabeçalhos descritivos: `source` vira "Filesystem", `fstype` vira "Type", `itotal` vira "Inodes", `iused` vira "IUsed" e `ipcent` vira "IUse%". `size`/`used`/`pcent` mostrariam blocos, e `iavail` apareceria como "IFree".
+
+### 104.2-012 | unica | 2
+ref: 101:p.466-467
+tags: fsck, e2fsck, tipos
+O que o `fsck /dev/sdb1` faz quando `/dev/sdb1` contém um sistema de arquivos ext4?
+= Chama o verificador específico do tipo, que no ext2/3/4 é o `e2fsck`
+- Verifica o sistema de arquivos por conta própria, sem chamar outro programa
+- Chama o `xfs_repair`, pois é o verificador padrão do Linux
+- Apenas lista os erros, sem tentar reparar
+> O `fsck` é um *front-end*: ele detecta (ou recebe com `-t`) o tipo do sistema de arquivos e executa o programa correspondente (`fsck.ext4`, `fsck.vfat`, `fsck.xfs`...). Para ext2/3/4 isso acaba em `e2fsck`, pois `fsck.ext2`, `fsck.ext3` e `fsck.ext4` são links para ele.
+
+### 104.2-013 | unica | 1
+ref: 101:p.467
+tags: fsck, desmontado
+Em que estado deve estar um sistema de arquivos para ser verificado com segurança pelo `fsck`?
+= Desmontado
+- Montado com leitura e gravação
+- Em uso intenso por um serviço ativo
+- Indiferente, pois o `fsck` bloqueia o acesso sozinho
+> Nunca se deve executar o `fsck` em um sistema de arquivos montado em leitura e gravação, pois ele altera estruturas que o kernel também usa, o que pode causar perda de dados. Para verificar a raiz, é preciso rodar o `fsck` na inicialização, a partir de um sistema de recuperação ou com a raiz montada somente leitura.
+
+### 104.2-014 | lacuna | 2
+ref: 101:p.467
+tags: fsck, -N, simulação
+Qual opção do `fsck` apenas mostra o que seria feito, sem verificar nada? `fsck ____ -A`
+= -N
+> Com `-N`, o `fsck` lista os comandos específicos que executaria (por exemplo, `fsck.ext4 /dev/sda1`) e termina sem tocar nos sistemas de arquivos. É útil para conferir, antes, quais dispositivos o `-A` incluiria.
+
+### 104.2-015 | unica | 2
+ref: 101:p.467
+tags: fsck, -A, -R, fstab
+Qual comando verifica todos os sistemas de arquivos do `/etc/fstab`, **exceto** o sistema raiz?
+= `fsck -AR`
+- `fsck -A`
+- `fsck -R`
+- `fsck -A -N`
+> `-A` percorre o `/etc/fstab` e `-R`, usado em conjunto com ele, pula o sistema de arquivos raiz (útil quando a raiz já está montada). `fsck -A` sozinho inclui a raiz, `-R` sozinho não seleciona nada, e `-N` apenas simula.
+
+### 104.2-016 | lacuna | 2
+ref: 101:p.468
+tags: e2fsck, -p, automático
+Qual opção do `e2fsck` corrige automaticamente, e sem perguntas, os problemas que podem ser resolvidos com segurança? `e2fsck ____ /dev/sdc1`
+= -p
+= -a
+> No modo `-p` (*preen*), o `e2fsck` conserta sozinho o que é seguro; se encontrar algo que exija decisão do administrador, descreve o problema, sai com código 4 e pede para rodar o `fsck` manualmente. `-y` responde "sim" a tudo, inclusive reparos arriscados. (`-a` é um sinônimo antigo de `-p`, mantido só por compatibilidade.)
+
+### 104.2-017 | unica | 2
+ref: 101:p.468
+tags: e2fsck, -n, somente leitura
+Qual opção faz o `e2fsck` verificar o sistema de arquivos sem modificá-lo, respondendo "não" a todas as perguntas?
+= `-n`
+- `-y`, que responde "sim" a tudo
+- `-p`, que repara só o que é seguro
+- `-f`, que força a verificação completa
+> `-n` abre o sistema de arquivos somente leitura e responde "não" a tudo, relatando os problemas sem corrigi-los. O `-y` responde "sim" a todas as perguntas (corrige tudo), `-p` repara automaticamente o que é seguro, e `-f` apenas força a verificação mesmo que o sistema esteja marcado como limpo.
+
+### 104.2-018 | unica | 2
+ref: 101:p.468
+tags: e2fsck, -f, forçar
+Um ext4 foi desmontado corretamente, e o `e2fsck -p /dev/sdb1` responde apenas "clean". Qual opção força a verificação completa mesmo assim?
+= `-f`
+- `-F`, que esvazia os caches do disco
+- `-c`, que procura blocos defeituosos
+- `-v`, que deixa a saída detalhada
+> Se o sistema de arquivos está marcado como limpo, o `e2fsck` não faz a verificação, a menos que se use `-f` (*force*). `-F` esvazia os caches do dispositivo (usado para medir tempos), `-c` executa também a busca de blocos defeituosos com `badblocks`, e `-v` só deixa a saída mais detalhada.
+
+### 104.2-019 | unica | 3
+ref: 101:p.468
+tags: e2fsck, código de saída
+Um administrador executa `e2fsck -fn /dev/sdc1` e, em seguida, `echo $?`, que imprime `4`. O que isso significa?
+= Há erros no sistema de arquivos que ficaram sem correção
+- O sistema de arquivos não tem nenhum erro e está consistente
+- Os erros foram corrigidos, e convém reiniciar o sistema em seguida
+- Houve um erro operacional ou de uso incorreto do próprio comando
+> O código de saída do `e2fsck` é uma soma de valores: 0 (sem erros), 1 (erros corrigidos), 2 (erros corrigidos, convém reiniciar), 4 (erros **não corrigidos**), 8 (erro operacional), entre outros. Como `-n` não modifica nada, a presença de erros resulta no código 4. Uma execução com `-y` que consertasse tudo retornaria 1.
+
+### 104.2-020 | unica | 2
+ref: 101:p.468
+tags: e2fsck, lost+found
+Depois de `e2fsck -fy`, um arquivo sem nenhuma entrada de diretório (inode "órfão") foi recuperado. Onde ele fica?
+= Em `lost+found`, no próprio sistema de arquivos, com o nome `#inode`
+- Em `/tmp`, com o nome original do arquivo, para que o usuário o recupere
+- Em `/var/lib/fsck`, em um subdiretório nomeado com a data da verificação
+- No diretório `/root/recovered`, criado pelo e2fsck para os arquivos órfãos
+> O `e2fsck` religa os inodes órfãos ao diretório `lost+found` que existe na raiz de cada ext2/3/4 (criado pelo `mke2fs`); como o nome original foi perdido, o arquivo aparece como `#NÚMERO`, por exemplo `#12`. É preciso inspecionar o conteúdo para identificá-lo.
+
+### 104.2-021 | unica | 1
+ref: 101:p.468-470
+tags: tune2fs, -l
+Qual comando exibe os parâmetros do superbloco (rótulo, UUID, contagem de montagens, diário etc.) de um ext2/3/4?
+= `tune2fs -l /dev/sda1`
+- `tune2fs -L /dev/sda1`
+- `e2fsck -l badblocks /dev/sda1`
+- `mke2fs -l badblocks /dev/sda1`
+> `tune2fs -l` lista as informações do sistema de arquivos, como "Mount count", "Maximum mount count", "Check interval" e "Errors behavior". Já `-L` define o rótulo e exige um argumento, e `e2fsck -l`/`mke2fs -l` esperam um arquivo com a lista de blocos defeituosos.
+
+### 104.2-022 | lacuna | 1
+ref: 101:p.470
+tags: tune2fs, rótulo, -L
+Qual opção do `tune2fs` define o rótulo de um ext2/3/4? `tune2fs ____ DADOS /dev/sdb1`
+= -L
+> `-L` altera o rótulo (até 16 caracteres), e `-U` altera o UUID. Rótulo e UUID podem ser usados em vez do nome do dispositivo, por exemplo, em `mount LABEL=DADOS`.
+
+### 104.2-023 | unica | 2
+ref: 101:p.470
+tags: tune2fs, -c, contagem de montagens
+O que faz o comando `tune2fs -c 30 /dev/sdb1`?
+= Define em 30 o máximo de montagens antes de uma verificação
+- Zera a contagem atual de montagens e passa a contar até 30
+- Agenda uma verificação do sistema de arquivos a cada 30 dias
+- Reserva 30% dos blocos do sistema de arquivos para uso exclusivo do root
+> `-c N` ajusta o **máximo** de montagens sem verificação (*Maximum mount count*); ao atingi-lo, o sistema é checado na próxima inicialização. Para agendar por tempo usa-se `-i 30d`, para reservar blocos usa-se `-m 30` e, para zerar a contagem atual, `-C 0`.
+
+### 104.2-024 | unica | 3
+ref: 101:p.470, 101:p.478
+tags: tune2fs, -C, -c, contagem
+Qual comando redefine para zero a contagem **atual** de montagens de um ext2/3/4, sem alterar o limite máximo de montagens?
+= `tune2fs -C 0 /dev/sdb1`
+- `tune2fs -c 0 /dev/sdb1`
+- `tune2fs -i 0 /dev/sdb1`
+- `tune2fs -m 0 /dev/sdb1`
+- `tune2fs -c 0 -i 0 /dev/sdb1`
+> `-C N` (maiúsculo) define a contagem **atual**; `-c N` (minúsculo) define o **máximo**. Com `-c 0`, a verificação por número de montagens é desativada (o máximo passa a -1), mas o "Mount count" atual continua o mesmo. `-i 0` desativa a verificação por intervalo de tempo, e `-m 0` zera a porcentagem de blocos reservados.
+
+### 104.2-025 | unica | 2
+ref: 101:p.470
+tags: tune2fs, -i, intervalo
+Qual comando faz um ext4 ser verificado automaticamente, na inicialização, depois de 30 dias desde a última verificação?
+= `tune2fs -i 30d /dev/sdb1`
+- `tune2fs -c 30d /dev/sdb1`
+- `tune2fs -C 30 /dev/sdb1`
+- `tune2fs -e 30d /dev/sdb1`
+- `tune2fs -c 30 -C 30 /dev/sdb1`
+> `-i` define o intervalo entre verificações, com sufixo `d` (dias), `w` (semanas) ou `m` (meses); com valor 0 o recurso é desativado. As opções `-c`/`-C` tratam de contagem de montagens, e `-e` define o comportamento do kernel diante de erros.
+
+### 104.2-026 | unica | 2
+ref: 101:p.470
+tags: tune2fs, -e, remount-ro
+Qual comando faz o kernel remontar um ext4 como somente leitura quando detectar um erro no sistema de arquivos?
+= `tune2fs -e remount-ro /dev/sdb1`
+- `tune2fs -e continue /dev/sdb1`
+- `tune2fs -e panic /dev/sdb1`
+- `tune2fs --errors=remount-ro /dev/sdb1`
+> `-e COMPORTAMENTO` aceita `continue` (padrão), `remount-ro` e `panic`. O `remount-ro` interrompe imediatamente as gravações, o que ajuda a evitar mais danos. A forma longa `--errors=` não existe no `tune2fs` (a opção correta é a curta, `-e`).
+
+### 104.2-027 | unica | 2
+ref: 101:p.470-471
+tags: tune2fs, -j, ext3, diário
+Como converter um sistema de arquivos ext2 em ext3 sem apagar os dados?
+= Executar `tune2fs -j /dev/sdb1`, que adiciona um diário
+- Executar `mke2fs -j /dev/sdb1`, que adiciona um diário
+- Executar `e2fsck -j /dev/sdb1`, que adiciona um diário
+- Executar `tune2fs -O ^has_journal /dev/sdb1`, que cria o diário
+> `tune2fs -j` cria o arquivo de diário (journal) no sistema de arquivos existente, convertendo ext2 em ext3 sem perder dados; depois, deve-se montá-lo como ext3 para usar o diário. O `mke2fs -j` cria um sistema **novo** (apaga o conteúdo), `e2fsck -j` apenas indica um diário externo, e `^has_journal` **remove** o diário.
+
+### 104.2-028 | unica | 3
+ref: 101:p.470-471, 101:p.477-478
+tags: tune2fs, -j, -C, -L
+Qual comando converte o ext2 `/dev/sdb1` em ext3, zera a contagem atual de montagens e define o rótulo `UserData`?
+= `tune2fs -j -C 0 -L UserData /dev/sdb1`
+- `tune2fs -f -j -c 0 -L UserData /dev/sdb1`
+- `tune2fs -f -J -C 0 -L UserData /dev/sdb1`
+- `tune2fs -j -C 0 -U UserData /dev/sdb1`
+> `-j` adiciona o diário, `-C 0` zera a contagem atual de montagens e `-L` define o rótulo. Com `-c 0` o máximo de montagens é que seria desativado (e a contagem atual seguiria como estava). `-J` exige parâmetros do diário (como `size=`), e `-U` define o UUID, que precisa estar no formato próprio e não aceita um nome livre.
+
+### 104.2-029 | unica | 2
+ref: 101:p.463, 101:p.466
+tags: mke2fs, inodes, -N
+Um novo sistema de arquivos ext4 vai guardar milhões de arquivos pequenos. Qual opção do `mke2fs` ajusta, durante a criação, o número de inodes?
+= `mke2fs -t ext4 -N 4000000 /dev/sdb1`
+- `mke2fs -t ext4 -b 4000000 /dev/sdb1`
+- `mke2fs -t ext4 -m 4000000 /dev/sdb1`
+- `mke2fs -t ext4 -E inodes=4000000 /dev/sdb1`
+> `-N` define o número total de inodes (e `-i` define a razão de bytes por inode). O número de inodes é fixado na criação do ext2/3/4: não há como aumentá-lo sem recriar o sistema de arquivos (ou ampliá-lo). `-b` é o tamanho do bloco, `-m` a porcentagem de blocos reservados e `-E` recebe opções estendidas (não há `inodes=` entre elas).
+
+### 104.2-030 | unica | 1
+ref: 101:p.471
+tags: xfs_repair, fsck, XFS
+Qual utilitário faz, em um sistema de arquivos XFS, o papel que o `e2fsck` faz no ext4?
+= `xfs_repair`
+- `xfs_metadump`
+- `xfs_db`
+- `tune2fs`
+> `xfs_repair` verifica e repara o XFS. O `xfs_metadump` copia os metadados para diagnóstico, o `xfs_db` serve para depurar e inspecionar, e o `tune2fs` é exclusivo da família ext. (O `xfs_fsr`, outra ferramenta do XFS, reorganiza/desfragmenta.)
+
+### 104.2-031 | unica | 3
+ref: 101:p.471-473, 101:p.479-480
+tags: xfs_repair, -n, -l, log externo
+O XFS de `/dev/sda1` tem o log em um dispositivo externo, `/dev/sdc1`. Qual comando verifica o sistema de arquivos **sem fazer reparos**?
+= `xfs_repair -n -l /dev/sdc1 /dev/sda1`
+- `xfs_repair -L /dev/sdc1 /dev/sda1`
+- `xfs_repair -n /dev/sda1 /dev/sdc1`
+- `xfs_repair -d -l /dev/sdc1 /dev/sda1 -v`
+> `-n` (*no modify*) só relata o que seria reparado, e `-l DISPOSITIVO` informa onde está o log externo; o último argumento é o dispositivo do sistema de arquivos. O `-L` **zera** o log, o que é perigoso, e `-d` ("dangerous") permite reparar um sistema montado somente leitura. A terceira forma passa os dois dispositivos como se fossem sistemas de arquivos.
+
+### 104.2-032 | unica | 3
+ref: 101:p.473
+tags: xfs_repair, -L, log sujo
+O `xfs_repair` recusa-se a prosseguir porque o log do XFS está "sujo", e o sistema de arquivos não pode ser montado para reproduzir o log. Qual opção, usada como último recurso, zera o log?
+= `-L`
+- `-n`, que apenas simula
+- `-d`, que repara um sistema somente leitura
+- `-v`, que aumenta a verbosidade
+> `xfs_repair -L` descarta o log e permite o reparo, mas as atualizações de metadados que estavam em andamento são perdidas, o que pode causar corrupção e perda de dados; por isso, só deve ser tentada depois de tentar montar o sistema para reproduzir o log. `-n` apenas simula, `-d` permite reparar um sistema montado somente leitura, e `-v` aumenta a verbosidade.
+
+### 104.2-033 | unica | 3
+ref: 101:p.473
+tags: xfs_db, superbloco, -r
+Qual é a saída do comando abaixo, executado em um XFS criado com `mkfs.xfs` sem opções extras?
+
+```
+# xfs_db -r -c 'sb 0' -c 'print blocksize' /dev/sdb1
+```
+= blocksize = 4096
+- blocksize = 512 bytes
+- data = bsize=4096
+- 4096 bytes
+> O `xfs_db` é o depurador do XFS: `-r` abre o dispositivo somente leitura, `-c` executa um comando, `sb 0` posiciona no superbloco do primeiro grupo de alocação e `print blocksize` mostra o campo no formato `campo = valor`. O tamanho de bloco padrão do XFS é 4096 bytes. O formato `bsize=4096` é o de `mkfs.xfs`/`xfs_info`.
+
+### 104.2-034 | lacuna | 2
+ref: 101:p.473
+tags: xfs_db, frag, fragmentação
+Qual comando interno do `xfs_db` informa o fator de fragmentação do sistema de arquivos? `xfs_db -r -c ____ /dev/sdb1`
+= frag
+= 'frag'
+= "frag"
+> O comando `frag` imprime "actual", "ideal" e o fator de fragmentação. Se o valor justificar, o sistema de arquivos pode ser reorganizado com `xfs_fsr`.
+
+### 104.2-035 | unica | 2
+ref: 101:p.473
+tags: xfs_fsr, desfragmentar
+Executado sem argumentos, o que faz o `xfs_fsr`?
+= Desfragmenta os XFS montados listados em `/etc/mtab`, por até 2 horas
+- Verifica e repara os XFS desmontados que estejam listados em `/etc/fstab`
+- Mostra o fator de fragmentação dos XFS montados e termina imediatamente
+- Aumenta o tamanho dos XFS montados até ocupar toda a partição disponível
+> `xfs_fsr` desfragmenta XFS **montados**. Sem argumentos, percorre os sistemas listados em `/etc/mtab` pelo tempo padrão de 7200 segundos (2 horas), ajustável com `-t`. A verificação é feita com `xfs_repair`, o fator de fragmentação, com `xfs_db -c frag`, e o crescimento do XFS, com `xfs_growfs`.
+
+### 104.2-036 | unica | 3
+ref: 101:p.466-467, 101:p.471
+tags: fsck.xfs, xfs_repair, fsck
+O `fsck -t xfs /dev/sdb1` termina sem erro e sem verificar coisa alguma. Por quê?
+= `fsck.xfs` é só um *stub* que sai com sucesso; o reparo é do `xfs_repair`
+- O XFS não possui nenhuma ferramenta de verificação, apenas de desfragmentação
+- O `fsck` só verifica sistemas ext2/3/4 e ignora os demais tipos
+- O `fsck` precisa da opção `-f` para verificar um XFS
+> Para o XFS, o `fsck.xfs` apenas termina com código 0 e orienta o usuário a ver o `xfs_repair(8)`, pois o XFS é recuperado pelo reaproveitamento do log na montagem e não precisa de verificação no boot. O `fsck` até suporta outros tipos (por exemplo, `fsck.vfat`), e o `-f` não muda o comportamento do `fsck.xfs`.
+
+### 104.2-037 | unica | 3
+ref: 101:p.462-463
+tags: df, du, arquivo apagado, diagnóstico
+Um arquivo de log de 40 GB foi removido com `rm`, mas o `df` continua mostrando o disco cheio, e o `du` não encontra o arquivo. O que explica a diferença?
+= Um processo ainda mantém o arquivo aberto; o espaço só é liberado ao fechá-lo
+- O `rm` só libera o espaço depois da próxima verificação do sistema de arquivos com `fsck`
+- O `df` só atualiza seus valores depois de um `reboot`
+- O arquivo foi movido para a lixeira do sistema de arquivos
+> No Linux, `rm` remove o **nome** do arquivo; os blocos só voltam a ficar livres quando não houver mais nenhum descritor aberto para ele. Assim, o `du` (que percorre nomes de arquivos) não o vê, mas o `df` (que consulta o sistema de arquivos) segue contando o espaço. Reiniciar ou recarregar o processo que mantém o arquivo aberto libera o espaço (`lsof +L1` mostra esses casos).
+
+### 104.2-038 | unica | 3
+ref: 101:p.461
+tags: du, sort, -h
+Qual comando lista os subdiretórios de `/var` por tamanho, do **menor** para o maior, com valores legíveis?
+= `du -h -d 1 /var | sort -h`
+- `du -h -d 1 /var | sort -n`
+- `du -h -d 1 /var | sort`
+- `du -sh /var | sort -h`
+- `du -h -d 1 /var | sort -h -r`
+> `sort -h` entende sufixos como K, M e G. O `sort -n` compara só o valor numérico (e coloca `1.1M` antes de `404K`), e o `sort` puro ordena como texto. Já `du -sh /var` mostra uma única linha com o total, e não há o que ordenar, e `sort -h -r` inverte a ordem (do maior para o menor).
+
+### 104.2-039 | multipla | 2
+ref: 101:p.466-468
+tags: fsck, e2fsck, fsck.ext4
+Quais comandos verificam o sistema de arquivos ext4 desmontado em `/dev/sdb1`?
+= `e2fsck /dev/sdb1`
+= `fsck.ext4 /dev/sdb1`
+= `fsck -t ext4 /dev/sdb1`
+- `xfs_repair /dev/sdb1`
+- `tune2fs -l /dev/sdb1`
+> `fsck.ext4` é um link para `e2fsck`, e `fsck -t ext4` chama o mesmo programa. O `xfs_repair` serve apenas para XFS e se recusaria a operar em um ext4. O `tune2fs -l` lista parâmetros do superbloco, mas não verifica a integridade do sistema de arquivos.
+
+### 104.2-040 | unica | 2
+ref: 101:p.463-464
+tags: df, -h, -T, tipos
+Qual opção do `df` acrescenta a coluna com o tipo de cada sistema de arquivos (ext4, xfs, tmpfs...) à saída?
+= `-T`
+- `-t`, que filtra por tipo
+- `-i`, que mostra inodes
+- `-x`, que exclui um tipo
+> `-T` (maiúsculo) inclui a coluna `Type`. `-t TIPO` é um filtro, que mostra só aquele tipo; `-x TIPO` exclui um tipo e `-i` troca blocos por inodes.
+
+### 104.2-041 | multipla | 2
+ref: 101:p.468
+tags: e2fsck, não interativo, -p, -y, -n
+Quais opções fazem o `e2fsck` rodar sem perguntar nada ao usuário (modo não interativo)?
+= `-p`
+= `-y`
+= `-n`
+- `-f`
+- `-v`
+> `-p` repara automaticamente o que é seguro, `-y` responde "sim" a tudo e `-n` responde "não" a tudo (abrindo o sistema somente leitura). Por outro lado, `-f` só força a verificação, e `-v` só aumenta a verbosidade: sem uma das três opções, o `e2fsck` entra no modo interativo e, sem terminal, termina com "need terminal for interactive repairs".
+
+### 104.2-042 | multipla | 2
+ref: 101:p.470
+tags: tune2fs, verificação periódica, -c, -i
+Quais opções do `tune2fs` configuram a verificação periódica automática de um ext2/3/4 na inicialização?
+= `-c`, que define o máximo de montagens entre verificações
+= `-i`, que define o intervalo de tempo entre verificações
+- `-L`, que define o rótulo do sistema de arquivos
+- `-U`, que define o UUID do sistema de arquivos
+- `-e`, que define o comportamento do kernel diante de erros
+> `-c N` verifica depois de N montagens e `-i` (como `-i 30d`) verifica depois de um intervalo de tempo; ambos aceitam desativar o recurso (0 em `-i` e 0 ou -1 em `-c`). `-L` e `-U` identificam o sistema de arquivos, e `-e` escolhe entre `continue`, `remount-ro` e `panic` diante de erros.
+
+### 104.2-043 | multipla | 2
+ref: 101:p.463, 101:p.466, 101:p.469
+tags: inodes, df, tune2fs
+Quais comandos permitem consultar a quantidade de inodes (total e livres) de um sistema de arquivos ext4?
+= `df -i /dev/sda1`
+= `df --output=itotal,iavail /dev/sda1`
+= `tune2fs -l /dev/sda1`
+- `df -h /dev/sda1`
+- `du -h /dev/sda1`
+> `df -i` e o campo `itotal`/`iavail` de `--output` mostram o total e os inodes livres de um sistema montado, e `tune2fs -l` exibe "Inode count" e "Free inodes" lidos do superbloco. O `df -h` informa apenas blocos (tamanho e uso), e o `du -h` mede o espaço usado por arquivos e diretórios.

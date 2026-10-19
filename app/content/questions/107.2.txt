@@ -1,0 +1,508 @@
+### 107.2-001 | unica | 1
+ref: 102:p.212
+tags: crontab, campos
+Qual é a ordem dos campos de tempo de uma linha de crontab de usuário?
+- hora, minuto, dia do mês, mês, dia da semana
+- minuto, hora, mês, dia do mês, dia da semana
+= minuto, hora, dia do mês, mês, dia da semana
+- minuto, hora, dia do mês, mês, dia da semana, ano
+> A ordem é: minuto (0-59), hora (0-23), dia do mês (1-31), mês (1-12) e dia da semana (0-7, sendo 0 e 7 o domingo). São apenas cinco campos de tempo: o crontab não tem campo de ano. Depois deles vem o comando (em crontabs de sistema, o nome do usuário vem entre os campos de tempo e o comando).
+
+### 107.2-002 | unica | 2
+ref: 102:p.213-214
+tags: /etc/cron.d, crontab de sistema
+Qual linha é válida em um arquivo de `/etc/cron.d/` para executar `/opt/backup.sh` todos os dias às 03:15, como root?
+- 15 3 * * * /opt/backup.sh
+- 15 3 * * * -u root /opt/backup.sh
+= 15 3 * * * root /opt/backup.sh
+- 15 3 * * root /opt/backup.sh
+> Os arquivos de `/etc/cron.d/` e o `/etc/crontab` são crontabs de sistema: depois dos cinco campos de tempo exigem um sexto campo com o nome do usuário que executará o comando, sem nenhuma opção. Sem ele, o cron tentaria interpretar o comando como nome de usuário. A opção com `-u` não existe nesse formato, e a última tem só quatro campos de tempo (o usuário ocuparia o quinto).
+
+### 107.2-003 | unica | 1
+ref: 102:p.212
+tags: crontab, passo
+O que significa a especificação de tempo `*/20 * * * *` em um crontab?
+- Uma vez por hora, sempre no minuto 20 de cada hora
+- Às 20h de todos os dias, uma única vez por dia
+= A cada 20 minutos, durante o dia todo
+- A cada 20 horas, sempre no minuto zero
+> A barra define passos: `*/20` no campo dos minutos equivale a `0,20,40`. Uma vez por hora no minuto 20 seria `20 * * * *`, e às 20h de todos os dias seria `0 20 * * *`.
+
+### 107.2-004 | lacuna | 2
+ref: 102:p.215
+tags: crontab, agendamento
+Escreva os cinco campos de tempo de crontab que executam uma tarefa todos os dias às 02:30:
+= 30 2 * * *
+= 30 02 * * *
+> O primeiro campo é o minuto (30) e o segundo é a hora (2). Os três campos restantes ficam com `*`, ou seja, qualquer dia do mês, qualquer mês e qualquer dia da semana. O zero à esquerda (`02`) é aceito pelo cron.
+
+### 107.2-005 | unica | 2
+ref: 102:p.216
+tags: crontab, lista, dia da semana
+O que faz a entrada de crontab abaixo?
+
+```
+0,15,30,45 08 * * 2 /home/frank/bar.sh
+```
+- Executa no dia 2 de cada mês, às 08:00, 08:15, 08:30 e 08:45
+- Executa às segundas-feiras, às 08:00, 08:15, 08:30 e 08:45
+= Executa às terças-feiras, às 08:00, 08:15, 08:30 e 08:45
+- Executa em todos os dias de fevereiro, às 08:00, 08:15, 08:30 e 08:45
+> A vírgula separa uma lista de minutos (0, 15, 30 e 45), e a hora é 08. O número 2 está no quinto campo, o dia da semana (0 ou 7 é domingo, 1 é segunda, 2 é terça). O dia do mês seria o terceiro campo, e o mês seria o quarto.
+
+### 107.2-006 | unica | 2
+ref: 102:p.212, 102:p.224
+tags: crontab, intervalo
+Quantas vezes por dia é executada a tarefa de um crontab com a especificação `00 09-18 * * *`?
+- 1
+- 9
+= 10
+- 600
+> O campo dos minutos fixa o minuto 0, e o intervalo `09-18` da hora é inclusivo: o job roda às 09:00, 10:00, ..., 18:00, ou seja, 10 vezes. Um job que rodasse em todos os minutos desse período (600 execuções) seria `* 09-18 * * *`.
+
+### 107.2-007 | unica | 3
+ref: 102:p.212, 102:p.216
+tags: crontab, intervalo, passo
+Quando é executado o job da linha abaixo?
+
+```
+*/5 9-17 * * 1-5 /usr/local/bin/coleta.sh
+```
+- A cada 5 horas, das 9h às 17h, de segunda a sexta-feira
+- A cada 5 minutos, das 09:00 às 17:55, nos dias 1 a 5 de cada mês
+= A cada 5 minutos, das 09:00 às 17:55, de segunda a sexta-feira
+- A cada 5 minutos, das 09:00 às 17:55, de segunda a sábado
+> `*/5` nos minutos gera 0, 5, 10, ..., 55; `9-17` nas horas é inclusivo, então o último disparo do dia é às 17:55. O intervalo `1-5` no quinto campo (dia da semana) representa segunda a sexta-feira. Os dias do mês estariam no terceiro campo, e `1-6` incluiria o sábado.
+
+### 107.2-008 | lacuna | 2
+ref: 102:p.214
+tags: crontab, @reboot
+Qual atalho do crontab pode substituir os cinco campos de tempo para executar uma tarefa uma vez a cada inicialização do sistema?
+= @reboot
+> `@reboot` roda o job uma vez após a inicialização do cron. Os demais atalhos são `@hourly`, `@daily` (ou `@midnight`), `@weekly`, `@monthly` e `@yearly` (ou `@annually`).
+
+### 107.2-009 | unica | 2
+ref: 102:p.214, 102:p.224
+tags: crontab, @weekly
+A qual especificação de tempo corresponde o atalho `@weekly` do crontab?
+= 0 0 * * 0
+- 0 0 * * 1
+- 0 0 1 * *
+- 0 0 */7 * *
+> `@weekly` executa uma vez por semana, à meia-noite de domingo (`0 0 * * 0`). `0 0 * * 1` seria a segunda-feira, `0 0 1 * *` equivale a `@monthly`, e `*/7` no dia do mês dispararia nos dias 1, 8, 15, 22 e 29 (e voltaria ao dia 1 do mês seguinte), e não a cada sete dias exatos.
+
+### 107.2-010 | unica | 3
+ref: 102:p.214, 102:p.219
+tags: @weekly, OnCalendar, weekly
+Qual a diferença entre o atalho `@weekly` do crontab e o valor `weekly` da diretiva `OnCalendar=` de um timer do systemd?
+= Cron: meia-noite de domingo; timer: meia-noite de segunda-feira
+- Cron: à meia-noite de segunda-feira; timer: à meia-noite de domingo
+- Cron: à meia-noite de sábado; timer: à meia-noite de domingo
+- Não há diferença: ambos executam à meia-noite de domingo
+> `@weekly` equivale a `0 0 * * 0` (domingo). Já `weekly` em `OnCalendar` é a forma abreviada de `Mon *-*-* 00:00:00` (segunda-feira), conforme verificado com `systemd-analyze calendar weekly`. Essa diferença costuma causar surpresa ao migrar jobs do cron para timers.
+
+### 107.2-011 | unica | 2
+ref: 102:p.215-216
+tags: crontab, -u, -e
+Como root, qual comando edita o crontab do usuário `joao`?
+= crontab -u joao -e
+- crontab -e joao
+- crontab -e --user=joao
+- crontab -l joao
+> A opção `-u` indica de qual usuário é o crontab e só pode ser usada pelo root; `-e` abre o editor. Passar o nome do usuário como argumento solto (`crontab -e joao`) é erro de uso, e o `crontab` não tem opções longas como `--user`. `-l` apenas lista o crontab.
+
+### 107.2-012 | unica | 1
+ref: 102:p.216
+tags: crontab, -r
+O que faz o comando `crontab -r` executado por um usuário comum?
+- Executa imediatamente todas as tarefas do crontab (run)
+- Recarrega o crontab, aplicando as alterações no cron
+= Remove por completo o crontab do usuário
+- Remove apenas a última linha do crontab
+> `crontab -r` apaga o arquivo crontab inteiro do usuário, no Debian sem pedir confirmação (por isso muitos usam `crontab -ir`, que pergunta antes). Para desativar só uma tarefa, comente a linha com `#` no editor aberto por `crontab -e`.
+
+### 107.2-013 | lacuna | 1
+ref: 102:p.216
+tags: crontab, -l
+Complete o comando para exibir na saída padrão o crontab do usuário atual:
+
+`crontab ____`
+= -l
+> `crontab -l` lista o crontab atual, `-e` o edita e `-r` o remove. Se o usuário não tiver crontab, o comando informa `no crontab for usuario`.
+
+### 107.2-014 | lacuna | 2
+ref: 102:p.215
+tags: crontab, -e, EDITOR
+O comando `crontab -e` abre o editor indicado pela variável de ambiente VISUAL ou, na falta dela, pela variável ____ .
+= EDITOR
+> O `crontab -e` consulta as variáveis `VISUAL` e `EDITOR` para escolher o editor. Em algumas distribuições, como o Debian, na primeira execução é oferecida uma lista de editores, e a escolha pode ser alterada depois com `select-editor`.
+
+### 107.2-015 | unica | 2
+ref: 102:p.215, 102:p.227
+tags: crontab, MAILTO
+Qual linha, colocada no início de um crontab, impede que o cron envie por e-mail a saída dos jobs?
+- MAILTO=none
+- MAILTO=/dev/null
+= MAILTO=""
+- NOMAIL=yes
+> Quando `MAILTO` é definida com valor vazio, nenhum e-mail é enviado. Sem a variável, a saída vai para o dono do crontab; com um valor, vai para o usuário ou endereço indicado. `MAILTO=none` tentaria enviar a mensagem a um usuário chamado `none`, e `NOMAIL` não existe.
+
+### 107.2-016 | unica | 3
+ref: 102:p.216-217
+tags: crontab, redirecionamento, e-mail
+Qual redirecionamento, acrescentado ao final da linha abaixo, descarta tanto a saída padrão quanto a saída de erro do script, evitando qualquer e-mail do cron?
+
+```
+0 4 * * * /usr/local/bin/limpa.sh
+```
+- 2>&1 > /dev/null
+- 2>/dev/null
+= >/dev/null 2>&1
+- >/dev/null
+> A ordem importa: `> /dev/null 2>&1` primeiro redireciona a saída padrão e depois faz o erro padrão seguir o mesmo destino. Em `2>&1 > /dev/null` o erro é copiado para o destino original da saída padrão (o cron, que envia e-mail), e só depois a saída padrão vai para `/dev/null`. As outras duas opções descartam apenas um dos fluxos (o erro ou a saída padrão), e o outro continua sendo enviado por e-mail. Como o cron usa `/bin/sh` (dash no Debian), não confie em `&>`, que é uma extensão do bash.
+
+### 107.2-017 | unica | 2
+ref: 102:p.217
+tags: cron.allow, cron.deny
+Existe o arquivo `/etc/cron.allow` contendo somente a linha `ana`, e `/etc/cron.deny` existe, mas está vazio. O usuário `bruno` executa `crontab -e`. O que acontece?
+- bruno é autorizado, porque cron.deny está vazio e não proíbe ninguém
+- bruno é autorizado, pois cron.allow vale apenas para o usuário root
+= bruno é impedido, pois só os usuários listados em cron.allow usam o crontab
+- bruno é impedido somente se o nome dele também constar em cron.deny
+> Se `/etc/cron.allow` existe, apenas os usuários nele listados podem usar o `crontab`; o `cron.deny` nem chega a ser consultado. O resultado é uma mensagem do tipo "You (bruno) are not allowed to use this program (crontab)". Um `cron.deny` vazio só libera todos os usuários quando `cron.allow` não existe.
+
+### 107.2-018 | multipla | 2
+ref: 102:p.217
+tags: cron.allow, cron.deny
+Quais afirmações sobre `/etc/cron.allow` e `/etc/cron.deny` são verdadeiras?
+= Se /etc/cron.allow existe, somente os usuários nele listados podem usar o crontab
+= Sem cron.allow, os usuários listados em /etc/cron.deny não podem usar o crontab
+= Sem cron.allow, um /etc/cron.deny vazio permite que todos usem o crontab
+- Se os dois existem, um usuário listado em ambos é negado, pois cron.deny sempre prevalece
+- Os nomes de usuário devem ser separados por vírgula, em uma única linha
+> A precedência é: `cron.allow` (se existe) manda; senão vale `cron.deny`; um `cron.deny` vazio não bloqueia ninguém. Um usuário listado nos dois arquivos é autorizado, porque `cron.deny` é ignorado quando `cron.allow` existe. Em ambos os arquivos os nomes ficam um por linha.
+
+### 107.2-019 | unica | 2
+ref: 102:p.231
+tags: at.deny, at.allow
+Não existe `/etc/at.allow`, e `/etc/at.deny` existe, mas está vazio. Quem pode agendar jobs com o comando `at`?
+= Todos os usuários
+- Somente o root
+- Nenhum usuário comum
+- Apenas quem estiver listado em /etc/at.allow
+> Para o `at` vale a mesma lógica do cron: `at.allow`, se existir, é a lista dos únicos autorizados; sem ele, `at.deny` lista os proibidos, e um `at.deny` vazio não proíbe ninguém. Como `at.allow` não existe, ninguém precisa estar listado nele.
+
+### 107.2-020 | lacuna | 1
+ref: 102:p.231
+tags: at.allow
+Qual arquivo, quando existe, restringe o uso do `at` apenas aos usuários nele listados?
+Informe o caminho completo.
+= /etc/at.allow
+> Se `/etc/at.allow` existe, somente os usuários nele listados podem usar `at`. Sem esse arquivo, o `/etc/at.deny` passa a valer, impedindo apenas os usuários listados nele.
+
+### 107.2-021 | lacuna | 1
+ref: 102:p.212
+tags: /var/spool/cron, crontab de usuário
+Em qual diretório o cron guarda os crontabs dos usuários criados com `crontab -e`?
+Informe o caminho completo, sem incluir o nome do usuário.
+= /var/spool/cron
+= /var/spool/cron/
+= /var/spool/cron/crontabs
+= /var/spool/cron/crontabs/
+> Os crontabs de usuário ficam em `/var/spool/cron`, em um arquivo com o nome da conta. Em RHEL/Fedora os arquivos ficam direto nesse diretório; no Debian e no Ubuntu, em `/var/spool/cron/crontabs/`. Eles não devem ser editados diretamente, e sim com `crontab -e`.
+
+### 107.2-022 | lacuna | 1
+ref: 102:p.213
+tags: /etc/cron.daily
+Em qual diretório se coloca um script executável para que o cron o execute automaticamente uma vez por dia, sem precisar escrever campos de tempo?
+Informe o caminho completo.
+= /etc/cron.daily
+= /etc/cron.daily/
+> Os scripts de `/etc/cron.daily` são executados diariamente. Os diretórios equivalentes são `/etc/cron.hourly`, `/etc/cron.weekly` e `/etc/cron.monthly`. Por serem scripts, não levam os campos de tempo: o horário é definido pelo `/etc/crontab` (ou pelo anacron).
+
+### 107.2-023 | multipla | 1
+ref: 102:p.213
+tags: /etc/cron.hourly, /etc/cron.weekly, /etc/cron.monthly
+Quais destes diretórios existem no cron para executar scripts periodicamente, sem necessidade de campos de tempo?
+= /etc/cron.hourly/
+= /etc/cron.weekly/
+= /etc/cron.monthly/
+- /etc/cron.minutely/
+- /etc/cron.reboot/
+> Os diretórios padrão são `cron.hourly`, `cron.daily`, `cron.weekly` e `cron.monthly` (todos em `/etc`). Não existem `cron.minutely` nem `cron.reboot`: para rodar algo a cada minuto ou na inicialização, use uma linha de crontab com `* * * * *` ou `@reboot`.
+
+### 107.2-024 | unica | 3
+ref: 102:p.213
+tags: /etc/cron.daily, run-parts, Debian
+No Debian, o script `/etc/cron.daily/backup.sh` é executável, mas o cron nunca o executa. Qual é a causa mais provável?
+- Os scripts de cron.daily precisam estar listados também em /etc/crontab para rodar
+- O cron.daily só executa scripts pertencentes ao grupo crontab, como o binário
+= O run-parts ignora nomes com ponto, como backup.sh; o nome deveria ser backup
+- O cron.daily só executa scripts cuja primeira linha seja exatamente #!/bin/bash
+> No Debian, o `run-parts` que executa o diretório só aceita nomes formados por letras, dígitos, sublinhado e hífen. Nomes com ponto (como `backup.sh`, `backup.dpkg-old`) são ignorados, o que se confirma com `run-parts --test /etc/cron.daily`. Basta renomear o arquivo. Em outras distribuições as regras de nome podem diferir.
+
+### 107.2-025 | unica | 2
+ref: 102:p.215
+tags: crontab, PATH, SHELL
+Um job de crontab de usuário chama `rsync-backup`, instalado em `/opt/ferramentas/bin`. O comando funciona no terminal, mas o cron registra "not found". Qual é a causa mais provável e a correção?
+= O cron usa um PATH reduzido; defina PATH no crontab ou use o caminho absoluto
+- O cron só executa programas de /usr/bin; o programa precisa ser copiado para lá
+- O cron exige um terminal; é preciso acrescentar a opção -t à linha do crontab
+- O cron não aceita programas fora do PATH do root; é preciso rodar o job como root
+> Os jobs do cron não herdam o ambiente do shell interativo: o `PATH` padrão é curto (por exemplo `/usr/bin:/bin`), e `SHELL` é `/bin/sh`. Defina `PATH=...` no início do crontab (variável aceita no arquivo) ou escreva o caminho completo do comando.
+
+### 107.2-026 | unica | 2
+ref: 102:p.214, 102:p.226
+tags: crontab, HOME
+Um crontab de usuário contém a linha abaixo e não define `HOME`. Em que diretório o cron executa o comando e grava `saida.log`?
+
+```
+*/1 * * * * ./coleta.sh >> saida.log
+```
+= No diretório inicial do dono do crontab
+- No diretório raiz do sistema de arquivos (/)
+- No diretório temporário do sistema (/tmp)
+- No diretório de spool, /var/spool/cron/crontabs
+> Por padrão, o cron executa os comandos a partir do diretório inicial do dono do crontab (valor da variável `HOME`, que pode ser redefinida no arquivo). Por isso o caminho relativo `./coleta.sh` e `saida.log` ficam no diretório inicial do usuário.
+
+### 107.2-027 | unica | 3
+ref: 102:p.227
+tags: crontab, SGID
+No Debian, `ls -l /usr/bin/crontab` exibe:
+
+```
+-rwxr-sr-x 1 root crontab 43648 mar  2  2023 /usr/bin/crontab
+```
+
+O que indica o `s` na permissão do grupo, e por que ele é necessário?
+- É o SUID: o programa roda como root para ler /etc/shadow ao validar o usuário
+- É o sticky bit: impede um usuário de apagar o crontab de outro usuário
+= É o SGID: roda com o grupo crontab, que tem acesso ao diretório de spool
+- Indica que somente o grupo crontab tem permissão de executar o programa
+> O `s` no lugar do `x` do grupo é o bit SGID: ao executar `crontab`, o processo assume o grupo `crontab`, que tem acesso ao diretório de spool dos crontabs (`/var/spool/cron/crontabs`). Assim, usuários comuns editam seus crontabs sem poder acessar os dos outros. Outras distribuições podem usar SUID em vez de SGID.
+
+### 107.2-028 | unica | 1
+ref: 102:p.228
+tags: at, Ctrl+D
+Ao usar `at`, qual combinação de teclas finaliza a lista de comandos digitada no prompt `at>` e agenda o job?
+- Ctrl+C
+- Ctrl+Z
+= Ctrl+D
+- Pressionar Enter duas vezes seguidas
+> `Ctrl+D` envia o fim de entrada, e o `at` grava o job e mostra o número e a data de execução. `Ctrl+C` interrompe o `at` sem agendar nada, e `Ctrl+Z` apenas suspende o comando.
+
+### 107.2-029 | multipla | 3
+ref: 102:p.231, 102:p.236
+tags: at, timespec
+Quais destes comandos usam uma especificação de tempo válida para o `at`?
+= at 10:30 AM October 31
+= at 10:00 AM tomorrow
+= at now +2 hours
+- at midday
+- at 01-01-2030 07:30 PM
+- at 10:15 PM 31/03/2030
+> São aceitos HH:MM com AM/PM, nome do mês e dia, `tomorrow`, `noon`, `midnight`, `teatime` e `now + período`. A data numérica deve vir no formato MMDDYY, MM/DD/YY, DD.MM.YY ou YYYY-MM-DD, depois da hora. `midday` não existe (o correto é `noon`), `01-01-2030` usa um formato sem suporte, e `31/03/2030` falha porque `/` é lido como MM/DD (não existe mês 31).
+
+### 107.2-030 | lacuna | 2
+ref: 102:p.230
+tags: atrm, at -d
+Complete o comando para remover o job `at` de número 14:
+
+`____ 14`
+= atrm
+= at -d
+= at -r
+> `atrm` remove jobs `at` pelo número. `at -d` e `at -r` são apelidos equivalentes. O root pode remover jobs de qualquer usuário, enquanto os usuários comuns só removem os próprios.
+
+### 107.2-031 | lacuna | 1
+ref: 102:p.229-230
+tags: atq
+Qual comando, sem opções, lista os jobs `at` pendentes do usuário atual?
+= atq
+> `atq` mostra para cada job o número, a data e hora de execução, a fila e o dono. `at -l` é um apelido de `atq`. Executado pelo root, `atq` lista os jobs de todos os usuários.
+
+### 107.2-032 | unica | 2
+ref: 102:p.229
+tags: at, -c
+Qual comando exibe o conteúdo do job `at` de número 12, isto é, os comandos agendados e as variáveis de ambiente salvas?
+- atq 12
+- at -l 12
+= at -c 12
+- atrm -c 12
+> `at -c N` imprime na saída padrão o script do job, com o ambiente que estava ativo no momento do agendamento. `atq 12` e `at -l 12` apenas mostram a linha da fila (número, data, fila e dono), e `atrm` remove o job.
+
+### 107.2-033 | unica | 2
+ref: 102:p.230, 102:p.237-238
+tags: atq, root
+Os usuários ana e bruno têm jobs pendentes no `at`. O que mostram `atq` executado por ana e `atq` executado pelo root?
+= ana vê somente os seus jobs; o root vê os jobs de todos os usuários
+- Ambos veem apenas os jobs do usuário que executou o comando
+- Ambos veem os jobs de todos os usuários do sistema
+- ana vê os jobs de ana e de bruno; o root não vê jobs de usuários comuns
+> Um usuário comum lista apenas os próprios jobs, mas o root enxerga todos (e também pode removê-los com `atrm`). O comportamento do `at -l` é idêntico, por ser um apelido de `atq`.
+
+### 107.2-034 | unica | 2
+ref: 102:p.229
+tags: batch, at
+Qual a característica do comando `batch`, em comparação com o `at`?
+- Repete os comandos em intervalos regulares, como faz o cron
+- Executa os comandos imediatamente e em segundo plano, sem passar pela fila
+= Executa os comandos quando a carga do sistema permite, sem hora fixa
+- Executa os comandos apenas durante a madrugada, em horário fixo
+> O `batch` é parecido com o `at`, mas os jobs só são executados quando a carga média do sistema está baixa o bastante. Nenhum dos dois repete tarefas; para isso há o cron e os timers do systemd.
+
+### 107.2-035 | unica | 2
+ref: 102:p.228-229
+tags: at, -f
+Qual comando agenda para as 23:00 a execução dos comandos do arquivo `/root/rotina.sh`, lendo-os do arquivo em vez da entrada padrão?
+- at -c /root/rotina.sh 23:00
+- at -m -c /root/rotina.sh 23:00
+= at -f /root/rotina.sh 23:00
+- at -q a /root/rotina.sh 23:00
+> A opção `-f arquivo` lê o job de um arquivo. `-c` imprime o conteúdo de um job já agendado, `-m` avisa o usuário por e-mail ao final do job, e `-q` exige uma letra de fila (por exemplo `-q b`) antes de qualquer outro argumento.
+
+### 107.2-036 | unica | 2
+ref: 102:p.217
+tags: systemd, timer, service
+Um arquivo `backup.timer` não contém a diretiva `Unit=`. Qual unidade o systemd ativa quando o temporizador dispara?
+- backup.target
+- backup.socket
+= backup.service
+- backup.timer.service
+> Por padrão, um timer ativa a unidade de serviço com o mesmo nome, trocando apenas o sufixo: `backup.timer` aciona `backup.service`. A diretiva `Unit=` na seção `[Timer]` permite apontar para outra unidade.
+
+### 107.2-037 | multipla | 2
+ref: 102:p.218
+tags: systemctl, timer, enable
+Os arquivos `foobar.timer` e `foobar.service` foram criados em `/etc/systemd/system/`. Quais comandos, executados como root, habilitam o timer para as próximas inicializações e também o iniciam agora?
+= systemctl enable --now foobar.timer
+= systemctl enable foobar.timer && systemctl start foobar.timer
+- systemctl enable --now foobar.service
+- systemctl start foobar.timer
+- systemctl enable foobar.timer
+> `enable` cria a ligação para a inicialização (WantedBy=timers.target) e `start` ativa agora; a opção `--now` faz as duas coisas. Somente `start` agenda até a próxima reinicialização, e somente `enable` deixa o timer inativo até o próximo boot. Habilitar o `.service` não agenda nada: o serviço seria executado de imediato, sem o temporizador. Depois de alterar `OnCalendar`, rode `systemctl daemon-reload`.
+
+### 107.2-038 | lacuna | 1
+ref: 102:p.218
+tags: systemctl, list-timers
+Complete o comando que lista os temporizadores ativos do systemd, ordenados pelo momento em que serão disparados:
+
+`systemctl ____`
+= list-timers
+> `systemctl list-timers` mostra os timers ativos com a próxima execução, o tempo restante e a unidade acionada; `--all` inclui também os inativos. Para usuários comuns, use `--user`.
+
+### 107.2-039 | unica | 2
+ref: 102:p.217, 102:p.225
+tags: OnCalendar
+O que significa `OnCalendar=Sat,Sun *-*-* 05:00:00` em um arquivo `.timer`?
+= Executa aos sábados e aos domingos, às 05:00
+- Executa no sábado e no domingo, a cada 5 minutos
+- Executa todos os dias, às 05:00, exceto aos sábados e domingos
+- Executa uma única vez, no primeiro sábado ou domingo do ano
+> O formato é `DiaDaSemana Ano-Mês-Dia Hora:Minuto:Segundo`. Os dias da semana abreviados (`Sat,Sun`) restringem a execução, e `*-*-*` indica qualquer ano, mês e dia; a hora é 05:00:00 (verificado com `systemd-analyze calendar`).
+
+### 107.2-040 | unica | 3
+ref: 102:p.217, 102:p.225
+tags: OnCalendar, lista
+Como deve ser interpretado `OnCalendar=*-*-01 13:15,30,45:00`?
+= Às 13:15, 13:30 e 13:45 do primeiro dia de cada mês
+- A cada 15 minutos, entre 13:00 e 13:45, todos os dias
+- Às 13:15:30 e 13:15:45 do primeiro dia de cada mês
+- Às 13:15, 13:30 e 13:45 do dia 1º de janeiro de cada ano
+> O formato é `Ano-Mês-Dia Hora:Minuto:Segundo`. A lista `15,30,45` está na posição dos minutos, e os segundos são `00`. Como o mês é `*`, a execução ocorre no dia 01 de todos os meses.
+
+### 107.2-041 | unica | 3
+ref: 102:p.217, 102:p.225
+tags: OnCalendar, passo
+Qual é a frequência de `OnCalendar=*-*-* *:00/05:00`?
+- A cada 5 horas, sempre no minuto zero
+- A cada 5 segundos
+= A cada 5 minutos, durante todo o dia
+- Uma vez por hora, no minuto 5
+> Os campos são hora (`*`, qualquer), minuto (`00/05`, começando em 0 com passo 5) e segundo (`00`). O resultado é 00:00, 00:05, 00:10... e o systemd normaliza a expressão como `*-*-* *:00/5:00`.
+
+### 107.2-042 | unica | 3
+ref: 102:p.218
+tags: OnCalendar, primeira segunda-feira
+Qual valor de `OnCalendar=` executa o serviço às 05:30 da primeira segunda-feira de cada mês?
+= Mon *-*-1..7 05:30:00
+- Mon *-*-01 05:30:00
+- *-*-1..7 Mon 05:30:00
+- Mon *-1..7-* 05:30:00
+> A primeira segunda-feira sempre cai entre os dias 1 e 7, então combina-se `Mon` (que vem primeiro) com o intervalo `1..7` no campo do dia. `Mon *-*-01` só dispara nos meses em que o dia 1 é segunda-feira. A terceira opção é inválida porque o dia da semana deve vir antes da data, e a quarta executa todas as segundas-feiras de janeiro a julho (meses 1..7).
+
+### 107.2-043 | lacuna | 2
+ref: 102:p.231-232
+tags: systemd-run, --on-active
+Complete o comando para executar o script `/home/ana/foo.sh` dois minutos depois do comando, usando uma unidade de temporizador transiente do systemd:
+
+`systemd-run ____=2m /home/ana/foo.sh`
+= --on-active
+> `--on-active=` cria um temporizador monotônico relativo ao momento em que ele é ativado (aqui, 2 minutos depois). Para um horário de calendário, usa-se `--on-calendar=`, por exemplo `--on-calendar='2030-10-06 11:30'`.
+
+### 107.2-044 | unica | 1
+ref: 102:p.231, 102:p.236
+tags: systemd-run, at
+Qual comando do systemd é a alternativa ao `at` para agendar execuções únicas, criando uma unidade de temporizador transiente?
+= systemd-run
+- systemd-at
+- systemd-cron
+- systemctl schedule
+> `systemd-run` cria e inicia uma unidade transiente (serviço e timer) sem exigir arquivos de unidade, o que o torna o equivalente do `at` no systemd. Os outros três nomes não existem.
+
+### 107.2-045 | unica | 2
+ref: 102:p.218, 102:p.232
+tags: systemctl, --user, timers
+Um usuário comum quer listar os seus próprios temporizadores do systemd (e não os do sistema). Qual comando usar?
+- systemctl list-timers --self
+- sudo systemctl list-timers
+= systemctl --user list-timers
+- systemctl list-timers --all --no-pager
+> Para unidades do usuário (gerenciador de sessão do usuário), os comandos `systemctl` e `journalctl` devem receber `--user`. O comando com `sudo` lista os timers do sistema, `--all` apenas inclui os timers inativos (e `--no-pager` só desliga a paginação), e `--self` não existe.
+
+### 107.2-046 | unica | 3
+ref: 102:p.218
+tags: timer, Persistent
+Em um arquivo `.timer`, qual é o efeito de `Persistent=true` junto com `OnCalendar=`?
+= Recupera a execução perdida se o horário passou com a máquina desligada
+- O serviço permanece ativo continuamente depois de iniciado, sem encerrar
+- O timer é executado de novo a cada reinicialização do sistema, sempre
+- O timer sobrevive ao comando systemctl daemon-reload sem ser recarregado
+> Com `Persistent=true` o systemd grava em disco a última vez que o serviço foi acionado. Ao ativar o timer, se um disparo foi perdido enquanto ele estava inativo (por exemplo, com o computador desligado), o serviço é executado imediatamente. É o comportamento que se assemelha ao do anacron.
+
+### 107.2-047 | unica | 2
+ref: 102:p.211
+tags: cron, anacron
+Um job do crontab está agendado para as 06:25, mas o notebook estava desligado nesse horário e só foi ligado às 09:00. O que acontece com esse job do cron?
+= Não é executado: o cron só dispara jobs se o sistema estiver ligado
+- É executado logo que o sistema inicia, assim que o cron detecta o atraso
+- É executado na próxima hora cheia depois de o sistema iniciar, às 10:00
+- É guardado em /var/spool/cron/atjobs e executado depois pelo daemon atd
+> O cron só executa os jobs se o computador estiver ligado no horário programado, o que o torna mais adequado a servidores. Para máquinas que ficam desligadas existe o anacron (restrito ao root, fora do escopo do LPIC-1), que executa na próxima inicialização os jobs perdidos. Timers do systemd com `Persistent=true` têm efeito parecido.
+
+### 107.2-048 | multipla | 2
+ref: 102:p.213
+tags: /etc/crontab, /etc/cron.d, crontab de sistema
+Quais destes arquivos ou diretórios contêm crontabs de sistema, em que cada linha traz o nome do usuário antes do comando?
+= /etc/crontab
+= Os arquivos dentro de /etc/cron.d/
+- O arquivo /var/spool/cron/crontabs/ana
+- Os scripts dentro de /etc/cron.daily/
+- O arquivo /etc/cron.allow
+> `/etc/crontab` e os arquivos de `/etc/cron.d/` são crontabs de sistema, editados diretamente por root com um editor de texto e com o campo extra de usuário. O arquivo em `/var/spool/cron/crontabs/` é um crontab de usuário (sem esse campo), `cron.daily` guarda scripts executáveis, e `cron.allow` é uma lista de usuários autorizados.
+
+### 107.2-049 | unica | 3
+ref: 102:p.215-216
+tags: crontab, porcentagem
+O crontab de um usuário contém a linha abaixo. O comando funciona no terminal, mas o cron nunca cria o arquivo de backup.
+
+```
+0 3 * * * tar czf /backup/dados-$(date +%F).tgz /dados
+```
+
+Qual é a causa?
+- O cron usa o shell csh por padrão e, por isso, não entende a sintaxe $( )
+= O % tem significado especial no crontab e precisa ser escrito como \%
+- O cron não permite o uso do comando date dentro de nenhum job agendado
+- A data deve ser calculada nos campos de tempo, e não dentro do comando
+> No crontab, o primeiro `%` não escapado encerra o comando, e o que vem depois é enviado como entrada padrão. Por isso `date +%F` precisa ser escrito como `date +\%F`, o que foi confirmado em teste no laboratório. O shell padrão do cron é o `/bin/sh`, que entende `$( )`, e não há restrição ao comando `date`.

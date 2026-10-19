@@ -1,0 +1,23 @@
+{
+  "id": "perm-equipe-script",
+  "obj": "104.5",
+  "titulo": "Script compartilhado pela equipe",
+  "nivel": 2,
+  "minutos": 6,
+  "params": {
+    "dono": { "escolha": ["ana", "bruno", "carla", "diego", "elisa"] },
+    "grupo": { "escolha": ["dev", "ops", "suporte", "redes", "vendas"] },
+    "script": { "escolha": ["backup.sh", "deploy.sh", "limpeza.sh", "relatorio.sh", "rotina.sh"] }
+  },
+  "enunciado": "O script `{script}` está em `~/lab/perm-equipe/` e hoje pertence ao `root`, com permissões `644`.\n\nAjuste-o para a equipe usar:\n\n* o **dono** deve ser o usuário `{dono}` e o **grupo** `{grupo}` (ambos já existem);\n* o dono pode **ler, escrever e executar**;\n* os membros do grupo podem **ler e executar**, mas não escrever;\n* **outros** usuários não podem fazer nada.\n\nDica de ambiente: você é o usuário `aluno` e tem `sudo`.",
+  "verifica": [
+    "dono e grupo do arquivo são `{dono}:{grupo}`",
+    "modo octal exatamente `750` (`rwxr-x---`)"
+  ],
+  "dicas": [
+    "Dois comandos resolvem: um para trocar dono/grupo e outro para o modo.",
+    "`chown dono:grupo arquivo` troca os dois de uma vez (precisa de sudo).",
+    "r=4, w=2, x=1: dono 4+2+1=7, grupo 4+1=5, outros 0 → `chmod 750`."
+  ],
+  "solucao": "```\ncd ~/lab/perm-equipe\nsudo chown {dono}:{grupo} {script}\nsudo chmod 750 {script}\nls -l {script}\n```\n`chown` muda dono e grupo; `750` = `rwx` para o dono, `r-x` para o grupo e `---` para os outros. Equivalente simbólico: `chmod u=rwx,g=rx,o= {script}`."
+}

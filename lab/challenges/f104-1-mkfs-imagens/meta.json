@@ -1,0 +1,32 @@
+{
+  "id": "f104-1-mkfs-imagens",
+  "obj": "104.1",
+  "titulo": "Quatro sistemas de arquivos, quatro mkfs",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "ext": { "escolha": ["dados", "projetos", "web", "docs"] },
+    "xfs": { "escolha": ["logs", "cofre", "midia", "historico"] },
+    "fat": { "escolha": ["pendrive", "camera", "cartao", "transferir"] },
+    "swap": { "escolha": ["troca", "swap1", "reserva", "paginacao"] },
+    "lbl_ext": { "escolha": ["dados-ext", "projetos", "sites-web", "docs-rh"] },
+    "lbl_xfs": { "escolha": ["logs-xfs", "cofre", "midia-xfs", "arquivo"] },
+    "lbl_fat": { "escolha": ["PENDRIVE", "CAMERA", "CARTAO", "TRANSFER"] },
+    "lbl_swap": { "escolha": ["troca1", "swap-lab", "memoria"] },
+    "bloco": { "escolha": [1024, 2048, 4096] },
+    "reserva": { "faixa": [1, 3] }
+  },
+  "enunciado": "Em `~/lab/sistemas-arquivos/` há quatro imagens de disco vazias, que fazem o papel de partições novas (não há dispositivos de bloco reais neste laboratório, mas os utilitários `mkfs.*` funcionam sobre arquivos). Prepare cada uma:\n\n| imagem | formato | rótulo (label) | detalhes |\n|--------|---------|----------------|----------|\n| `{ext}.img` | **ext4** | `{lbl_ext}` | blocos de **{bloco} bytes** e **{reserva}%** dos blocos reservados ao root |\n| `{xfs}.img` | **XFS** | `{lbl_xfs}` | — |\n| `{fat}.img` | **FAT32** (vfat) | `{lbl_fat}` | — |\n| `{swap}.img` | **área de troca (swap)** | `{lbl_swap}` | — |\n\nTodos os formatos devem ser criados com as ferramentas de linha de comando adequadas (sem `sudo`: os arquivos são seus). Se uma ferramenta pedir confirmação por se tratar de um arquivo comum, leia a mensagem com atenção.",
+  "verifica": [
+    "`{ext}.img` é ext4, com rótulo `{lbl_ext}`, bloco de {bloco} bytes e ~{reserva}% de blocos reservados",
+    "`{xfs}.img` é XFS com rótulo `{lbl_xfs}`",
+    "`{fat}.img` é vfat/FAT32 com rótulo `{lbl_fat}`",
+    "`{swap}.img` é swap com rótulo `{lbl_swap}`"
+  ],
+  "dicas": [
+    "Cada formato tem seu mkfs: `mkfs.ext4`, `mkfs.xfs`, `mkfs.vfat` (ou `mkfs.fat`) e `mkswap`. Veja as opções de rótulo e tamanho de bloco em cada `--help`/`man`.",
+    "Rótulo: `-L` no mke2fs/mkfs.xfs/mkswap, `-n` no mkfs.vfat. No ext4: `-b` (tamanho do bloco) e `-m` (percentual reservado). No vfat, `-F 32` força FAT32.",
+    "Confira com `blkid arquivo.img` e, para o ext4, `dumpe2fs -h arquivo.img` (campos Block size e Reserved block count)."
+  ],
+  "solucao": "```\ncd ~/lab/sistemas-arquivos\nmkfs.ext4 -L {lbl_ext} -b {bloco} -m {reserva} {ext}.img\nmkfs.xfs  -L {lbl_xfs} {xfs}.img\nmkfs.vfat -F 32 -n {lbl_fat} {fat}.img\nmkswap    -L {lbl_swap} {swap}.img\nblkid *.img\n```\n`mkfs.ext4 -m` define a porcentagem reservada ao root (o padrão é 5%); `-b` fixa o tamanho do bloco. O rótulo usa `-L` na maioria das ferramentas, mas **`-n` no mkfs.vfat** (lá `-L` não existe). O XFS exige imagens de pelo menos ~300 MiB e rótulo de até 12 caracteres; o FAT guarda o rótulo em maiúsculas e até 11 caracteres. `mkswap` só prepara a área: ativá-la com `swapon` exigiria privilégios que este laboratório não tem. Verifique sempre com `blkid` (TYPE e LABEL)."
+}

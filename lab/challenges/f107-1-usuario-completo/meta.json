@@ -1,0 +1,33 @@
+{
+  "id": "f107-1-usuario-completo",
+  "obj": "107.1",
+  "titulo": "Cadastrar um novo funcionário com expiração de conta",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "usuario": { "escolha": ["dagoberto", "evandro", "fabiola", "gilberto", "heloisa", "ivanilde"] },
+    "uid": { "faixa": [3100, 3899] },
+    "gp": { "escolha": ["contabil", "fiscal", "compras", "logistica", "juridico"] },
+    "ge": { "escolha": ["relatorios", "auditoria", "impressoras", "planilhas"] },
+    "shell": { "escolha": ["/bin/bash", "/bin/sh", "/bin/dash"] },
+    "base": { "escolha": ["/srv/contas", "/data/usuarios-lab", "/opt/equipes"] },
+    "comentario": { "escolha": ["Contabilidade", "Fiscal-SP", "Compras_Sul", "Logistica", "Juridico-Filial"] },
+    "expira": { "escolha": ["2027-01-31", "2027-03-15", "2027-06-30", "2027-09-10", "2027-12-20"] },
+    "maxdias": { "faixa": [30, 90] },
+    "aviso": { "faixa": [8, 14] }
+  },
+  "enunciado": "Chegou um novo colaborador e o RH pediu a conta dele no servidor. Os grupos `{gp}` e `{ge}` **já existem**. Use `sudo` e crie a conta com exatamente estas características:\n\n* login `{usuario}` e **UID** `{uid}`;\n* **grupo primário** `{gp}` e **grupo suplementar** `{ge}` (somente esse);\n* **shell** `{shell}`;\n* **diretório pessoal** `{base}/{usuario}`, criado já com os arquivos do `/etc/skel`;\n* **comentário** (campo GECOS) `{comentario}`.\n\nDepois, com o `chage`, configure a política da conta:\n\n* a **conta** expira em `{expira}` (data absoluta, formato AAAA-MM-DD);\n* a **senha** vale no máximo `{maxdias}` dias;\n* o usuário é **avisado** `{aviso}` dias antes de a senha expirar.\n\nNão é preciso definir senha.",
+  "verifica": [
+    "o usuário `{usuario}` existe com UID `{uid}`, shell `{shell}`, home `{base}/{usuario}` e comentário `{comentario}`",
+    "o grupo primário é `{gp}` e o único grupo suplementar é `{ge}`",
+    "o diretório pessoal existe, pertence ao usuário e contém os arquivos do skel (`.bashrc`, `.profile`)",
+    "no `/etc/shadow`: expiração da conta em `{expira}`, validade máxima da senha `{maxdias}` e aviso `{aviso}` dias"
+  ],
+  "dicas": [
+    "Dois comandos resolvem: um para criar a conta (`useradd`) e outro para a política de expiração (`chage`).",
+    "No `useradd`: `-u` UID, `-g` grupo primário, `-G` grupos suplementares, `-s` shell, `-d` home, `-m` cria o home copiando o skel, `-c` comentário.",
+    "No `chage`: `-E` expiração da conta, `-M` máximo de dias da senha, `-W` dias de aviso. Confira o resultado com `sudo chage -l {usuario}` e `getent passwd {usuario}`.",
+    "`sudo useradd -m -u {uid} -g {gp} -G {ge} -s {shell} -d {base}/{usuario} -c {comentario} {usuario}` e depois `sudo chage -E {expira} -M {maxdias} -W {aviso} {usuario}`."
+  ],
+  "solucao": "```\nsudo useradd -m -u {uid} -g {gp} -G {ge} -s {shell} -d {base}/{usuario} -c {comentario} {usuario}\nsudo chage -E {expira} -M {maxdias} -W {aviso} {usuario}\n\ngetent passwd {usuario}\nid {usuario}\nsudo chage -l {usuario}\n```\n`-g` (minúsculo) define o grupo **primário**; `-G` (maiúsculo) lista os **suplementares**. Sem `-m` o `useradd` **não** cria o diretório pessoal (no Debian a opção `CREATE_HOME` do `login.defs` é `no`), e `-d` sozinho só grava o caminho em `/etc/passwd`. O `chage` grava no `/etc/shadow`: o 5º campo é a validade máxima da senha (`-M`), o 6º o aviso (`-W`) e o 8º a expiração da conta, em **dias desde 1970-01-01** (`-E`). Pegadinha de prova: `chage -E` expira a *conta*; a expiração da *senha* é `-M` (ou `-d 0` para forçar a troca no próximo login)."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "f104-5-sticky-caixa",
+  "obj": "104.5",
+  "titulo": "Caixa de depósito com sticky bit",
+  "nivel": 2,
+  "minutos": 6,
+  "params": {
+    "nome": { "escolha": ["entrega", "depositos", "caixa-postal", "malote"] },
+    "outros": { "escolha": ["rwx", "wx"] },
+    "a": { "escolha": ["otavio", "paula", "rafael"] },
+    "b": { "escolha": ["sofia", "tiago", "vera"] }
+  },
+  "enunciado": "A pasta `~/lab/caixa/{nome}/` será usada por todos os usuários do servidor para **depositar arquivos** (hoje ela está com `777`, aberta a todos, e qualquer um pode apagar o arquivo dos outros). Ajuste-a assim:\n\n* o **dono continua sendo o `aluno`**, com acesso total;\n* **grupo e outros** devem ter exatamente as permissões `{outros}` sobre a pasta;\n* cada usuário só pode **apagar ou renomear os próprios arquivos** dentro dela (além do dono da pasta e do root).\n\nDepois, grave em `~/lab/caixa/simbolico.txt` a **representação das permissões da pasta tal como o `ls -ld` a mostra** (os 10 caracteres iniciais, por exemplo `drwxr-xr-x`).\n\nO verificador vai testar na prática com os usuários `{a}` e `{b}`.",
+  "verifica": [
+    "dono da pasta continua `aluno`",
+    "as permissões da pasta (incluindo o bit especial): dono `rwx`, grupo e outros `{outros}`",
+    "`{a}` deposita um arquivo; `{b}` não consegue apagá-lo nem renomeá-lo; cada um apaga o próprio",
+    "se outros = `wx`, `{b}` não consegue nem listar a caixa",
+    "`simbolico.txt` com a string do `ls -ld`"
+  ],
+  "dicas": [
+    "Há um bit especial para diretórios compartilhados em que cada um só mexe no que é seu — é o mesmo usado no `/tmp`. Ele aparece no lugar do `x` dos outros no `ls -l`.",
+    "É o *sticky bit*: `chmod +t pasta` ou o dígito `1` na frente do modo octal (por exemplo `1xyz`). Calcule rwx=7, wx=3 e monte o modo completo.",
+    "Se os outros têm `wx` (sem `r`), podem entrar e criar arquivos, mas não conseguem listar o conteúdo: é a clássica \"caixa de correio\".",
+    "Confira com `ls -ld ~/lab/caixa/{nome}`; a letra `t` minúscula indica sticky com `x` para os outros."
+  ],
+  "solucao": "```\ncd ~/lab/caixa\nchmod 1777 {nome}          # se outros = rwx;  1733 se outros = wx\nls -ld {nome}                # confira: termina em t\nls -ld {nome} | cut -d' ' -f1 > simbolico.txt\n```\nO modo octal tem 4 dígitos: o primeiro guarda os bits especiais (`4` SUID, `2` SGID, `1` sticky). Com `1` + `7` (dono rwx) + permissões de grupo e outros dá `1777` (`drwxrwxrwt`) ou `1733` (`drwx-wx-wt`). Num diretório, o **sticky bit** impede que alguém remova ou renomeie arquivos que não são seus (só o dono do arquivo, o dono do diretório e o root podem) — por isso o `/tmp` é `1777`. A pegadinha: um `T` maiúsculo no `ls -l` significa sticky **sem** `x` para os outros; e permissão de escrita no diretório, sozinha, permite apagar o arquivo alheio."
+}

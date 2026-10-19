@@ -1,0 +1,42 @@
+{
+  "id": "f103-5-matar-teimosos",
+  "obj": "103.5",
+  "titulo": "Achar e encerrar processos de outro usuário",
+  "nivel": 3,
+  "minutos": 9,
+  "params": {
+    "nome": {
+      "escolha": [
+        "indexer",
+        "mailq",
+        "spooler",
+        "relay",
+        "fetcher",
+        "worker",
+        "crawler"
+      ]
+    },
+    "svc": {
+      "escolha": [
+        "lab5-fila",
+        "lab5-mail",
+        "lab5-etl",
+        "lab5-web"
+      ]
+    }
+  },
+  "enunciado": "Um serviço travou: o usuário de serviço **`{svc}`** está com **três processos `{nome}`** em execução consumindo recursos (um deles é teimoso e ignora o pedido educado de término). Além deles, estão rodando, e **devem continuar rodando**:\n\n* um processo `{nome}` que pertence ao **seu** usuário (`aluno`);\n* um processo de controle chamado **`{nome}-ctl`**, do root.\n\nOs PIDs não foram informados. Faça, nesta ordem:\n\n1. Grave em `~/lab/f103-5-matar-teimosos/pids.txt` os **PIDs dos processos `{nome}` que pertencem ao usuário `{svc}`** (um PID por linha, só o número, qualquer ordem). Faça isso **antes** de encerrá-los.\n2. **Encerre esses três processos** — sem tocar no `{nome}` do `aluno` nem no `{nome}-ctl`. Você precisará de `sudo`.",
+  "verifica": [
+    "`pids.txt` lista exatamente os 3 PIDs dos processos `{nome}` do usuário `{svc}`",
+    "os três processos de `{svc}` foram encerrados (inclusive o teimoso)",
+    "o processo `{nome}` do `aluno` continua em execução",
+    "o processo `{nome}-ctl` continua em execução"
+  ],
+  "dicas": [
+    "`ps` e `pgrep` podem filtrar por usuário (`-u`) e por nome. Atenção: sem `-x`, o nome é procurado como padrão dentro do nome do processo (e `{nome}-ctl` contém `{nome}`).",
+    "`pgrep -u USUARIO -x NOME` imprime os PIDs, um por linha — dá para redirecionar direto para o arquivo.",
+    "Os processos são de outro usuário: `sudo kill` ou `sudo pkill`. Comece pelo pedido educado (SIGTERM, o padrão) e confira com `ps`/`pgrep` quem sobrou.",
+    "Quem ignora o SIGTERM só cai com o sinal que não pode ser tratado nem ignorado (número 9, `SIGKILL`). Use-o só nos que sobraram."
+  ],
+  "solucao": "```\ncd ~/lab/f103-5-matar-teimosos\npgrep -u {svc} -x {nome} > pids.txt       # registra antes de matar\nsudo pkill -u {svc} -x {nome}              # SIGTERM só nos processos do {svc}\npgrep -u {svc} -x {nome}                   # quem sobrou ignorou o TERM...\nsudo pkill -KILL -u {svc} -x {nome}        # ...então SIGKILL (9)\n```\n`pgrep`/`pkill` combinam filtros com E: `-u` limita ao dono e `-x` exige o **nome exato** — sem eles, `pkill {nome}` casaria também `{nome}-ctl` e o processo do `aluno`. Outro usuário só é sinalizado pelo root (`sudo`). A ordem certa é sempre TERM (15) primeiro, para o processo fechar arquivos e conexões, e só então KILL (9) para os teimosos, porque o KILL não permite limpeza. Equivalente com PIDs: `sudo kill $(cat pids.txt)` e depois `sudo kill -9 PID` nos que ficaram."
+}

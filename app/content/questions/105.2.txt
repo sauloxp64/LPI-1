@@ -1,0 +1,757 @@
+### 105.2-001 | unica | 1
+ref: 102:p.98
+tags: shebang
+Qual deve ser a primeira linha de um script para que o sistema o execute com o Bash quando ele for chamado diretamente (`./script.sh`)?
+= `#!/bin/bash`
+- `$!/bin/bash`
+- `//bin/bash`
+- `!#/bin/bash`
+- `#/bin/bash`
+> A linha shebang começa com os dois caracteres `#!` seguidos do caminho do interpretador. `#/bin/bash` é apenas um comentário (falta o `!`), e as formas `!#`, `$!` e `//` não são reconhecidas pelo kernel como shebang. Fora da primeira linha, qualquer linha iniciada por `#` também é só comentário.
+
+### 105.2-002 | unica | 2
+ref: 102:p.99
+tags: permissões, chmod, execução
+Um usuário criou o arquivo `backup.sh` com um editor de texto e tentou executá-lo:
+
+```
+$ ./backup.sh
+bash: ./backup.sh: Permission denied
+```
+
+Sabendo que o arquivo pertence ao próprio usuário, qual é a causa mais provável do erro?
+- Somente o root pode executar scripts de shell
+- O diretório atual não faz parte da variável `PATH`
+= O arquivo está sem a permissão de execução (`x`)
+- A primeira linha do arquivo não traz o shebang
+- O interpretador `/bin/bash` não está instalado
+> `Permission denied` ao chamar `./script` indica falta do bit de execução; resolve-se com `chmod +x backup.sh` (ou executando `bash backup.sh`, que exige apenas leitura). Sem shebang o Bash ainda executaria o arquivo; o `./` dispensa o uso de `PATH`; um interpretador ausente geraria outra mensagem (arquivo ou interpretador não encontrado); e qualquer usuário pode executar scripts a que tenha acesso.
+
+### 105.2-003 | unica | 2
+ref: 102:p.100
+tags: source, sub-shell, variáveis
+O script `config.sh` contém apenas a linha `EDITOR=vim`. Depois de executá-lo com `./config.sh`, o comando `echo $EDITOR` não exibe nada na sessão atual. Qual comando faria a variável `EDITOR` continuar definida na sessão atual?
+= `. ./config.sh`
+- `bash ./config.sh`
+- `exec ./config.sh`
+- `sh config.sh`
+- `export ./config.sh`
+> Um script executado normalmente roda em um sub-shell (processo filho), e as variáveis criadas ali desaparecem quando ele termina. `source config.sh` ou `. ./config.sh` leem os comandos na própria sessão atual. `bash` e `sh` também criam novos processos; `exec` substitui o shell pelo script (a sessão se encerra ao final dele); `export` não executa arquivos.
+
+### 105.2-004 | lacuna | 1
+ref: 102:p.101
+tags: código de retorno, $?
+Para exibir o código de status de saída do último comando concluído, digite: `echo ____`
+= $?
+= "$?"
+> O parâmetro especial `$?` guarda o status de saída do último comando; `0` significa sucesso e qualquer outro valor indica falha. `$!` é o PID do último processo em segundo plano, `$$` é o PID do shell atual e `$#` é o número de argumentos.
+
+### 105.2-005 | unica | 2
+ref: 102:p.104
+tags: &&, ||, encadeamento
+Qual é a saída do comando abaixo?
+
+```
+$ false && echo A || echo B; echo C
+```
+- `A`, `B` e `C`, em linhas separadas
+- somente `B`
+- `A` e depois `C`, em linhas separadas
+= `B` e depois `C`, em linhas separadas
+- somente `C`
+> `false` retorna status 1, então o `&&` não executa `echo A`. O `||` executa o comando seguinte porque o status da lista até ali é diferente de 0, e `echo B` exibe `B`. Depois do `;` o `echo C` é sempre executado, independentemente do que veio antes.
+
+### 105.2-006 | lacuna | 1
+ref: 102:p.104
+tags: ||, encadeamento
+Complete o comando para que a mensagem seja exibida somente se o `cp` falhar:
+
+```
+cp relatorio.txt /mnt/backup/ ____ echo "Falha na copia"
+```
+= ||
+> O operador `||` executa o comando seguinte apenas quando o anterior termina com status diferente de 0. Com `&&` a mensagem apareceria apenas se o `cp` tivesse sucesso.
+
+### 105.2-007 | unica | 1
+ref: 102:p.111
+tags: &&, encadeamento
+Qual linha de comando reinicia o sistema somente se a atualização de pacotes terminar com sucesso?
+- `apt-get dist-upgrade ; systemctl reboot`
+= `apt-get dist-upgrade && systemctl reboot`
+- `apt-get dist-upgrade || systemctl reboot`
+- `apt-get dist-upgrade | systemctl reboot`
+- `apt-get dist-upgrade & systemctl reboot`
+> O `&&` executa o segundo comando apenas se o primeiro retornar 0. Com `||` o reinício ocorreria somente em caso de falha; com `;` ocorreria sempre, mesmo após erro; com `|` os comandos rodam em paralelo ligados por um pipe; e com `&` o primeiro vai para segundo plano e o reinício é disparado imediatamente.
+
+### 105.2-008 | unica | 3
+ref: 102:p.104
+tags: &&, ||, encadeamento
+Qual é a saída do comando abaixo?
+
+```
+$ true || echo A && echo B
+```
+- somente `A`
+- `A` e `B`, nessa ordem
+- uma mensagem de erro de sintaxe
+= somente `B`
+- nenhuma saída
+> Os operadores `&&` e `||` são avaliados da esquerda para a direita. `true` tem sucesso, então o `||` pula `echo A`; o status da lista até esse ponto continua sendo 0, e por isso o `&&` executa `echo B`.
+
+### 105.2-009 | unica | 2
+ref: 102:p.114
+tags: test, arquivos
+Qual expressão retorna 0 somente se o caminho guardado em `$ARQ` existir e for um arquivo regular?
+- `[ -r "$ARQ" ]`
+= `[ -f "$ARQ" ]`
+- `[ -e "$ARQ" ]`
+- `[ -s "$ARQ" ]`
+- `[ -d "$ARQ" ]`
+> `-f` é verdadeiro apenas para arquivo regular. `-e` também é verdadeiro para diretórios e outros tipos; `-d` testa diretório; `-r` testa permissão de leitura; `-s` testa se o caminho existe e não está vazio, o que vale para diretórios também.
+
+### 105.2-010 | lacuna | 1
+ref: 102:p.116
+tags: test, strings
+Complete o teste para que ele seja verdadeiro quando a variável `NOME` estiver vazia (tamanho zero): `[ ____ "$NOME" ]`
+= -z
+> `-z` é verdadeiro para string de tamanho zero. Seu oposto é `-n`, verdadeiro quando a string não está vazia.
+
+### 105.2-011 | unica | 2
+ref: 102:p.117
+tags: test, comparação numérica
+Qual teste é verdadeiro quando o valor numérico de `$N` é estritamente maior que 5?
+- `[ "$N" > 5 ]`
+- `[ "$N" -lt 5 ]`
+- `[ "$N" gt 5 ]`
+= `[ "$N" -gt 5 ]`
+- `[ "$N" -ge 5 ]`
+> `-gt` (greater than) compara inteiros. `-ge` inclui o 5 (maior ou igual) e `-lt` é "menor que". Sem escape, `>` é o redirecionamento de saída do shell (cria um arquivo chamado `5`) e o teste vira só `[ "$N" ]`, sempre verdadeiro; `gt` sem hífen não é um operador e gera erro.
+
+### 105.2-012 | unica | 3
+ref: 102:p.116-117
+tags: test, comparação numérica, strings
+Qual é o resultado dos dois comandos abaixo?
+
+```
+$ [ 10 -gt 9 ]; echo $?
+$ [ 10 \> 9 ]; echo $?
+```
+- o primeiro imprime `1` e o segundo imprime `0`
+- ambos imprimem `1`
+- o primeiro imprime `0` e o segundo imprime `2`
+- ambos imprimem `0`
+= o primeiro imprime `0` e o segundo imprime `1`
+> `-gt` compara números: 10 é maior que 9, logo o status é 0. Já `\>` (com a barra para o shell não tratá-lo como redirecionamento) compara strings em ordem alfabética: `"10"` vem antes de `"9"` porque o caractere `1` precede o `9`, então a expressão é falsa e o status é 1. Para números, use sempre `-gt`, `-lt` e similares.
+
+### 105.2-013 | unica | 3
+ref: 102:p.116
+tags: test, aspas, diagnóstico
+Um script apresenta o seguinte comportamento:
+
+```
+$ NOME=
+$ [ $NOME = "root" ]; echo $?
+bash: [: =: unary operator expected
+2
+```
+
+Qual é a causa do erro e a correção?
+- Falta um `;` logo após o colchete de abertura
+= A variável vazia some da expressão; use `[ "$NOME" = "root" ]`
+- O `=` não existe no `test`; use `-eq` para comparar
+- Falta `export` na variável; só variáveis exportadas podem ser testadas
+- O `test` só compara números; para texto use `grep`
+> Sem aspas, uma variável vazia desaparece após a expansão e o `test` enxerga apenas `= root`, ficando sem o primeiro operando. Colocar a variável entre aspas duplas mantém um argumento vazio e a comparação funciona. O `=` é o operador de igualdade de strings (`-eq` é numérico), a exportação é irrelevante para o teste e `test` compara textos normalmente.
+
+### 105.2-014 | multipla | 2
+ref: 102:p.115
+tags: test, links simbólicos
+Quais opções do `test` são verdadeiras quando o caminho informado é um link simbólico?
+- `-s`
+- `-S`
+- `-b`
+= `-h`
+= `-L`
+> `-h` e `-L` são sinônimos e testam se o caminho é um link simbólico. `-S` testa se é um socket, `-s` testa se existe e não está vazio, e `-b` testa se é um arquivo especial de bloco.
+
+### 105.2-015 | unica | 2
+ref: 102:p.116
+tags: test, datas
+Qual teste retorna 0 quando o arquivo cujo caminho está em `$FROM` foi modificado mais recentemente que o arquivo em `$TO`?
+- `[ "$FROM" -newer "$TO" ]`
+- `[ "$FROM" -ot "$TO" ]`
+- `[ "$FROM" -ef "$TO" ]`
+= `[ "$FROM" -nt "$TO" ]`
+- `[ "$FROM" -gt "$TO" ]`
+> `-nt` (newer than) compara as datas de modificação. `-ot` é o inverso (mais antigo), `-ef` verifica se os dois caminhos são o mesmo arquivo (link físico), `-gt` compara números inteiros e `-newer` é uma opção do `find`, não do `test` (gera "binary operator expected").
+
+### 105.2-016 | unica | 1
+ref: 102:p.111
+tags: read
+Um script precisa pedir uma senha, sem exibir os caracteres digitados, e guardá-la na variável `PASSWORD`. Qual comando faz isso?
+- `read -r PASSWORD`
+- `read -p PASSWORD`
+= `read -s PASSWORD`
+- `read -t PASSWORD`
+- `read -n PASSWORD`
+> A opção `-s` (silent) do `read` oculta o que é digitado. `-p` define uma mensagem de prompt (e nesse caso `PASSWORD` seria usado como texto do prompt, com a entrada indo para `REPLY`); `-r` apenas impede a interpretação de barras invertidas; `-n` e `-t` exigem um número (quantidade de caracteres e tempo limite) e resultam em erro aqui.
+
+### 105.2-017 | unica | 2
+ref: 102:p.101
+tags: read, variáveis
+Um script contém a linha `read NOME SOBRENOME` e o usuário digita `Maria da Silva Souza` seguido de Enter. Qual será o conteúdo da variável `SOBRENOME`?
+= `da Silva Souza`
+- `Silva Souza`
+- `Souza`
+- `da`
+- vazio
+> O `read` divide a entrada em campos usando o `IFS` (espaço, tabulação e nova linha). Cada campo vai para uma variável, em ordem, e todo o texto excedente fica na última variável. Assim `NOME` recebe `Maria` e `SOBRENOME` recebe `da Silva Souza`.
+
+### 105.2-018 | lacuna | 2
+ref: 102:p.101
+tags: read, REPLY
+Quando o comando `read` é executado sem informar nenhum nome de variável, em qual variável o texto digitado é armazenado?
+= REPLY
+= $REPLY
+> Sem argumentos, o `read` coloca a linha lida na variável `REPLY`.
+
+### 105.2-019 | unica | 1
+ref: 102:p.102
+tags: substituição de comandos
+Qual atribuição guarda na variável `OS` a saída do comando `uname -s`?
+- `OS=${uname -s}`
+- `OS='uname -s'`
+= `OS=$(uname -s)`
+- `OS=$((uname -s))`
+- `OS=(uname -s)`
+> A substituição de comandos usa `$(comando)` (ou crases). `OS=(uname -s)` cria um array com dois elementos de texto; `${uname -s}` é uma expansão de parâmetro inválida; aspas simples preservam o texto literal `uname -s`; e `$(( ))` é uma expressão aritmética, que aqui resultaria em 0 sem executar o comando.
+
+### 105.2-020 | unica | 2
+ref: 102:p.119
+tags: for, seq
+Qual é a saída do comando abaixo?
+
+```
+$ for i in $(seq 2 2 8); do echo -n "$i "; done
+```
+- `2 4 6`
+= `2 4 6 8`
+- `2 8`
+- `8 6 4 2`
+- `2 3 4 5 6 7 8`
+> A sintaxe do `seq` é `seq PRIMEIRO INCREMENTO ÚLTIMO`. Com três argumentos, `2 2 8` produz 2, 4, 6 e 8 (o último valor é incluído quando alcançado). A substituição de comandos `$(seq ...)` fornece a lista de palavras ao `for`, e o `echo -n` evita a quebra de linha entre os itens.
+
+### 105.2-021 | unica | 2
+ref: 102:p.95
+tags: seq
+Qual comando imprime, um por linha, os números 10, 8, 6, 4 e 2 nessa ordem?
+- `seq 2 2 10`
+- `seq 2 -2 10`
+- `seq 10 2 2`
+= `seq 10 -2 2`
+- `seq -2 10 2`
+> A forma `seq PRIMEIRO INCREMENTO ÚLTIMO` aceita incremento negativo para contagem regressiva. `seq 10 2 2` e `seq 2 -2 10` não imprimem nada (o incremento aponta para longe do limite); `seq 2 2 10` conta em ordem crescente; `seq -2 10 2` começa em -2 e imprime apenas esse valor.
+
+### 105.2-022 | lacuna | 2
+ref: 102:p.95
+tags: seq
+Qual opção do `seq` define o separador entre os números? Complete o comando para obter `1,2,3,4,5` em uma única linha: `seq ____ , 1 5`
+= -s
+= --separator
+> Por padrão o `seq` separa os números com nova linha. A opção `-s` (ou `--separator`) troca o separador pela string indicada.
+
+### 105.2-023 | unica | 2
+ref: 102:p.121
+tags: while, aritmética
+Qual é a saída do script abaixo?
+
+```
+N=3
+while [ $N -gt 0 ]; do
+  echo -n "$N "
+  N=$((N - 1))
+done
+```
+- `3`
+= `3 2 1`
+- `1 2 3`
+- `2 1 0`
+- `3 2 1 0`
+> O `while` repete enquanto o teste retornar 0 (sucesso). Com N valendo 3, 2 e 1 o teste `-gt 0` é verdadeiro e os valores são impressos; quando N chega a 0 o teste falha e o loop termina sem imprimir o 0.
+
+### 105.2-024 | unica | 2
+ref: 102:p.121
+tags: while, diagnóstico
+O script a seguir deveria imprimir os números de 0 a 9, mas imprime `0` indefinidamente:
+
+```
+#!/bin/bash
+CONT=0
+while [ $CONT -lt 10 ]
+do
+  echo $CONT
+done
+```
+
+O que deve ser feito para corrigi-lo?
+- Trocar `while` por `until`, mantendo o mesmo teste
+- Trocar `-lt` por `-le` no teste
+- Escrever `CONT=0` dentro do loop
+- Colocar `exit 0` logo após o `echo`
+= Incrementar `CONT` dentro do loop, com `CONT=$((CONT + 1))`
+> O valor de `CONT` nunca muda, então o teste continua verdadeiro para sempre. É preciso uma instrução que altere a variável até o critério de parada ser atingido. `-le` ainda deixaria o loop infinito; `until` com o mesmo teste nem entraria no loop; `exit 0` encerraria o script após o primeiro número; e zerar `CONT` a cada volta mantém o problema.
+
+### 105.2-025 | unica | 3
+ref: 102:p.105
+tags: if, código de retorno
+Qual é a saída do comando abaixo? Considere que o diretório `/naoexiste` não existe.
+
+```
+$ if ls /naoexiste 2>/dev/null; then echo A; else echo B; fi; echo $?
+```
+- `B` e depois `1`, em linhas separadas
+= `B` e depois `0`, em linhas separadas
+- somente `B`
+- `A` e depois `0`, em linhas separadas
+- `B` e depois `2`, em linhas separadas
+> O `if` testa o código de retorno do comando: o `ls` falha (status 2), então o bloco `else` é executado e imprime `B`. O status final da estrutura `if` é o do último comando executado dentro dela, que é o `echo B` (sucesso, 0). Por isso o `echo $?` imprime `0`, e não o 2 do `ls`.
+
+### 105.2-026 | unica | 3
+ref: 102:p.117-118
+tags: case
+Considere o script `servico.sh`:
+
+```
+#!/bin/bash
+case "$1" in
+  start)     echo S ;;
+  stop|halt) echo H ;;
+  *)         echo U ;;
+esac
+```
+
+O que será impresso por `./servico.sh Start`?
+- `H`
+- nada
+= `U`
+- uma mensagem de erro
+- `S`
+> O `case` diferencia maiúsculas de minúsculas, então `Start` não casa com o padrão `start`. Nenhum padrão anterior casa e o asterisco (`*`) captura todo o resto, imprimindo `U`. Para ignorar o caso seria preciso ativar `shopt -s nocasematch` antes do `case`.
+
+### 105.2-027 | unica | 2
+ref: 102:p.100-101
+tags: parâmetros posicionais, $#
+O script `args.sh` contém:
+
+```
+#!/bin/bash
+echo "$# $2"
+```
+
+Qual é a saída de `./args.sh um "dois tres" quatro`?
+- `4 dois`
+- `3 dois`
+- `2 tres`
+= `3 dois tres`
+- `3 um`
+> `$#` é a quantidade de argumentos. As aspas fazem `"dois tres"` contar como um único argumento, então são 3 (`um`, `dois tres`, `quatro`). `$2` é o segundo argumento posicional: `dois tres`.
+
+### 105.2-028 | lacuna | 2
+ref: 102:p.112
+tags: parâmetros, $0
+Um script `do.sh` possui um link simbólico `undo.sh` apontando para ele. Qual parâmetro especial permite ao script saber por qual nome foi chamado?
+= $0
+= "$0"
+> `$0` contém o nome usado para invocar o script; chamado via link, ele traz o nome do link (`undo.sh`). `$1` é o primeiro argumento, `$#` a quantidade de argumentos e `$$` o PID do shell.
+
+### 105.2-029 | multipla | 2
+ref: 102:p.100
+tags: parâmetros, $@, $*
+Quais parâmetros especiais representam todos os argumentos passados ao script?
+- `$?`
+= `$@`
+- `$$`
+- `$0`
+- `$#`
+= `$*`
+> `$*` e `$@` expandem para todos os argumentos (com `"$@"` cada argumento é preservado como palavra separada). `$#` é a contagem de argumentos, `$0` o nome do script, `$$` o PID do shell atual e `$?` o status do último comando.
+
+### 105.2-030 | unica | 2
+ref: 102:p.103-104
+tags: aritmética
+Qual é a saída do comando abaixo?
+
+```
+$ echo $(( 17 % 5 )) $(( 17 / 5 ))
+```
+= `2 3`
+- `3 2`
+- `0 3`
+- `3.4 2`
+- `2 3.4`
+> A expansão aritmética `$(( ))` trabalha apenas com inteiros. `%` devolve o resto da divisão (17 = 3 × 5 + 2, resto 2) e `/` devolve a divisão inteira (quociente 3). O Bash não gera resultados fracionários.
+
+### 105.2-031 | unica | 2
+ref: 102:p.102-103
+tags: arrays
+Qual é a saída dos comandos abaixo?
+
+```
+$ SIZES=(10 20 30)
+$ echo ${SIZES[1]} ${#SIZES[@]}
+```
+- `10 3`
+- `20 2`
+- `30 3`
+= `20 3`
+- `10 30`
+> Os índices de um array no Bash começam em 0, então `${SIZES[1]}` é o segundo elemento (20). `${#SIZES[@]}` retorna a quantidade de elementos, que é 3.
+
+### 105.2-032 | unica | 2
+ref: 102:p.102
+tags: substituição de comandos, aspas
+Qual é o efeito do comando abaixo?
+
+```
+$ echo 'Host: $(hostname)'
+```
+- Imprime `Host:` e uma linha em branco
+= Imprime literalmente `Host: $(hostname)`
+- Imprime `Host:` seguido do nome da máquina
+- Imprime o PID do processo `hostname`
+- Gera um erro de sintaxe
+> Dentro de aspas simples nenhuma expansão ocorre, incluindo a substituição de comandos, e o texto é impresso como está. Com aspas duplas (`"Host: $(hostname)"`) o comando seria executado e o nome da máquina apareceria.
+
+### 105.2-033 | unica | 3
+ref: 102:p.106-107
+tags: printf, echo
+Qual é a saída dos comandos abaixo?
+
+```
+printf "Total: %d\n" 7
+printf "OK"
+echo "!"
+```
+= `Total: 7` em uma linha e `OK!` na linha seguinte
+- `Total: 7 OK !` em uma única linha
+- `Total: 7` e depois um erro
+- `Total: 7` e `OK` e `!`, cada um em sua linha
+- `Total: %d` em uma linha e `OK!` na seguinte
+> O `printf` substitui `%d` pelo inteiro 7 e só quebra a linha quando recebe `\n`, ao contrário do `echo`. Como o segundo `printf` não termina com `\n`, o `OK` fica na mesma linha do `!` impresso em seguida pelo `echo`, que adiciona a quebra de linha ao final.
+
+### 105.2-034 | lacuna | 1
+ref: 102:p.106
+tags: echo, sequências de escape
+Qual opção do `echo` faz com que sequências como `\t` e `\n` sejam interpretadas? Complete: `echo ____ "Nome:\tAna"`
+= -e
+> Com `-e`, o `echo` interpreta sequências de escape como `\t` (tabulação) e `\n` (nova linha). Sem a opção, a barra invertida é impressa literalmente. Em scripts mais elaborados, `printf` oferece mais controle sobre o formato.
+
+### 105.2-035 | unica | 3
+ref: 102:p.100
+tags: exec
+Qual é a saída do comando abaixo?
+
+```
+$ bash -c 'echo 1; exec echo 2; echo 3'
+```
+- `1`, `2` e `3`, em linhas separadas
+- `2` e `3`, em linhas separadas
+- somente `1`
+- `1` e `3`, em linhas separadas
+= `1` e `2`, em linhas separadas
+> O `exec` substitui o processo do shell pelo comando indicado, sem criar um novo processo. Depois do `echo 2` o shell já não existe mais, então o `echo 3` nunca é lido. Quando usado em um shell interativo, `exec comando` também fecha a sessão ao fim do comando.
+
+### 105.2-036 | unica | 1
+ref: 102:p.101
+tags: exit, código de retorno
+Um script termina com a instrução `exit 3`. Qual será o valor de `$?` no shell que o chamou, imediatamente após a execução?
+- `0`
+= `3`
+- `127`
+- `1`
+- `255`
+> O argumento de `exit` define o status de saída do script, e o shell que o executou o recebe em `$?`. Por convenção, 0 indica sucesso e os demais valores indicam falha ou condições específicas; 127 é o código típico de "comando não encontrado".
+
+### 105.2-037 | unica | 2
+ref: 102:p.99
+tags: PATH, localização
+O script `limpa.sh` está em `/opt/scripts`, com permissão de execução. O comando `/opt/scripts/limpa.sh` funciona, mas `limpa.sh` produz:
+
+```
+bash: limpa.sh: command not found
+```
+
+Qual é a causa?
+- A primeira linha do script não traz o shebang
+- O diretório `/opt/scripts` não tem o bit de execução
+= `/opt/scripts` não está listado na variável `PATH`
+- O script precisa ser executado com `sudo`
+- O script precisa ter o SUID habilitado
+> Quando o comando é digitado sem uma barra, o shell procura o nome apenas nos diretórios de `PATH`. Para chamá-lo apenas pelo nome, é preciso colocar o script em um diretório que já esteja no `PATH` (como `/usr/local/bin`) ou acrescentar `/opt/scripts` à variável. SUID, `sudo` ou um shebang ausente não explicam um "command not found"; e se o diretório estivesse sem permissão de acesso o caminho completo também falharia.
+
+### 105.2-038 | unica | 2
+ref: 102:p.99
+tags: SUID, chmod, permissões
+Qual permissão `ls -l` mostrará para um arquivo de script após `chmod 4755 /usr/local/bin/limpa.sh`?
+= `-rwsr-xr-x`
+- `-rwxr-xr-t`
+- `-rwSr-xr-x`
+- `-rwxr-xr-x`
+- `-rwxr-sr-x`
+> O dígito 4 no início do modo octal ativa o SUID, exibido como `s` no lugar do `x` do dono. `-rwxr-sr-x` seria o SGID (dígito 2); `-rwxr-xr-t` o sticky bit (dígito 1); `-rwSr-xr-x` seria SUID em um arquivo cujo dono não tem a permissão de execução; e `-rwxr-xr-x` é o modo 755 comum. Observação: o kernel Linux ignora o SUID em scripts iniciados por shebang; a permissão aparece na listagem, mas não eleva o privilégio de quem executa o script.
+
+### 105.2-039 | unica | 2
+ref: 102:p.99
+tags: SUID, segurança, permissões
+Um arquivo executável pertencente ao root recebe a permissão SUID para que usuários comuns o executem com privilégios de root. Qual cuidado é essencial?
+- Guardá-lo no diretório `/tmp`
+- Ativar também o sticky bit no arquivo
+- Deixar o arquivo com modo 777 para facilitar a manutenção
+- Remover a permissão de leitura de todos os usuários
+= Garantir que nenhum outro usuário possa escrever no arquivo
+> Se outro usuário puder modificar um arquivo SUID do root, ele poderá inserir comandos arbitrários que serão executados com privilégios de root. Por isso apenas o root deve ter permissão de escrita (por exemplo, modo 4755). O material da LPI faz essa advertência para scripts; na prática o kernel Linux ignora o SUID em scripts com shebang, e programas compilados são os que de fato usam o recurso. Modo 777 e `/tmp` agravam o risco, e o sticky bit não protege o arquivo.
+
+### 105.2-040 | unica | 3
+ref: 102:p.112
+tags: if, código de retorno, mail, superusuário
+Qual construção envia um e-mail ao usuário `root` somente se o comando executado imediatamente antes tiver falhado?
+- `if [ "$$" -ne 0 ]; then mail -s "Erro" root <<<"Falhou"; fi`
+= `if [ "$?" -ne 0 ]; then mail -s "Erro" root <<<"Falhou"; fi`
+- `if [ "$0" -ne 0 ]; then mail -s "Erro" root <<<"Falhou"; fi`
+- `if [ "$#" -ne 0 ]; then mail -s "Erro" root <<<"Falhou"; fi`
+- `if [ "$?" -eq 0 ]; then mail -s "Erro" root <<<"Falhou"; fi`
+> O parâmetro `$?` guarda o status do último comando, e `-ne 0` identifica falha. Com `-eq 0` o e-mail seria enviado apenas após um sucesso. `$#` é o número de argumentos do script, `$$` é o PID do shell (nunca 0, o que faria o e-mail ser sempre enviado) e `$0` é o nome do script (não numérico, gerando erro no teste).
+
+### 105.2-041 | lacuna | 1
+ref: 102:p.112
+tags: mail, superusuário
+Qual comando permite a um script enviar uma mensagem por e-mail ao superusuário? Complete: `____ -s "Alerta de disco" root <<<"Particao cheia"`
+= mail
+= mailx
+> O comando `mail` (ou `mailx`, conforme a distribuição) envia mensagens pelo serviço de e-mail local; `-s` define o assunto e o último argumento é o destinatário (`root`). É útil em scripts executados de forma autônoma, como tarefas do cron. Também é possível avisar usuários logados com `wall`.
+
+### 105.2-042 | unica | 2
+ref: 102:p.129-130
+tags: LANG, ordenação, scripts
+Dois administradores executam o mesmo script em máquinas diferentes. Ele ordena uma lista de usuários com `sort` e os resultados saem em ordens diferentes (em uma, `carol` aparece antes de `Dave`; na outra, `Dave` vem antes de `carol`). Qual é a explicação e a forma de evitar esse problema?
+- Os fusos horários são diferentes; o script deve definir a variável `TZ`
+- As codificações dos arquivos são diferentes; o script deve usar `iconv`
+- O `sort` ignora maiúsculas em um dos sistemas; o script deve usar `sort -f`
+- As versões do `sort` são diferentes; o script deve instalar o mesmo pacote
+= As localidades são diferentes; o script deve fixar a localidade `C`
+> A ordem alfabética depende da localidade (`LC_COLLATE`/`LANG`) do sistema. Em `en_US.UTF-8`, por exemplo, `carol` vem antes de `Dave`; na localidade `C` os bytes são comparados diretamente e todas as maiúsculas vêm antes das minúsculas. Definir `LANG=C` (ou `LC_ALL=C`) dentro do script torna o resultado previsível em qualquer máquina.
+
+### 105.2-043 | unica | 3
+ref: 102:p.116-117
+tags: test, -o, operadores lógicos
+Com `FROM=/tmp` (diretório existente) e `TO=/naoexiste` (caminho inexistente), qual é o resultado do comando abaixo?
+
+```
+$ [ ! -d "$FROM" -o ! -d "$TO" ]; echo $?
+```
+- `2`
+- `127`
+- nenhuma saída
+= `0`
+- `1`
+> `!` nega a expressão seguinte e `-o` significa OU. `! -d "$FROM"` é falso (o diretório existe), mas `! -d "$TO"` é verdadeiro (o caminho não é um diretório). Como basta uma delas ser verdadeira, o teste inteiro é verdadeiro e o status é 0. Esse é o padrão usado para validar parâmetros em scripts de sincronização.
+
+### 105.2-044 | unica | 2
+ref: 102:p.114
+tags: test, código de retorno
+Qual é a saída dos comandos abaixo?
+
+```
+test -d /etc; echo -n "$? "
+test -f /etc; echo -n "$? "
+test -e /etc; echo $?
+```
+= `0 1 0`
+- `0 1 1`
+- `1 0 1`
+- `0 0 0`
+- `1 1 0`
+> `/etc` é um diretório existente: `-d` é verdadeiro (0), `-f` é falso porque não é arquivo regular (1) e `-e` é verdadeiro porque o caminho existe (0). No shell, o status 0 representa verdadeiro/sucesso.
+
+### 105.2-045 | multipla | 3
+ref: 102:p.99
+tags: execução, source, chmod
+O arquivo `run.sh` tem permissão de leitura, mas não tem o bit de execução, e fica no diretório atual. Quais comandos conseguem executá-lo?
+- `./run.sh`
+- `exec ./run.sh`
+= `. ./run.sh`
+- `run.sh`
+= `bash run.sh`
+> Passar o arquivo como argumento ao `bash`, ou lê-lo com `.` (equivalente a `source`), exige apenas permissão de leitura. Chamar `./run.sh` ou `exec ./run.sh` pede ao kernel que execute o arquivo e falha com `Permission denied`; e `run.sh` sem caminho, além da falta do bit `x`, só seria procurado nos diretórios do `PATH`.
+
+### 105.2-046 | unica | 3
+ref: 102:p.98
+tags: shebang, bash, sh, diagnóstico
+Em um Debian 12, o script abaixo (com permissão de execução) falha ao ser executado:
+
+```
+#!/bin/sh
+LISTA=(a b c)
+echo "${LISTA[1]}"
+```
+
+A saída é `./lista.sh: 2: Syntax error: "(" unexpected`. Qual é a causa e a correção?
+- Os índices de arrays começam em 1; use `${LISTA[2]}`
+- Falta `declare -a LISTA` antes da atribuição do array
+- O Bash não permite arrays em scripts; use apenas variáveis simples
+- O script precisa ser executado com `source` em vez de `./`
+= `/bin/sh` é o dash, que não tem arrays; use `#!/bin/bash`
+> O interpretador é escolhido pela linha shebang. No Debian e no Ubuntu `/bin/sh` aponta para o dash, um shell POSIX simples sem arrays; usar `#!/bin/bash` resolve. Em outras distribuições (RHEL, Fedora) `/bin/sh` é um link para o Bash e o script funcionaria, motivo pelo qual scripts devem declarar o interpretador de que realmente precisam. O Bash aceita arrays sem `declare -a`, e seus índices começam em 0.
+
+### 105.2-047 | unica | 1
+ref: 102:p.105
+tags: test, if
+Qual comando é equivalente a `test -d /etc`?
+- `[-d /etc]`
+- `{ -d /etc }`
+= `[ -d /etc ]`
+- `[[ -d /etc ]`
+- `( -d /etc )`
+> Os colchetes são uma forma alternativa de chamar o `test`, mas `[` é um comando e precisa estar separado dos argumentos por espaços, assim como o `]` final. Sem os espaços (`[-d`) o shell procura um comando chamado `[-d`; as demais formas têm colchetes desbalanceados ou usam delimitadores que significam outra coisa no shell.
+
+### 105.2-048 | unica | 2
+ref: 102:p.120
+tags: for
+Qual é a saída do comando abaixo?
+
+```
+$ for (( IDX = 0; IDX < 3; IDX++ )); do echo -n "$IDX "; done
+```
+- `1 2`
+- `0 1 2 3`
+- `1 2 3`
+= `0 1 2`
+- `0 1`
+> A notação com parênteses duplos lembra o `for` da linguagem C: IDX começa em 0 e o loop continua enquanto IDX for menor que 3, imprimindo 0, 1 e 2. O 3 não é impresso porque a condição `IDX < 3` deixa de ser verdadeira.
+
+### 105.2-049 | multipla | 1
+ref: 102:p.119
+tags: for, while, until, laços
+Quais são instruções de repetição (loops) do Bash?
+- `case`
+= `for`
+= `until`
+- `test`
+- `if`
+= `while`
+> O Bash tem três estruturas de repetição: `for`, `while` e `until`. `case` e `if` são estruturas condicionais, e `test` é o comando que avalia expressões e devolve um código de retorno.
+
+### 105.2-050 | multipla | 1
+ref: 102:p.117
+tags: test, comparação numérica
+Quais operadores do `test` comparam números inteiros?
+= `-ge`
+- `-ef`
+- `-nt`
+- `-z`
+= `-le`
+= `-ne`
+> `-le` (menor ou igual), `-ne` (diferente) e `-ge` (maior ou igual) são comparações numéricas, assim como `-lt`, `-gt` e `-eq`. `-nt` compara datas de modificação, `-ef` verifica se dois caminhos são o mesmo arquivo e `-z` testa se uma string está vazia.
+
+### 105.2-051 | multipla | 2
+ref: 102:p.114
+tags: código de retorno, test, true
+Quais dos comandos abaixo terminam com código de retorno 0?
+- `test 5 -lt 3`
+= `[ 3 -lt 5 ]`
+- `false`
+- `[ -z "abc" ]`
+= `true`
+= `test -n "abc"`
+> O código 0 indica sucesso/verdadeiro. `true` sempre devolve 0, 3 é menor que 5 e `"abc"` não está vazia. Os demais retornam 1: `false` sempre falha, `-z "abc"` é falso porque a string não é vazia e 5 não é menor que 3.
+
+### 105.2-052 | lacuna | 1
+ref: 102:p.118
+tags: case, esac
+A construção `case` é encerrada pela palavra reservada ____
+= esac
+> `esac` é `case` escrito de trás para a frente e fecha a estrutura, assim como `fi` fecha o `if` e `done` fecha os laços `for`, `while` e `until`.
+
+### 105.2-053 | lacuna | 2
+ref: 102:p.100
+tags: source, sub-shell
+Além de `source`, qual comando de um único caractere executa um script na sessão atual do shell, sem criar um sub-shell? Complete: `____ script.sh`
+= .
+> O ponto (`.`) é sinônimo de `source`: o conteúdo do arquivo é lido e executado no shell atual, e por isso variáveis e diretório de trabalho alterados pelo script permanecem após o término. Deve haver um espaço entre o ponto e o nome do arquivo.
+
+### 105.2-054 | lacuna | 1
+ref: 102:p.105
+tags: test, if, executável
+Complete o teste para que a mensagem seja exibida somente se `/bin/bash` existir e for executável:
+
+```
+if [ ____ /bin/bash ] ; then
+  echo "Confirmed: /bin/bash is executable."
+fi
+```
+= -x
+> A opção `-x` do `test` (ou `[ ]`) é verdadeira quando o caminho existe e o usuário atual tem permissão de execução sobre ele. `-e` apenas verifica a existência, `-f` verifica se é arquivo regular e `-r` testa permissão de leitura.
+
+### 105.2-055 | lacuna | 2
+ref: 102:p.101
+tags: parâmetros, $$, PID
+Qual parâmetro especial do shell contém o PID do shell atual (o processo que está executando o script)?
+= $$
+= "$$"
+> `$$` expande para o PID do shell em execução. Já `$!` é o PID do último comando executado em segundo plano, `$?` é o status do último comando e `$#` é o número de argumentos.
+
+### 105.2-056 | lacuna | 1
+ref: 102:p.100
+tags: parâmetros, $#
+Qual parâmetro especial contém o número de argumentos passados a um script?
+= $#
+= "$#"
+> `$#` expande para a quantidade de argumentos. `$0` é o nome do script, `$1`, `$2`... são os argumentos posicionais e `$*` e `$@` representam todos eles.
+
+### 105.2-057 | lacuna | 1
+ref: 102:p.119
+tags: for, laços, done
+O bloco de comandos de um laço `for`, `while` ou `until` é delimitado por `do` e encerrado pela palavra reservada ____
+= done
+> Nas construções de repetição do Bash, os comandos ficam entre `do` e `done`. No `if`, o encerramento é feito com `fi`, e no `case`, com `esac`.
+
+### 105.2-058 | multipla | 2
+ref: 102:p.115
+tags: test, permissões, -r, -w, -x
+Quais opções do `test` verificam permissões do usuário atual sobre o caminho informado?
+- `-f`
+= `-r`
+= `-w`
+- `-s`
+- `-e`
+= `-x`
+> `-r`, `-w` e `-x` são verdadeiros quando o usuário atual pode ler, gravar e executar o arquivo, respectivamente. `-e` testa existência, `-f` testa se é arquivo regular e `-s` testa se existe e não está vazio.
+
+### 105.2-059 | lacuna | 2
+ref: 102:p.115
+tags: test, propriedade, -O
+Complete o teste para que seja verdadeiro somente se o arquivo guardado em `$ARQ` pertencer ao usuário que está executando o script: `[ ____ "$ARQ" ]`
+= -O
+> `-O` é verdadeiro quando o caminho pertence ao usuário efetivo atual (proprietário). Já `-G` testa se o arquivo pertence ao grupo efetivo do usuário. Note a diferença de maiúsculas e minúsculas entre as opções do `test`.
+
+### 105.2-060 | unica | 2
+ref: 102:p.99
+tags: localização, PATH, /usr/local/bin
+O administrador quer instalar um script próprio para que todos os usuários o executem apenas pelo nome, sem interferir nos arquivos gerenciados pelos pacotes da distribuição. Qual é o local mais adequado?
+- `/var/local/scripts`
+- `/etc/bin`
+= `/usr/local/bin`
+- `/boot/bin`
+- `/usr/bin`
+> `/usr/local/bin` é o diretório convencional para programas e scripts instalados localmente pelo administrador, e costuma estar no `PATH` de todos os usuários. `/usr/bin` é gerenciado pelo gerenciador de pacotes. Os demais não existem por padrão ou não estão no `PATH`.
+
+### 105.2-061 | unica | 2
+ref: 102:p.99
+tags: propriedade, permissões, chmod, chown
+Um script em `/usr/local/bin` deve poder ser executado por todos os usuários, mas modificado somente pelo root. Quais ajustes de dono e permissão atendem a esse requisito?
+= Dono `root` e modo `755`
+- Dono `root` e modo `777`
+- Dono `root` e modo `4777`
+- Dono `root` e modo `666`
+- Dono `root` e modo `644`
+> O modo 755 (`rwxr-xr-x`) dá ao dono leitura, escrita e execução, e aos demais apenas leitura e execução. O 777 e o 4777 (que ainda ativa SUID) permitem escrita a qualquer usuário; o 666 também permite escrita a todos e não dá execução; o 644 impede que os outros usuários executem o script diretamente.

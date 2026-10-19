@@ -1,0 +1,33 @@
+{
+  "id": "f103-4-redir-tee",
+  "obj": "103.4",
+  "titulo": "Separar stdout e stderr e acrescentar com tee",
+  "nivel": 3,
+  "minutos": 8,
+  "params": {
+    "rotulo": {
+      "escolha": [
+        "rede-interna",
+        "filial-sul",
+        "datacenter-a",
+        "borda-dmz",
+        "laboratorio"
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-4-redir-tee/` há o script `coleta.sh`, que verifica a lista de equipamentos de **{rotulo}**: para cada equipamento que responde ele escreve uma linha `OK: ...` na **saída padrão**, e para cada um que não responde escreve uma linha `ERRO: ...` na **saída de erro**. Há também o `historico.txt`, com três linhas de coletas anteriores.\n\nSem editar nenhum desses arquivos:\n\n1. Rode `./coleta.sh` de modo que a saída padrão vá para `saida.txt` e o erro padrão vá para `erros.txt` (separados, cada fluxo no seu arquivo).\n2. Rode o script **mais uma vez** e **acrescente** ao final de `historico.txt` a saída **combinada** (padrão + erro, na ordem em que o script as produz), **sem apagar** o que já está lá. Faça isso de modo que a saída também **apareça na tela** enquanto é gravada.",
+  "verifica": [
+    "`coleta.sh` e `servidores.txt` continuam intactos",
+    "`saida.txt` tem somente o que o script escreve na saída padrão",
+    "`erros.txt` tem somente o que o script escreve no erro padrão",
+    "as linhas originais de `historico.txt` continuam no topo",
+    "depois delas, `historico.txt` recebeu a saída combinada do script (padrão + erro, na ordem de execução)"
+  ],
+  "dicas": [
+    "Os fluxos têm números: 0 = entrada padrão, 1 = saída padrão, 2 = erro padrão. `>` redireciona o 1 por padrão; `2>` redireciona o fluxo 2.",
+    "Para juntar os dois fluxos no mesmo destino existe `2>&1` (\"o fluxo 2 vai para onde o 1 está indo agora\"). A **ordem** em que você escreve os redirecionamentos importa.",
+    "Para mostrar na tela e gravar ao mesmo tempo existe o comando `tee`, que lê a entrada de um pipe. Ele tem uma opção para **acrescentar** em vez de sobrescrever.",
+    "Como o `tee` lê de um pipe e o pipe só transporta a saída padrão, junte o erro à saída padrão **antes** do `|`."
+  ],
+  "solucao": "```\ncd ~/lab/f103-4-redir-tee\n./coleta.sh > saida.txt 2> erros.txt\n./coleta.sh 2>&1 | tee -a historico.txt\n```\n`> arquivo` redireciona o fluxo 1 e `2> arquivo` o fluxo 2. Na segunda linha, `2>&1` faz o erro padrão seguir a saída padrão para dentro do pipe, e `tee -a` copia a entrada para a tela **e** acrescenta (`-a`, de *append*) ao arquivo; sem `-a` o `tee` sobrescreveria o histórico. Pegadinhas: (1) `cmd > arq 2>&1` junta os dois no arquivo, mas `cmd 2>&1 > arq` **não** (o `2>&1` é avaliado antes e copia o destino antigo do 1, a tela); (2) `cmd | tee arq` só leva a saída padrão — o erro passa direto para a tela; (3) `>` no lugar de `>>`/`-a` apaga o conteúdo anterior."
+}

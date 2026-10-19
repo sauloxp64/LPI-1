@@ -1,0 +1,552 @@
+### 110.3-001 | unica | 1
+ref: 102:p.556
+tags: ssh, known_hosts, fingerprint
+Na primeira conexão SSH a um servidor desconhecido, o cliente exibe a impressão digital (fingerprint) da chave do host e pergunta `Are you sure you want to continue connecting (yes/no)?`. O que acontece ao responder `yes`?
+- A chave pública do usuário é copiada para o arquivo `authorized_keys` do servidor, liberando logins futuros
+- Um novo par de chaves do cliente é gerado e gravado em `~/.ssh/id_ecdsa` e `~/.ssh/id_ecdsa.pub`
+= A chave pública do servidor é gravada em `~/.ssh/known_hosts` e conferida nas próximas conexões
+- A senha digitada em seguida é guardada em `~/.ssh/known_hosts` para dispensar novos pedidos de senha
+> A chave pública do servidor (de que o fingerprint é um resumo) é adicionada ao banco de hosts conhecidos, `~/.ssh/known_hosts` (o diretório `~/.ssh` e o arquivo são criados nessa primeira conexão). A partir daí o cliente autentica o servidor comparando a chave apresentada com a registrada. O ideal é conferir o fingerprint por um canal confiável, por exemplo com `ssh-keygen -l -f /etc/ssh/ssh_host_ecdsa_key.pub` no servidor. As chaves do usuário (`id_*`) e o `authorized_keys` não são alterados.
+
+### 110.3-002 | unica | 2
+ref: 102:p.557-558
+tags: ssh, known_hosts, ssh-keygen -R
+A usuária carol tenta acessar `192.168.1.77`, endereço que o DHCP passou a atribuir a outra máquina, e recebe:
+
+```
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Offending ECDSA key in /home/carol/.ssh/known_hosts:1
+Host key verification failed.
+```
+
+Carol sabe que se trata de uma máquina nova, e não de um ataque. Qual é o procedimento correto para voltar a conectar?
+- Gerar um novo par de chaves no cliente com `ssh-keygen -t ecdsa` e copiá-lo ao servidor
+= Remover a entrada antiga com `ssh-keygen -R 192.168.1.77` e reconectar, aceitando a nova chave
+- Apagar `/etc/ssh/ssh_host_ecdsa_key` no servidor e reiniciar o `sshd` para gerar outra chave de host
+- Executar `ssh-add -D` para limpar o agente de autenticação e repetir a conexão ao servidor
+> O aviso significa que a chave de host apresentada difere da registrada em `~/.ssh/known_hosts` para aquele endereço (reuso de IP por DHCP, servidor reinstalado... ou um ataque man-in-the-middle, por isso se confere o fingerprint). Como a própria mensagem sugere, `ssh-keygen -R <host>` remove do `known_hosts` todas as chaves daquele host (e guarda cópia em `known_hosts.old`); em seguida, a próxima conexão pergunta de novo e registra a nova chave. O problema é a chave do servidor, e não a do usuário; `ssh-add` só lida com chaves do cliente, e apagar a chave de host no servidor só criaria uma terceira identidade.
+
+### 110.3-003 | lacuna | 1
+ref: 102:p.556-557
+tags: ssh, known_hosts
+Informe o caminho do arquivo do usuário (use o til `~`) em que o cliente SSH registra as chaves públicas dos servidores já conhecidos:
+= ~/.ssh/known_hosts
+= .ssh/known_hosts
+= $HOME/.ssh/known_hosts
+> `~/.ssh/known_hosts` é o banco de hosts conhecidos de cada usuário. Nas instalações do Debian o cliente grava os nomes de host já com hash (linhas iniciadas por `|1|`), e `ssh-keygen -F host` ou `-R host` continuam funcionando com eles. Existe ainda um arquivo global, `/etc/ssh/ssh_known_hosts`.
+
+### 110.3-004 | unica | 2
+ref: 102:p.554
+tags: ssh_known_hosts, ssh
+Qual arquivo guarda uma lista global de chaves públicas de servidores conhecidos, consultada para todos os usuários do cliente além do `~/.ssh/known_hosts` de cada um?
+- `/etc/ssh/ssh_config`
+= `/etc/ssh/ssh_known_hosts`, lista global do sistema
+- `/etc/ssh/ssh_host_rsa_key.pub`
+- `/etc/ssh/sshd_config`
+> Segundo `ssh(1)`, `/etc/ssh/ssh_known_hosts` é a lista de chaves de host válida para todo o sistema, preparada pelo administrador e legível por todos. Não confunda com `ssh_host_rsa_key.pub`, que é a chave pública do próprio host quando ele atua como servidor. `ssh_config` e `sshd_config` guardam opções (de cliente e de servidor), e não chaves.
+
+### 110.3-005 | unica | 1
+ref: 102:p.562
+tags: ssh_config, sshd_config
+Em qual arquivo se ajusta o comportamento do cliente `ssh` para todos os usuários da máquina?
+= `/etc/ssh/ssh_config`
+- `/etc/ssh/sshd_config`
+- `~/.ssh/authorized_keys`
+- `/etc/ssh/moduli`
+> `/etc/ssh/ssh_config` é a configuração global do cliente (cada usuário pode ter ainda o seu `~/.ssh/config`). `sshd_config` configura o servidor `sshd` e é a pegadinha clássica pela diferença de uma letra. `authorized_keys` lista as chaves públicas aceitas para login e `moduli` guarda parâmetros usados na troca de chaves, não opções do cliente.
+
+### 110.3-006 | unica | 1
+ref: 102:p.557
+tags: ssh, comando remoto
+Qual comando executa `ls` no host `halof` como a usuária `ina` e devolve o controle ao terminal local, sem deixar uma sessão interativa aberta?
+= `ssh ina@halof ls`
+- `scp ina@halof ls`
+- `ssh ina@halof:ls`
+- `sftp ina@halof ls`
+> Quando se passa um comando depois do destino, o `ssh` o executa no host remoto, mostra a saída e encerra. `scp` copia arquivos, a sintaxe `host:caminho` é do `scp` (no `ssh` o `:` entra no nome do host e a resolução falha), e `sftp` abre uma sessão de transferência de arquivos.
+
+### 110.3-007 | unica | 3
+ref: 102:p.559-560, 102:p.572-573
+tags: ssh-agent, ssh-add, authorized_keys
+Qual sequência está correta para acessar `halof` com login por chave pública usando o agente SSH?
+- `ssh-agent` → `ssh-add` → `ssh-keygen` → criar `~/.ssh` no servidor → incluir a chave pública em `authorized_keys` → `ssh`
+- `ssh-keygen` → `ssh` → criar `~/.ssh` no servidor → incluir a chave pública em `authorized_keys` → `ssh-agent` → `ssh-add`
+= `ssh-keygen` → criar `~/.ssh` no servidor → incluir a chave pública em `authorized_keys` → `ssh-agent` → `ssh-add` → `ssh`
+- `ssh-keygen` → criar `~/.ssh` no servidor → incluir a chave pública em `authorized_keys` → `ssh-add` → `ssh-agent` → `ssh`
+> Há dependências: a chave precisa existir antes de ser copiada ou carregada (`ssh-keygen` primeiro); o `authorized_keys` do servidor precisa conter a chave pública antes da conexão; e o agente precisa estar em execução antes do `ssh-add`, que só então guarda a chave privada na memória (pedindo a frase secreta uma vez). Só a terceira alternativa respeita todas elas. Nas outras, `ssh-add` não encontra chave ou agente, ou a conexão acontece antes de o servidor conhecer a chave pública.
+
+### 110.3-008 | unica | 1
+ref: 102:p.559
+tags: authorized_keys, chave pública
+Depois de gerar um par de chaves no cliente, em qual arquivo do servidor deve ser acrescentada a chave pública de `carol` para que ela entre como `ina` sem digitar a senha?
+- `~/.ssh/known_hosts` da usuária `ina`, no servidor
+- `/etc/ssh/ssh_host_ecdsa_key.pub`, no servidor
+= `~/.ssh/authorized_keys` da usuária `ina`
+- `~/.ssh/id_ecdsa` da usuária `ina`, no servidor
+> O `sshd` consulta `~/.ssh/authorized_keys` do usuário de destino (aqui, `ina`) para saber quais chaves públicas podem autenticar logins sem senha. A cópia pode ser feita com `ssh-copy-id`, `scp` ou, como no material, `cat id_ecdsa.pub | ssh ina@host 'cat >> .ssh/authorized_keys'`. `known_hosts` fica no cliente e guarda chaves de servidores; `ssh_host_*` identifica o servidor; `id_ecdsa` é a chave privada do próprio usuário.
+
+### 110.3-009 | lacuna | 2
+ref: 102:p.574
+tags: ssh-copy-id
+Qual comando instala automaticamente a chave pública do cliente no `~/.ssh/authorized_keys` de `ina@192.168.1.77`? Complete:
+
+`____ ina@192.168.1.77`
+= ssh-copy-id
+> O `ssh-copy-id` conecta ao servidor (pedindo a senha uma última vez), cria `~/.ssh` com modo 700, se necessário, e acrescenta a chave pública a `authorized_keys` (modo 600). É a forma prática de fazer o que o material mostra com `cat ... | ssh ... 'cat >> .ssh/authorized_keys'`. Pode-se escolher a chave com `-i ~/.ssh/id_ed25519.pub`.
+
+### 110.3-010 | multipla | 3
+ref: 102:p.559
+tags: authorized_keys, permissões, StrictModes
+Com a configuração padrão do `sshd` (`StrictModes yes`), quais permissões fazem o servidor ignorar a chave pública de `ina` em `~/.ssh/authorized_keys` e voltar a pedir a senha?
+= o diretório `~/.ssh` com modo 777
+- o arquivo `authorized_keys` com modo 644
+= o arquivo `authorized_keys` com modo 666
+- o diretório `~/.ssh` com modo 755
+= o diretório pessoal `/home/ina` com modo 777
+- o diretório `~/.ssh` com modo 700
+> O `sshd` com `StrictModes` recusa a chave quando o arquivo `authorized_keys`, o `~/.ssh` ou o diretório pessoal podem ser alterados por outros usuários (registro: `Authentication refused: bad ownership or modes for file/directory ...`). Testado: 777 em `~/.ssh`, 666 em `authorized_keys` e 777 no diretório pessoal geraram recusa; 644 em `authorized_keys`, 755 e 700 em `~/.ssh` funcionaram. A prática recomendada é 700 para `~/.ssh` e 600 para `authorized_keys`.
+
+### 110.3-011 | unica | 1
+ref: 102:p.561
+tags: ssh-keygen, DSA
+Qual algoritmo de chave pública do OpenSSH é considerado inseguro e foi preterido a partir do OpenSSH 7.0?
+- RSA
+= DSA
+- ECDSA
+- Ed25519
+> O DSA (Digital Signature Algorithm) tem chaves de exatamente 1024 bits, é considerado inseguro e deixou de ser aceito por padrão no OpenSSH 7.0. ECDSA (curvas elípticas de 256, 384 ou 521 bits) e Ed25519 (256 bits) são mais modernos, e o RSA continua em uso, com mínimo de 1024 bits e tamanhos maiores recomendados.
+
+### 110.3-012 | unica | 2
+ref: 102:p.559, 102:p.561
+tags: ssh-keygen, ecdsa, -b
+Qual comando gera um par de chaves ECDSA de 384 bits?
+= `ssh-keygen -t ecdsa -b 384`
+- `ssh-keygen -t ecdsa -b 512`
+- `ssh-keygen -t ecdsa384`
+- `ssh-keygen -t ed25519 -b 384`
+> `-t` escolhe o tipo e `-b` o tamanho em bits. Para ECDSA, só são válidos 256, 384 e 521 bits (testado: `-b 512` falha com "Invalid ECDSA key length: valid lengths are 256, 384 or 521 bits"). `ecdsa384` não é um tipo válido, e no Ed25519 o `-b` é ignorado, pois o tamanho é fixo.
+
+### 110.3-013 | lacuna | 1
+ref: 102:p.561
+tags: ssh-keygen, ed25519
+As chaves Ed25519 têm tamanho fixo de ____ bits.
+= 256
+> O Ed25519 (EdDSA sobre a curva 25519) usa sempre 256 bits (testado: `ssh-keygen -t ed25519 -b 521` ainda gera uma chave de 256 bits). É considerado o mais seguro dos algoritmos listados no material.
+
+### 110.3-014 | multipla | 2
+ref: 102:p.558-559
+tags: ssh-keygen, id_ed25519, chave privada
+A usuária carol executa `ssh-keygen -t ed25519`, aceita o caminho padrão e informa uma frase secreta. Quais afirmações estão corretas?
+= `~/.ssh/id_ed25519` é a chave privada e nunca deve ser compartilhada
+- `~/.ssh/id_ed25519.pub` é a chave privada e deve ficar em segredo
+= `~/.ssh/id_ed25519.pub` é a chave pública, a que vai para o `authorized_keys` do servidor
+- A chave pública é instalada sozinha em todos os servidores que carol já acessou
+= A frase secreta protege a chave privada caso o arquivo seja copiado por terceiros
+- Os arquivos são gravados em `/etc/ssh/`, com os nomes `ssh_host_ed25519_key*`
+> O par é gravado em `~/.ssh/` como `id_ed25519` (privada, modo 600) e `id_ed25519.pub` (pública, modo 644). A frase secreta cifra a chave privada: sem ela, quem obtiver o arquivo não consegue usá-lo. A cópia da chave pública para os servidores é manual (`ssh-copy-id`, `scp`...). Os arquivos `/etc/ssh/ssh_host_*` são as chaves do host, usadas pelo servidor para se identificar, e não as do usuário.
+
+### 110.3-015 | unica | 2
+ref: 102:p.562-563
+tags: ssh-keygen -l, fingerprint, chave de host
+Qual comando exibe a impressão digital (fingerprint) da chave pública `ssh_host_ed25519_key.pub` do servidor?
+= `ssh-keygen -l -f /etc/ssh/ssh_host_ed25519_key.pub`
+- `ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key.pub`
+- `ssh-keygen -p -f /etc/ssh/ssh_host_ed25519_key.pub`
+- `ssh-keygen -R /etc/ssh/ssh_host_ed25519_key.pub -f ~/.ssh/known_hosts`
+> `-l` mostra o fingerprint (com `-f` indicando o arquivo; acrescentar `-v` mostra também a imagem "randomart"). Isso permite comparar o valor com o exibido pelo cliente na primeira conexão. `-y` imprime a chave pública a partir de uma chave privada, `-p` altera a frase secreta e `-R` remove um host do `known_hosts`.
+
+### 110.3-016 | lacuna | 2
+ref: 102:p.558-559
+tags: ssh-keygen, frase secreta
+Complete o comando para alterar a frase secreta de uma chave privada já existente:
+
+`ssh-keygen ____ -f ~/.ssh/id_ed25519`
+= -p
+> `ssh-keygen -p` pede a frase atual e a nova (ou recebe `-P` e `-N` na linha de comando) e regrava a chave privada protegida pela nova frase. Testado com `-p -P "" -N "novaFrase" -f ...`.
+
+### 110.3-017 | unica | 2
+ref: 102:p.560
+tags: ssh-agent, ssh-add, frase secreta
+Qual é a principal vantagem de usar o `ssh-agent` com o `ssh-add`?
+- A chave privada deixa de existir em disco e passa a ser guardada apenas no servidor remoto
+= A frase secreta é digitada uma só vez e a chave fica na memória durante a sessão
+- A chave pública é copiada para o `authorized_keys` de cada servidor acessado
+- O tráfego SSH deixa de ser cifrado, o que torna as conexões repetidas mais rápidas
+> O agente guarda as chaves privadas já decifradas na memória, então o `ssh` as usa sem pedir de novo a frase secreta: segurança (a chave continua protegida em disco) com conveniência. Ele não move a chave para o servidor, não copia chaves públicas (isso é `ssh-copy-id`) e não altera a criptografia da conexão.
+
+### 110.3-018 | lacuna | 1
+ref: 102:p.560
+tags: ssh-add
+Qual opção do `ssh-add` lista as impressões digitais das identidades carregadas no agente?
+
+`ssh-add ____`
+= -l
+> `ssh-add -l` mostra uma linha por identidade (tamanho, fingerprint, comentário e tipo); sem identidades, exibe "The agent has no identities." e retorna 1. `-L` mostra as chaves públicas completas, `-d` remove uma identidade e `-D` remove todas.
+
+### 110.3-019 | unica | 3
+ref: 102:p.560
+tags: ssh-agent, SSH_AUTH_SOCK, eval
+Um usuário executa estes comandos:
+
+```
+$ ssh-agent
+SSH_AUTH_SOCK=/tmp/ssh-QUT0CciEcgEz/agent.28; export SSH_AUTH_SOCK;
+SSH_AGENT_PID=30; export SSH_AGENT_PID;
+echo Agent pid 30;
+$ ssh-add
+Could not open a connection to your authentication agent.
+```
+
+Qual é a causa do erro e a correção?
+- O agente exige privilégios de root; é preciso repetir os comandos com `sudo`
+- A chave privada está com permissões abertas demais e precisa de `chmod 600 ~/.ssh/id_*`
+= As variáveis do agente não foram aplicadas ao shell; use `eval "$(ssh-agent)"`
+- O `ssh-add` só funciona depois de `ssh-copy-id` ter sido executado para o servidor
+> `ssh-agent` apenas imprime os comandos que definem `SSH_AUTH_SOCK` e `SSH_AGENT_PID`; sem executá-los no shell atual (`eval "$(ssh-agent)"`), o `ssh-add` não sabe onde está o agente. A alternativa do material é `ssh-agent /bin/bash`, que inicia um novo shell já com o ambiente configurado. Não é problema de privilégios, de permissão de arquivo, nem depende do `ssh-copy-id`.
+
+### 110.3-020 | unica | 1
+ref: 102:p.562
+tags: ssh_host_key, chave de host
+Qual é a função das chaves de host armazenadas em `/etc/ssh/ssh_host_*_key` no servidor OpenSSH?
+= Identificar o servidor perante os clientes, que conferem a chave com o `known_hosts`
+- Autenticar os usuários que entram no servidor, no lugar das senhas e das chaves pessoais
+- Criptografar os arquivos pessoais dos usuários que ficam no disco do servidor
+- Assinar os pacotes instalados pelo gerenciador de pacotes da distribuição
+> O servidor tem um par de chaves por algoritmo (RSA, ECDSA, Ed25519 e, em instalações antigas, DSA) e usa-o para provar sua identidade ao cliente. O cliente guarda a chave pública em `known_hosts` e avisa se ela mudar. Quem autentica usuários são as chaves de `~/.ssh/authorized_keys` ou as senhas; as chaves de host nada têm a ver com disco ou pacotes.
+
+### 110.3-021 | lacuna | 2
+ref: 102:p.562
+tags: ssh_host_key, permissões
+As chaves privadas de host, como `/etc/ssh/ssh_host_rsa_key`, ficam legíveis e graváveis apenas pelo proprietário (root). Informe o modo octal (três dígitos) dessas permissões:
+= 600
+= 0600
+> `-rw-------` equivale a 600. As chaves públicas correspondentes (`ssh_host_rsa_key.pub`) ficam com 644 (`-rw-r--r--`). O mesmo padrão vale para as chaves de usuário em `~/.ssh`: `id_*` com 600 e `id_*.pub` com 644. Chaves privadas acessíveis a outros usuários podem ser rejeitadas pelo `ssh`/`sshd`.
+
+### 110.3-022 | unica | 3
+ref: 102:p.557-558, 102:p.562
+tags: ssh_host_key, known_hosts, reinstalação
+Depois da reinstalação do servidor `halof`, todos os clientes passaram a ver o aviso `REMOTE HOST IDENTIFICATION HAS CHANGED`. O que o administrador do servidor poderia ter feito para evitá-lo?
+- Copiar o `~/.ssh/known_hosts` de cada cliente para o servidor
+- Copiar o `/etc/ssh/ssh_config` de um dos clientes para o servidor reinstalado
+= Restaurar os arquivos `/etc/ssh/ssh_host_*` originais a partir de uma cópia de segurança
+- Gerar um novo `~/.ssh/id_rsa` para cada usuário do servidor
+> Os clientes comparam a chave de host que o servidor apresenta com a registrada em `known_hosts`. Se a reinstalação gera novas chaves de host (o `sshd` cria as ausentes; `ssh-keygen -A` faz o mesmo), a identidade muda e o aviso aparece. Restaurar o conjunto `ssh_host_*` (privadas e públicas, com as mesmas permissões) preserva a identidade. Os arquivos dos clientes ou do usuário não influem nisso.
+
+### 110.3-023 | unica | 2
+ref: 102:p.563-564
+tags: ssh -L, túnel local
+Qual é o efeito do comando abaixo?
+
+```
+$ ssh -L 8585:www.gnu.org:80 ina@halof
+```
+- Conexões à porta 8585 de `halof` são levadas, pelo túnel, à porta 80 da máquina cliente
+- A porta 80 de `www.gnu.org` fica acessível na 8585 de qualquer host da rede, por padrão
+= Conexões à porta local 8585 seguem pelo túnel até `halof` e dali para `www.gnu.org:80`
+- Todo o tráfego do cliente passa a seguir por `halof`, como um proxy SOCKS na porta 8585
+> `-L [bind:]porta_local:host_destino:porta_destino` cria um túnel local (a porta é aberta no cliente). Acessar `http://localhost:8585` leva a `www.gnu.org:80`, com o trecho entre cliente e `halof` cifrado. A direção inversa é a do `-R`; o proxy SOCKS é o encaminhamento dinâmico (`-D`); e, por padrão, a porta escuta só em loopback, não "em qualquer host".
+
+### 110.3-024 | unica | 2
+ref: 102:p.565
+tags: ssh -N, ssh -f, túnel
+No comando `ssh -L 8585:www.gnu.org:80 -Nf ina@halof`, o que fazem as opções `-N` e `-f`?
+- `-N`: nega novas conexões ao túnel; `-f`: fecha o túnel após a primeira conexão
+= `-N`: não executa comando remoto nem abre shell (só o túnel); `-f`: vai para segundo plano
+- `-N`: vai para segundo plano; `-f`: não executa comando remoto
+- `-N`: ignora o `known_hosts`; `-f`: ignora o `authorized_keys`
+> `-N` informa ao `ssh` que não deve executar comando remoto nem abrir shell (ideal para túneis), e `-f` o envia para segundo plano logo após a autenticação, devolvendo o terminal. Sem `-f`, o `ssh -N` continua em primeiro plano (testado). As alternativas trocam as funções ou inventam efeitos que as opções não têm.
+
+### 110.3-025 | unica | 3
+ref: 102:p.564, 102:p.573
+tags: ssh -L, localhost, túnel
+O usuário executa o comando abaixo na máquina cliente e depois abre `http://localhost:8888` no navegador dessa mesma máquina:
+
+```
+$ ssh -L 8888:localhost:80 -Nf ina@halof
+```
+
+O que aparece?
+- A página do servidor web instalado na própria máquina cliente, onde roda o navegador
+- Uma recusa de conexão, pois a porta 8888 do cliente não tem nenhum serviço
+- Uma página de erro, pois a porta 80 só pode ser encaminhada com `-R`
+= A página do servidor web de `halof`, pois `localhost` vale do lado do servidor
+> No `-L`, o host de destino (`localhost`) é resolvido pelo servidor SSH, na outra ponta do túnel; portanto `localhost:80` significa a porta 80 de `halof`. O `ssh` abre a porta 8888 no cliente, de modo que não há recusa de conexão. `-R` seria o caso inverso, em que a porta é aberta no servidor.
+
+### 110.3-026 | unica | 2
+ref: 102:p.565
+tags: ssh -R, túnel remoto, GatewayPorts
+Qual é o efeito do comando abaixo, executado no cliente?
+
+```
+$ ssh -R 8585:localhost:80 -Nf ina@192.168.1.77
+```
+- A porta 8585 passa a escutar no cliente, e o tráfego é enviado à porta 80 do servidor remoto
+= A porta 8585 passa a escutar no servidor, e o tráfego volta à porta 80 do cliente
+- A porta 80 do cliente deixa de ser acessível e responde apenas pela porta 8585
+- O túnel só funciona enquanto houver uma sessão interativa de `ina` aberta no servidor
+> `-R` cria um túnel remoto (reverso): a porta 8585 é aberta no servidor SSH e o tráfego recebido nela é devolvido pelo túnel ao cliente, que o entrega a `localhost:80`. Assim, quem acessar `192.168.1.77:8585` chega ao servidor web do cliente. Por padrão o `sshd` abre essa porta apenas em loopback; para aceitar conexões de outras máquinas é preciso `GatewayPorts yes` (ou `clientspecified`) no `sshd_config` (testado). Com `-N` não é necessária sessão interativa.
+
+### 110.3-027 | unica | 1
+ref: 102:p.566
+tags: ssh -X, X11
+Qual opção do `ssh` habilita o encaminhamento de X11, exibindo na máquina local os aplicativos gráficos executados no servidor?
+= `-X`
+- `-x`
+- `-L 8585:host:80`
+- `-R 8585:host:80`
+> `ssh -X ina@halof` ativa o X11 forwarding; o aplicativo (por exemplo, o `firefox`) roda no servidor e sua janela aparece na máquina local. No servidor, o `sshd_config` precisa ter `X11Forwarding yes`. O `-x` (minúsculo) faz o contrário, desabilitando-o, e `-L`/`-R` são túneis de portas TCP. Testado: com `-X` a sessão remota recebe `DISPLAY=localhost:10.0`; com `-x`, `DISPLAY` fica vazio.
+
+### 110.3-028 | multipla | 2
+ref: 102:p.566-567
+tags: sshd_config, AllowTcpForwarding, GatewayPorts, X11Forwarding
+Quais diretivas de `/etc/ssh/sshd_config` estão relacionadas ao encaminhamento de portas (local e remoto) e ao túnel X11, conforme o material da LPI?
+= `AllowTcpForwarding`
+- `PermitRootLogin`
+= `GatewayPorts`
+- `AllowUsers`
+= `X11Forwarding`
+- `PubkeyAuthentication`
+> `AllowTcpForwarding` controla o encaminhamento de portas TCP, `GatewayPorts` define se as portas encaminhadas remotamente (`-R`) aceitam conexões de outras máquinas e `X11Forwarding` liga ou desliga o túnel X11. `PermitRootLogin` (login do root), `AllowUsers` (lista de contas autorizadas a usar o SSH) e `PubkeyAuthentication` (autenticação por chave) são diretivas de segurança, mas não de encaminhamento.
+
+### 110.3-029 | unica | 3
+ref: 102:p.563-564
+tags: ssh -L, bind_address, túnel
+Por padrão, a porta local aberta por `ssh -L 8585:www.gnu.org:80 -Nf ina@halof` só aceita conexões do próprio cliente. Como permitir que outras máquinas da rede a usem?
+- `ssh -L 8585:0.0.0.0:80 -Nf ina@halof`
+= `ssh -L 0.0.0.0:8585:www.gnu.org:80 -N -f ina@halof`
+- `ssh -L 8585:www.gnu.org:80 -Nf ina@0.0.0.0`
+- `ssh -R 0.0.0.0:8585:www.gnu.org:80 -Nf ina@halof`
+> O formato completo é `-L [bind_address:]porta:host:porta_destino`. Sem `bind_address`, o `ssh` escuta só em loopback (testado: `127.0.0.1` e `::1`); com `0.0.0.0:8585:...` (ou `*:8585:...`) a porta passa a escutar em todas as interfaces. Colocar `0.0.0.0` no destino ou no host de login muda outra coisa; e `-R` abre a porta no servidor, não no cliente.
+
+### 110.3-030 | unica | 2
+ref: 102:p.574
+tags: ssh -L, múltiplos túneis
+Qual comando cria, de uma só vez, os túneis locais 8080 → `www.gnu.org:80` e 8585 → `www.melpa.org:80`, ambos por `halof` como usuário `ina`, em segundo plano e sem comando remoto?
+- `ssh -L 8080:www.gnu.org:80,8585:www.melpa.org:80 -Nf ina@halof`
+- `ssh -R 8080:www.gnu.org:80 -R 8585:www.melpa.org:80 -Nf ina@halof`
+= `ssh -L 8080:www.gnu.org:80 -L 8585:www.melpa.org:80 -N -f ina@halof`
+- `ssh -L 8080:8585:www.gnu.org:www.melpa.org:80 -Nf ina@halof`
+> A opção `-L` pode ser repetida, uma vez por túnel. Não existe lista separada por vírgulas nem combinação de duas portas locais (testado: ambas as formas dão "Bad local forwarding specification"). Com `-R` as portas seriam abertas no servidor.
+
+### 110.3-031 | unica | 1
+ref: 102:p.575-576, 102:p.582
+tags: gpg, chave pública, cifrar
+A usuária ina quer enviar a carol um arquivo cifrado que somente carol consiga ler. Qual chave ina usa para cifrar o arquivo?
+- A chave privada de carol, que só ela possui
+= A chave pública de carol
+- A chave privada da própria ina, que só ela possui
+- A chave pública da própria ina, que ela distribui
+> Na criptografia de chave pública, tudo o que é cifrado com uma das chaves só é decifrado pela outra do par. Para sigilo, cifra-se com a chave pública do destinatário (carol), que será a única a decifrar com a sua chave privada. A chave privada de ina serve para assinar, e a pública de ina, para que outros verifiquem as assinaturas dela.
+
+### 110.3-032 | lacuna | 1
+ref: 102:p.576
+tags: gpg, gen-key
+Qual opção do `gpg` gera um novo par de chaves com os parâmetros padrão, pedindo apenas nome e e-mail?
+
+`gpg ____`
+= --gen-key
+= --generate-key
+> `gpg --gen-key` (sinônimo de `--generate-key`) cria o par de chaves, cria o diretório `~/.gnupg` se necessário e grava também um certificado de revogação em `~/.gnupg/openpgp-revocs.d/`. Para escolher algoritmo, tamanho e validade, usa-se `--full-generate-key`. No GnuPG 2.2 testado, o padrão é RSA de 3072 bits.
+
+### 110.3-033 | unica | 2
+ref: 102:p.577-578
+tags: gpg, pubring.kbx, ~/.gnupg
+Qual item de `~/.gnupg` guarda o chaveiro público, isto é, as chaves públicas do usuário e as importadas de terceiros?
+- `trustdb.gpg`
+= `pubring.kbx`
+- `private-keys-v1.d`
+- `openpgp-revocs.d`
+> `pubring.kbx` é o chaveiro público (no GnuPG 2.1 em diante, substitui `pubring.gpg` e `secring.gpg`). `trustdb.gpg` é o banco de dados de confiança (Web of Trust), `private-keys-v1.d` guarda as chaves privadas e `openpgp-revocs.d`, os certificados de revogação gerados junto com as chaves.
+
+### 110.3-034 | lacuna | 2
+ref: 102:p.578
+tags: gpg, private-keys-v1.d
+No GnuPG 2.1 ou superior, as chaves privadas ficam em um diretório de `~/.gnupg` com permissões restritivas. Informe o nome desse diretório (apenas o nome):
+= private-keys-v1.d
+= private-keys-v1.d/
+> `private-keys-v1.d` guarda as chaves privadas (gerenciadas pelo `gpg-agent`) e deve ser acessível só ao dono (modo 700). Não existe mais o arquivo `secring.gpg` das versões anteriores à 2.1.
+
+### 110.3-035 | lacuna | 2
+ref: 102:p.578, 102:p.591
+tags: gpg, KEY-ID, fingerprint
+Conforme o material da LPI, o KEY-ID corresponde aos 8 últimos dígitos hexadecimais da impressão digital. Qual é o KEY-ID da impressão digital abaixo (escreva sem espaços, em maiúsculas)?
+
+`07A6 5898 2D3A F3DD 43E3 DA95 1F3F 3147 FA7F 54C7`
+= FA7F54C7
+= 0xFA7F54C7
+= fa7f54c7
+> A impressão digital (fingerprint) identifica a chave inteira; o KEY-ID curto são os últimos 8 dígitos (`FA7F 54C7`). O `gpg --fingerprint USER-ID` mostra a impressão digital completa. Versões modernas do GnuPG usam também o KEY-ID longo, com os últimos 16 dígitos (`1F3F3147FA7F54C7`), por serem mais resistentes a colisões.
+
+### 110.3-036 | lacuna | 2
+ref: 102:p.579
+tags: gpg, export, armor
+Complete o comando para exportar a chave pública de carol em formato ASCII (texto), adequado para enviar por e-mail:
+
+`gpg --export ____ carol > carol.asc`
+= --armor
+= -a
+> `--armor` (`-a`) produz saída ASCII blindada ("armored"), iniciada por `-----BEGIN PGP PUBLIC KEY BLOCK-----`. Sem ela, `gpg --export` grava o formato binário OpenPGP, que não deve ser colado em e-mails.
+
+### 110.3-037 | unica | 2
+ref: 102:p.579
+tags: gpg, keyserver, --send-keys
+Qual comando envia a chave pública de um usuário a um servidor de chaves, para distribuí-la globalmente?
+= `gpg --keyserver keys.openpgp.org --send-keys KEY-ID`
+- `gpg --keyserver keys.openpgp.org --search-keys KEY-ID`
+- `gpg --keyserver keys.openpgp.org --recv-keys KEY-ID`
+- `gpg --keyserver keys.openpgp.org --import KEY-ID`
+> `--send-keys` publica a chave no servidor, e outros usuários a obtêm com `--recv-keys` (operação inversa: baixa e importa). `--search-keys` apenas pesquisa chaves no servidor, e `--import` lê chaves de um arquivo, e não de um identificador. Para enviar sem servidor, a chave é exportada com `gpg --export`.
+
+### 110.3-038 | unica | 2
+ref: 102:p.582-583
+tags: gpg, encrypt, recipient, armor
+Qual comando cifra `relatorio.txt` para a usuária `carol`, gerando o arquivo ASCII `relatorio.asc`?
+- `gpg --output relatorio.asc --recipient carol --armor --decrypt relatorio.txt`
+- `gpg --output relatorio.asc --local-user carol --armor --encrypt relatorio.txt`
+- `gpg --output relatorio.asc --recipient carol --armor --sign relatorio.txt`
+= `gpg --output relatorio.asc --recipient carol --armor --encrypt relatorio.txt`
+> `--encrypt` (`-e`) cifra, `--recipient` (`-r`) indica de quem é a chave pública usada, `--armor` (`-a`) gera texto ASCII e `--output` (`-o`) define o arquivo de saída. `--local-user` (`-u`) escolhe a chave usada para assinar, e não o destinatário; `--sign` só assina; `--decrypt` faz o caminho inverso. Se a chave de carol ainda não for confiável, o `gpg` pergunta `Use this key anyway? (y/N)`.
+
+### 110.3-039 | unica | 2
+ref: 102:p.583-584
+tags: gpg, decrypt, chave privada
+Ina cifrou o arquivo `m.gpg` para carol. Ao tentar decifrá-lo com a própria conta, vê:
+
+```
+$ gpg --decrypt m.gpg
+gpg: encrypted with 3072-bit RSA key, ID 7AA6D405869E106E, created 2026-10-19
+      "carol <carol@debian>"
+gpg: decryption failed: No secret key
+```
+
+Por que a decifração falha?
+- O arquivo foi corrompido na transferência entre as máquinas, e ina deve pedir o reenvio
+= Só a chave privada de carol, a destinatária, decifra a mensagem; ina não a possui
+- Falta a opção `--armor`, que é obrigatória na decifração de qualquer arquivo cifrado
+- A chave pública de carol expirou, e ina precisa importá-la de novo
+> A mensagem foi cifrada com a chave pública de carol; só a chave privada correspondente (guardada em `~/.gnupg/private-keys-v1.d` de carol) a decifra, e é isso que a mensagem "No secret key" indica. Corrupção geraria erro de integridade; `--armor` é uma opção de saída ao cifrar, e não requisito ao decifrar; e a chave pública nem é usada na decifração.
+
+### 110.3-040 | lacuna | 2
+ref: 102:p.584, 102:p.593
+tags: gpg, clearsign
+Qual opção do `gpg` assina um arquivo de texto mantendo o conteúdo legível, com a assinatura ASCII anexada ao final?
+
+`gpg ____ mensagem.txt`
+= --clearsign
+> `--clearsign` gera `mensagem.txt.asc` com o texto original entre `-----BEGIN PGP SIGNED MESSAGE-----` e o bloco de assinatura. Já `--sign` (`-s`) comprime e assina em formato binário, e `--detach-sign` (`-b`) grava a assinatura separada do arquivo.
+
+### 110.3-041 | unica | 3
+ref: 102:p.585
+tags: gpg, verify, confiança
+Ina verifica um arquivo assinado por carol:
+
+```
+$ gpg --verify message.sig
+gpg: Signature made Sat 04 jul 2020 14:34:41 CEST
+gpg:                using RSA key D18FA0021F644CDAF57FD0F919BBEFD16813034E
+gpg: Good signature from "carol <carol@debian>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+```
+
+O que esse resultado significa?
+- A assinatura é inválida, pois o arquivo foi alterado depois de assinado
+- A chave de carol foi revogada, e a assinatura deve ser descartada
+= A assinatura confere com o conteúdo, mas não há garantia de que a chave pertença mesmo a carol
+- A assinatura é válida e a identidade de carol foi confirmada por uma cadeia de confiança
+> `Good signature` indica que o conteúdo não foi alterado e que a assinatura foi feita pela chave mostrada. O aviso e o `[unknown]` informam que ina ainda não certificou nem confiou nessa chave (Web of Trust), então não há garantia de que ela pertença a quem diz. Arquivo alterado resultaria em `BAD signature`; chave revogada seria apontada como tal.
+
+### 110.3-042 | unica | 2
+ref: 102:p.584-585
+tags: gpg, detach-sign, verify
+Carol gerou uma assinatura destacada com `gpg --detach-sign relatorio.txt`, que criou `relatorio.txt.sig`. Depois, o conteúdo de `relatorio.txt` foi alterado. O que acontece ao executar `gpg --verify relatorio.txt.sig relatorio.txt`?
+- Mostra `Good signature`, pois a assinatura destacada fica no `.sig` e não depende do arquivo
+- Mostra `Good signature`, mas avisa que o arquivo foi modificado
+= Mostra `BAD signature` e termina com código de saída diferente de zero
+- Mostra um erro informando que a chave pública de carol expirou
+> A assinatura cobre um resumo (hash) do conteúdo; qualquer alteração faz a verificação falhar com `gpg: BAD signature from "..."` e retorno 1 (testado). A assinatura destacada fica em arquivo separado, mas é validada justamente contra o arquivo original passado como segundo argumento.
+
+### 110.3-043 | unica | 2
+ref: 102:p.579-581, 102:p.591
+tags: gpg, revogação
+Qual é a ordem correta dos passos para revogar uma chave GPG comprometida?
+- Importar o certificado → criar o certificado de revogação → divulgar a chave revogada
+- Divulgar a chave revogada → criar o certificado de revogação → importá-lo no chaveiro
+= Criar o certificado de revogação → importá-lo no chaveiro → divulgar a chave
+- Criar o certificado de revogação → divulgar a chave → importar o certificado no chaveiro
+> Primeiro cria-se o certificado de revogação (`--gen-revoke`); depois ele é importado ao chaveiro (`gpg --import`), o que marca a chave como `[revoked]` em `gpg --list-keys`; só então a chave revogada é distribuída aos correspondentes e aos servidores de chaves. Divulgar antes de importar publicaria uma chave ainda válida.
+
+### 110.3-044 | lacuna | 2
+ref: 102:p.579-580
+tags: gpg, gen-revoke
+Complete o comando para criar o certificado de revogação da chave de carol, gravando-o em `revoga.asc`:
+
+`gpg --output revoga.asc ____ carol`
+= --gen-revoke
+= --generate-revocation
+> `--gen-revoke USER-ID` (`--generate-revocation`) pergunta o motivo (0 sem motivo, 1 chave comprometida, 2 chave substituída, 3 chave não mais usada) e uma descrição opcional, e grava o certificado em ASCII. Ele deve ser guardado em lugar seguro: quem o tiver pode revogar a chave.
+
+### 110.3-045 | multipla | 2
+ref: 102:p.578-581
+tags: gpg, revogação, openpgp-revocs.d
+Quais afirmações sobre o certificado de revogação do GnuPG estão corretas?
+= Quem tiver acesso a ele pode tornar a chave inutilizável, por isso deve ser guardado com cuidado
+- Revogar a chave apaga a chave privada do disco
+= O `gpg --gen-key` já grava um certificado de revogação em `~/.gnupg/openpgp-revocs.d/`
+- Só é possível criar o certificado depois que a chave for comprometida
+= A revogação só vale no chaveiro depois que o certificado é importado com `gpg --import`
+- Basta apagar o chaveiro público para que os outros considerem a chave revogada
+> O certificado é uma espécie de "interruptor de emergência": é gerado junto com o par de chaves (o diretório `openpgp-revocs.d` tem permissões restritivas por isso) e deve ser criado de antemão, não depois do incidente. A revogação não remove arquivos: ela só passa a valer quando o certificado é importado (o `.rev` automático traz um `:` antes dos traços de `BEGIN`, que precisa ser removido) e quando a chave revogada é divulgada aos outros.
+
+### 110.3-046 | unica | 3
+ref: 102:p.581
+tags: gpg, revogação, cifrar
+Depois de importar o certificado de revogação da chave de carol, `gpg --list-keys` mostra `[revoked]` para ela. O que ocorre quando ina tenta cifrar um arquivo com `gpg -e -r carol`?
+- O arquivo é cifrado normalmente, pois a revogação afeta só as chaves privadas
+- O `gpg` pergunta `Use this key anyway? (y/N)` e cifra se ina responder `y`
+= A cifragem falha, pois o `gpg` não usa chaves revogadas como destinatárias
+- O arquivo é cifrado com a subchave de cifragem, que não é afetada pela revogação
+> Uma chave revogada não deve mais ser usada, e o `gpg` a rejeita como destinatária (testado: a operação termina com erro, `carol: skipped: No public key`, e nenhum arquivo cifrado é criado). A pergunta `Use this key anyway?` aparece para chaves ainda não certificadas, e não para revogadas; a revogação da chave primária invalida também as subchaves.
+
+### 110.3-047 | unica | 2
+ref: 102:p.585
+tags: gpg-agent
+Qual é a função do `gpg-agent`?
+- Distribuir as chaves públicas dos usuários da rede, como se fosse um servidor de chaves público
+= Gerenciar as chaves privadas do GPG e guardar frases secretas em cache, sob demanda do `gpg`
+- Gerar automaticamente certificados de revogação quando uma chave privada é comprometida
+- Manter o chaveiro `pubring.kbx` sincronizado com um servidor de chaves remoto na internet
+> O `gpg-agent` é o daemon que cuida das chaves privadas (em `~/.gnupg/private-keys-v1.d`) e mantém a frase secreta em cache por um tempo, para que ela não seja pedida a cada operação. Ele é iniciado automaticamente pelo `gpg` quando necessário (testado: os sockets `S.gpg-agent*` aparecem em `~/.gnupg` depois do primeiro uso). Não distribui chaves nem sincroniza chaveiros.
+
+### 110.3-048 | lacuna | 1
+ref: 102:p.582
+tags: gpg, import
+Complete o comando para importar ao chaveiro de ina a chave pública de carol, salva no arquivo `carol.pub.key`:
+
+`gpg ____ carol.pub.key`
+= --import
+> `gpg --import` adiciona ao chaveiro (`pubring.kbx`) as chaves de um arquivo; depois, `gpg --list-keys` mostra a nova chave, com validade `[unknown]` até ser certificada. O mesmo comando importa certificados de revogação.
+
+### 110.3-049 | multipla | 3
+ref: 102:p.579, 102:p.583-584
+tags: gpg, armor, clearsign, binário
+Quais comandos produzem saída em texto ASCII (e não em formato binário OpenPGP)?
+= `gpg --clearsign msg.txt`
+- `gpg --sign msg.txt`
+= `gpg --armor --encrypt -r carol msg.txt`
+- `gpg --encrypt -r carol msg.txt`
+= `gpg --export --armor carol`
+- `gpg --export carol`
+> `--clearsign` sempre gera texto e `--armor` (`-a`) converte a saída para ASCII blindado. Sem `--armor`, `--sign` (compactado e assinado), `--encrypt` e `--export` produzem dados binários (testado nos três casos).
+
+### 110.3-050 | unica | 2
+ref: 102:p.566
+tags: ssh -x, X11, DISPLAY
+Uma usuária conecta com `ssh -x ina@halof` e executa `firefox` no servidor, recebendo `Error: no DISPLAY environment variable specified`. Qual é a causa?
+- O `sshd` do servidor proíbe o uso de aplicativos gráficos por qualquer usuário do sistema
+= A opção `-x` desabilitou o X11 forwarding, e a sessão ficou sem a variável `DISPLAY`
+- O `firefox` só pode ser executado através de túneis de porta remotos criados com `-R`
+- A conexão foi aberta com `-N`, e por isso nenhuma variável de ambiente é definida
+> `-x` (minúsculo) desabilita o X11 forwarding; sem ele, a sessão remota não recebe `DISPLAY` e o aplicativo gráfico não sabe onde desenhar a janela. Com `ssh -X` (e `X11Forwarding yes` no servidor) a variável é definida, por exemplo `DISPLAY=localhost:10.0` (testado). Não há proibição geral no `sshd`, `-R` não tem relação com X11 e `-N` nem abre sessão com shell.

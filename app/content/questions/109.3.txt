@@ -1,0 +1,591 @@
+### 109.3-001 | unica | 1
+ref: 102:p.454
+tags: ip addr, iproute2
+Qual comando do iproute2 adiciona o endereço IPv4 192.168.5.5/24 à interface enp0s8?
+= ip addr add 192.168.5.5/24 dev enp0s8
+- ip address set dev enp0s8 192.168.5.5 netmask 255.255.255.0
+- ip link set enp0s8 addr 192.168.5.5/24
+- ip route add 192.168.5.5/24 dev enp0s8
+> A sintaxe é `ip addr add <endereço/prefixo> dev <interface>` (`addr` e `address` são sinônimos, e `a` também é aceito).
+> `ip address set` e a opção `netmask` não existem no iproute2 (o prefixo vai no próprio endereço); `ip link set ... addr` altera o endereço MAC, não o IP; `ip route add` cria uma rota, e não atribui um endereço à interface.
+
+### 109.3-002 | unica | 2
+ref: 102:p.454
+tags: ip addr, ifconfig, ipv6
+Qual é a diferença de sintaxe entre `ip` e `ifconfig` ao atribuir um endereço IPv6 a uma interface?
+= O ip usa a mesma sintaxe para IPv4 e IPv6; o ifconfig exige a palavra add para IPv6
+- O ip exige a opção -6 em qualquer atribuição; o ifconfig usa a mesma sintaxe para IPv4 e IPv6
+- O ip e o ifconfig exigem a palavra add apenas ao atribuir endereços IPv6 à interface
+- O ip e o ifconfig usam a mesma sintaxe e não distinguem IPv4 de IPv6 em nenhum comando
+> Com o `ip`, o comando é o mesmo: `ip addr add 2001:db8::10/64 dev enp0s8`. Com o `ifconfig`, o IPv6 precisa da palavra `add`: `ifconfig enp0s8 add 2001:db8::10/64`; sem ela o comando falha (em teste, `ifconfig veth1 2001:db8::11/64` respondeu `Unknown host`).
+
+### 109.3-003 | lacuna | 1
+ref: 102:p.453
+tags: ifconfig
+Qual opção do `ifconfig` faz listar todas as interfaces, inclusive as que estão desativadas? ifconfig ____
+= -a
+> Sem opções, o `ifconfig` mostra só as interfaces ativas. Com `-a`, lista todas as interfaces disponíveis, inclusive as desativadas.
+
+### 109.3-004 | unica | 2
+ref: 102:p.454
+tags: ip link, estado
+O comando `ip link show dev enp0s8` produz a linha abaixo. O que ela indica e o que ativa a interface?
+
+```
+3: enp0s8: <BROADCAST,MULTICAST> mtu 1500 qdisc pfifo_fast state DOWN mode DEFAULT group default qlen 1000
+```
+= A interface está desativada (falta a flag UP); ip link set dev enp0s8 up a ativa
+- A interface está ativa, mas sem cabo conectado; ip link set dev enp0s8 up a ativa
+- A interface foi removida do sistema; ip link add enp0s8 a recria
+- A interface está ativa com MTU inválido; ip link set enp0s8 mtu 1500 a corrige
+> A lista de flags só traz `BROADCAST,MULTICAST`, sem `UP`, e o estado é `DOWN`: a interface foi desativada administrativamente (por exemplo, com `ip link set dev enp0s8 down`). Reativa-se com `ip link set dev enp0s8 up` (ou `ifconfig enp0s8 up`).
+> Uma interface ativa sem cabo mostra a flag `UP`, mas sem `LOWER_UP` (estado `NO-CARRIER`); a interface continua listada mesmo desativada; e o MTU mostrado (1500) é válido.
+
+### 109.3-005 | unica | 1
+ref: 102:p.454, 102:p.462
+tags: ip link
+Qual comando desativa temporariamente a interface wlan1?
+= ip link set wlan1 down
+- ip link delete wlan1
+- ip addr flush dev wlan1
+- ifconfig wlan1 stop
+> `ip link set wlan1 down` (ou `ifconfig wlan1 down`) desativa a interface; `ip link set wlan1 up` a reativa. A mudança vale até a próxima reinicialização ou reconfiguração.
+> `ip link delete` remove dispositivos virtuais; `ip addr flush dev` remove os endereços IP, mas não desativa a interface; `ifconfig ... stop` não existe.
+
+### 109.3-006 | lacuna | 1
+ref: 102:p.454, 102:p.462
+tags: ifconfig
+Complete o comando legado para ativar a interface enp0s8: ifconfig enp0s8 ____
+= up
+> `ifconfig <interface> up` ativa a interface; `ifconfig <interface> down` a desativa. O equivalente moderno é `ip link set <interface> up`.
+
+### 109.3-007 | unica | 2
+ref: 102:p.454-455
+tags: ip link, mtu
+Qual comando define o MTU da interface enp0s8 como 1400 bytes?
+= ip link set dev enp0s8 mtu 1400
+- ip addr set mtu 1400 dev enp0s8
+- ip route set mtu 1400 dev enp0s8
+- ip link add enp0s8 mtu 1400
+> O MTU é uma propriedade de camada de enlace da interface e é ajustado com `ip link set <if> mtu <valor>` (ou, no comando legado, `ifconfig <if> mtu <valor>`). Em teste, o `ip link show` passou a exibir `mtu 1400` logo após o comando.
+> `ip addr` cuida de endereços, `ip route` de rotas, e `ip link add` cria dispositivos novos, e não altera uma interface existente.
+
+### 109.3-008 | unica | 3
+ref: 102:p.453, 102:p.462-463
+tags: ip addr, label, ifconfig
+Um segundo endereço foi adicionado com o comando abaixo. Qual é o efeito do trecho `label enp0s9:sub1`?
+
+```
+ip addr add 172.16.15.16/16 dev enp0s9 label enp0s9:sub1
+```
+= O endereço passa a ter um alias que também aparece na saída do ifconfig
+- Cria uma nova interface virtual enp0s9:sub1, com endereço MAC próprio
+- Coloca o endereço em uma VLAN chamada sub1, separada da rede principal
+- É apenas um comentário, que não altera nada no resultado do comando
+> O `label` dá um nome de alias ao endereço no formato `dispositivo:nome`. Sem o rótulo, o endereço adicional é aplicado normalmente, mas o `ifconfig` (legado) não o exibe; com ele, o `ifconfig` mostra a entrada `enp0s9:sub1`. Em teste, o endereço com label apareceu no `ifconfig` e o sem label não.
+> Não há novo dispositivo nem MAC próprio: o endereço continua na mesma interface; VLANs são criadas com `ip link add ... type vlan`.
+
+### 109.3-009 | lacuna | 1
+ref: 102:p.454
+tags: ip addr
+Complete o comando que remove o endereço da interface: ip addr ____ 192.168.5.5/24 dev enp0s8
+= del
+= delete
+> `ip addr del <endereço/prefixo> dev <interface>` remove um endereço específico. Se o endereço não existir, o `ip` responde com um erro (`Address not found`).
+
+### 109.3-010 | unica | 2
+ref: 102:p.453
+tags: ip addr, ip link, ip -br
+Qual comando exibe um resumo, uma linha por interface, com o estado e todos os endereços IP de cada uma?
+= ip -br addr
+- ip -s addr
+- ip -c addr
+- ip -d addr
+> A opção `-br` (brief) antes do objeto resume a saída: interface, estado e endereços em uma linha. As demais opções existem, mas fazem outra coisa: `-s` acrescenta estatísticas, `-c` colore a saída e `-d` mostra detalhes.
+
+### 109.3-011 | unica | 2
+ref: 102:p.456-457
+tags: ip route, dhcp
+Observe a tabela de rotas. Qual é o gateway padrão e como essa rota foi adicionada?
+
+```
+default via 10.0.2.2 dev enp0s3 proto dhcp metric 100
+10.0.2.0/24 dev enp0s3 proto kernel scope link src 10.0.2.15 metric 100
+```
+= O gateway é 10.0.2.2, acessado por enp0s3, e a rota foi adicionada pelo DHCP
+- O gateway é 10.0.2.15, acessado por enp0s3, e a rota foi adicionada pelo kernel
+- O gateway é 10.0.2.2, acessado por enp0s3, e a rota foi adicionada manualmente
+- O gateway é 10.0.2.0, acessado por enp0s3, e a rota foi adicionada pelo DHCP
+> `default via 10.0.2.2` indica o gateway; `dev enp0s3` é a interface de saída; `proto dhcp` mostra que o cliente DHCP criou a rota. `10.0.2.15` é o endereço da própria máquina (`src`) e `10.0.2.0/24` é a rede conectada, criada pelo kernel (`proto kernel`).
+> Uma rota criada manualmente apareceria, em geral, com `proto static` ou sem campo `proto`.
+
+### 109.3-012 | unica | 2
+ref: 102:p.456-457
+tags: ip route, proto kernel
+Na linha `10.0.2.0/24 dev enp0s3 proto kernel scope link src 10.0.2.15`, o que significa `proto kernel`?
+= A rota foi criada automaticamente pelo kernel ao configurar o endereço da interface
+- A rota foi aprendida de um roteador vizinho por um protocolo de roteamento dinâmico
+- A rota foi instalada por um cliente DHCP durante a obtenção do endereço IP
+- A rota só pode ser removida reiniciando o kernel, e não com ip route del
+> Ao atribuir um endereço com prefixo à interface, o kernel cria a rota da rede diretamente conectada, marcada como `proto kernel`; `src` indica o endereço de origem preferido para pacotes enviados por essa rota.
+> Rotas de DHCP aparecem como `proto dhcp`, e rotas dinâmicas aparecem com o nome do protocolo (como `proto bgp`). Qualquer rota pode ser removida com `ip route del`.
+
+### 109.3-013 | unica | 2
+ref: 102:p.464
+tags: ip route, rota padrão
+Qual comando do iproute2 define a rota padrão por meio do gateway 192.168.1.1?
+= ip route add default via 192.168.1.1
+- ip route add 0.0.0.0 via 192.168.1.1
+- ip route default gw 192.168.1.1
+- ip addr add default via 192.168.1.1
+> A rota padrão é chamada de `default` (equivale a `0.0.0.0/0`). A forma correta é `ip route add default via <gateway>`. O gateway precisa estar em uma rede diretamente conectada.
+> `ip route add 0.0.0.0 via ...` cria apenas uma rota para o endereço único 0.0.0.0 (em teste, a tabela mostrou `0.0.0.0 via ...`, em vez de `default via ...`); `gw` é palavra do comando `route`, e `ip addr` não manipula rotas.
+
+### 109.3-014 | unica | 2
+ref: 102:p.464
+tags: route, rota padrão, net-tools
+Qual comando do net-tools equivale a `ip route add default via 192.168.1.1`?
+= route add default gw 192.168.1.1
+- route add default via 192.168.1.1
+- route default gw 192.168.1.1
+- route set default 192.168.1.1
+> No `route`, o gateway é indicado pela palavra `gw`: `route add default gw 192.168.1.1`. No `ip route` usa-se `via`. Em teste, `route add default via 192.168.1.1` exibiu a mensagem de uso do comando e falhou.
+
+### 109.3-015 | multipla | 2
+ref: 102:p.455
+tags: ip route, route, netstat
+Quais comandos mostram a tabela de rotas IPv4 do sistema?
+= ip route
+= route -n
+= netstat -rn
+- ip addr show
+- ss -r
+- ifconfig -r
+> `ip route`, `route` (aqui com `-n`, para não resolver nomes) e `netstat -r` exibem a tabela de roteamento.
+> `ip addr show` lista endereços; `ss -r` apenas faz o `ss` resolver nomes (não mostra rotas); `ifconfig -r` não é uma opção do `ifconfig`.
+
+### 109.3-016 | lacuna | 2
+ref: 102:p.455
+tags: netstat, rotas
+Qual opção do `netstat` exibe a tabela de roteamento do kernel? netstat ____
+= -r
+= -rn
+= -nr
+= --route
+> `netstat -r` mostra a tabela de rotas (equivale ao comando `route`); com `-n`, os endereços aparecem numericamente, sem resolução de nomes.
+
+### 109.3-017 | unica | 3
+ref: 102:p.464, 102:p.452
+tags: ip route, erro, gateway
+Em um host com os endereços 192.168.5.5/24, o comando `ip route add default via 10.99.99.1` retorna `Error: Nexthop has invalid gateway.` Qual é a causa?
+= O gateway 10.99.99.1 não está em nenhuma rede diretamente conectada ao host
+- Já existe uma rota padrão cadastrada na tabela, e o comando não a substitui
+- Faltou informar a interface com a opção dev, que é obrigatória em ip route
+- O comando exige o endereço do gateway em notação CIDR, como 10.99.99.1/32
+> Um gateway só é aceito se for alcançável diretamente, ou seja, se estiver em uma rede para a qual o host tem rota conectada. Aqui o host só tem rota para `192.168.5.0/24`, então `10.99.99.1` é um gateway inválido.
+> Uma rota padrão duplicada produziria `RTNETLINK answers: File exists`; o `dev` é opcional quando o gateway é alcançável; e o gateway é um endereço simples, sem prefixo.
+
+### 109.3-018 | unica | 2
+ref: 102:p.457-458, 102:p.452
+tags: ping, rota padrão, diagnóstico
+Em um host sem rota padrão, `ping 8.8.8.8` responde `ping: connect: Network is unreachable`. O que isso indica?
+= O host não tem nenhuma rota para o destino, como a falta de uma rota padrão
+- O host 8.8.8.8 está desligado ou descarta os pacotes ICMP recebidos
+- O servidor DNS configurado não conseguiu resolver o nome do destino
+- O firewall do host 8.8.8.8 está bloqueando as respostas de eco ICMP
+> `Network is unreachable` é gerado localmente: a tabela de rotas não tem entrada para o destino e nem rota padrão, e o pacote nem chega a sair da máquina. Resolve-se, por exemplo, com `ip route add default via <gateway>`.
+> Desligamento do destino, firewalls e filtros ICMP causam `100% packet loss` (sem resposta), e não esse erro; falha de DNS dá `Name or service not known`.
+
+### 109.3-019 | lacuna | 1
+ref: 102:p.466-467
+tags: ping
+Qual opção do `ping` limita o número de pacotes enviados (por exemplo, a 4)? ping ____ 4 192.168.50.2
+= -c
+> Sem `-c`, o `ping` envia pacotes até ser interrompido com Ctrl+C. Com `-c 4`, envia 4 e exibe o resumo estatístico.
+
+### 109.3-020 | lacuna | 1
+ref: 102:p.466
+tags: ping6, ipv6
+Qual comando, equivalente ao `ping` para endereços IPv6, consta na lista de utilitários do LPI? ____
+= ping6
+> `ping6` envia solicitações de eco ICMPv6 a um endereço IPv6; `ping` envia echo ICMP a um endereço IPv4. Em sistemas atuais, `ping6` costuma ser um atalho para o próprio `ping`, que aceita ambos.
+
+### 109.3-021 | unica | 3
+ref: 102:p.466-467
+tags: ping, código de saída
+Um script executa `ping -c 1 -W 1 192.168.5.200`, endereço de uma máquina da LAN que está desligada. Qual código de saída o `ping` retorna?
+= 1
+- 0
+- 2
+- 127
+> O `ping` retorna 0 quando recebe resposta, 1 quando envia pacotes mas não recebe resposta (como aqui: `100% packet loss`) e 2 em caso de erro, como rede inalcançável ou nome não resolvido. Em teste, a máquina inexistente na LAN deu código 1, enquanto `Network is unreachable` deu 2.
+> O código 127 é o de "comando não encontrado" do shell.
+
+### 109.3-022 | unica | 3
+ref: 102:p.467, 102:p.480
+tags: ping, icmp, firewall
+`ping srv.exemplo.org` não recebe resposta, mas `nc -zv srv.exemplo.org 443` informa conexão bem-sucedida. Qual é a explicação mais provável?
+= O ICMP echo é bloqueado por firewall ou ACL no caminho ou no destino
+- O servidor está desligado e a porta 443 responde por outro equipamento
+- A porta 443 usa UDP, que não depende de ICMP para estabelecer conexão
+- O DNS retornou o endereço errado, mas o nc consultou outro servidor DNS
+> Muitas redes bloqueiam o ICMP echo (que pode transportar dados arbitrários). Falha no `ping` não significa que o host esteja inacessível; um teste TCP, como `nc -zv`, confirma que o serviço responde.
+> Se o host estivesse desligado, a conexão TCP não teria sido estabelecida; o HTTPS usa TCP; e o `nc` usa o mesmo resolvedor que o `ping`.
+
+### 109.3-023 | multipla | 3
+ref: 102:p.480
+tags: ping, diagnóstico
+Quais situações podem fazer o `ping` para um host falhar?
+= O firewall do host remoto descarta o ICMP echo
+= O nome foi resolvido para um endereço incorreto
+= A interface de rede local está desativada
+- A porta TCP 80 do destino está fechada
+- O MTU da interface local é de 1500 bytes
+- O arquivo /etc/services está vazio
+> Entre as causas citadas na lição: firewall ou ACL bloqueando, resolução de nome devolvendo endereço errado e interface local ou remota desconectada ou desativada.
+> O ICMP echo não usa portas TCP/UDP, então uma porta fechada não afeta o ping; 1500 é o MTU padrão do Ethernet; e `/etc/services` apenas mapeia nomes de serviços a portas.
+
+### 109.3-024 | unica | 2
+ref: 102:p.480, 102:p.466
+tags: ping, dns, diagnóstico
+`ping 8.8.8.8` funciona, mas `ping www.exemplo.org` responde `Name or service not known`. Onde está o problema?
+= Na resolução de nomes, por exemplo no resolv.conf ou no nsswitch.conf
+- Na rota padrão, que está ausente ou aponta para um gateway incorreto
+- Na interface de rede, que está desativada ou sem endereço IP
+- No MTU da interface, que está pequeno demais para o pacote ICMP
+> Se o IP responde, a rede e as rotas estão funcionando. A mensagem `Name or service not known` indica falha de resolução de nomes: verificar `nameserver` em `/etc/resolv.conf`, a linha `hosts:` de `/etc/nsswitch.conf` e testar com `getent hosts`, `host` ou `dig`.
+
+### 109.3-025 | unica | 2
+ref: 102:p.467
+tags: traceroute, ttl
+Como o `traceroute` descobre os roteadores do caminho até o destino?
+= Aumenta o TTL das sondas; cada roteador responde com ICMP de tempo excedido
+- Consulta cada roteador do caminho por SNMP e lê a respectiva tabela de rotas
+- Lê a tabela de rotas do próprio host e lista todos os gateways configurados nela
+- Envia um único pacote e recebe a lista de saltos registrada no cabeçalho IP
+> O `traceroute` envia sondas com TTL 1, 2, 3... Cada roteador que decrementa o TTL a zero descarta o pacote e responde com ICMP "TTL exceeded", revelando seu endereço e o tempo de ida e volta.
+
+### 109.3-026 | unica | 2
+ref: 102:p.468
+tags: traceroute, udp
+Que tipo de sonda o `traceroute` envia por padrão?
+= Pacotes UDP para portas altas, a partir da 33434
+- Solicitações de eco ICMP para a porta 7 do destino
+- Segmentos TCP SYN para a porta 80 do destino
+- Consultas DNS para a porta 53 de cada roteador
+> Por padrão, o `traceroute` envia datagramas UDP para uma porta alta (33434 e seguintes), incrementando-a. Com `-I` usa ICMP echo e com `-T` usa TCP SYN.
+
+### 109.3-027 | lacuna | 2
+ref: 102:p.468
+tags: traceroute, icmp
+Qual opção faz o `traceroute` usar solicitações de eco ICMP em vez de pacotes UDP? traceroute ____ destino
+= -I
+= --icmp
+> `-I` (`--icmp`) usa ICMP echo, o que costuma ser mais eficaz, pois o destino tem mais probabilidade de responder a um eco do que a um UDP em porta alta. (`-T` usa TCP SYN.)
+
+### 109.3-028 | unica | 3
+ref: 102:p.469
+tags: traceroute, tcp
+Uma rede bloqueia ICMP e UDP. Qual comando rastreia o caminho usando TCP na porta 443?
+= traceroute -T -p 443 destino
+- traceroute -I -p 443 destino
+- traceroute -t 443 destino
+- traceroute -U -p 443 destino
+> `-T` faz o `traceroute` usar TCP SYN e `-p` define a porta de destino. Em teste, o método TCP exigiu privilégios de root (`You do not have enough privileges to use this traceroute method`).
+> `-I` usa ICMP (a porta é irrelevante); `-t` define o campo TOS, não a porta; `-U` usa UDP.
+
+### 109.3-029 | unica | 2
+ref: 102:p.468
+tags: traceroute, saída
+Em uma linha da saída do `traceroute` aparece `*  *  *` no lugar do endereço e dos tempos. O que isso significa?
+= Nenhuma resposta ICMP de tempo excedido foi recebida das sondas daquele salto
+- O roteador daquele salto respondeu, mas o tempo de resposta foi zero
+- O destino final foi alcançado e o traceroute terminou o rastreamento
+- O pacote foi roteado por um caminho alternativo e não pode ser medido
+> O `*` ocupa o lugar do tempo quando o `traceroute` não recebe a resposta ICMP de tempo excedido. Pode ser um roteador que não responde ou um firewall que filtra a resposta, e a rota pode continuar nos saltos seguintes.
+
+### 109.3-030 | lacuna | 1
+ref: 102:p.467
+tags: traceroute6, ipv6
+Qual comando rastreia a rota até um destino IPv6, sendo o equivalente do traceroute para IPv6? ____
+= traceroute6
+> `traceroute6` é a versão para IPv6 (em sistemas atuais, equivale a `traceroute -6`).
+
+### 109.3-031 | unica | 2
+ref: 102:p.470, 102:p.479
+tags: tracepath, mtu
+Qual comando, parecido com o traceroute, informa também o menor MTU do caminho até o destino?
+= tracepath
+- ping -c 1
+- netstat -r
+- nc -zv
+> O `tracepath` envia um datagrama UDP grande com TTL crescente e usa as respostas ICMP "destino inacessível" (que trazem o MTU do próximo enlace) para descobrir o MTU do caminho; a última linha resume o resultado. Não exige root.
+> `ping` testa a alcançabilidade, `netstat -r` mostra a tabela de rotas local, e `nc -zv` testa portas TCP.
+
+### 109.3-032 | unica | 3
+ref: 102:p.470
+tags: tracepath, pmtu
+A última linha da saída do `tracepath` é `Resume: pmtu 1500 hops 2 back 64`. Qual é o significado de `pmtu 1500`?
+= O menor MTU encontrado ao longo do caminho é de 1500 bytes
+- A latência máxima medida ao longo do caminho é de 1500 ms
+- O pacote mais longo enviado tinha 1500 bytes, mas nem todos chegaram
+- O destino está a 1500 saltos de distância do host de origem
+> `pmtu` (Path MTU) é o menor MTU do caminho. `hops 2` indica 2 saltos até o destino e `back 64` é a estimativa de saltos do caminho de volta, deduzida do TTL das respostas. Essa informação ajuda a diagnosticar problemas de fragmentação.
+
+### 109.3-033 | lacuna | 1
+ref: 102:p.470
+tags: tracepath6, ipv6
+Qual é o nome da variante do tracepath para IPv6 citada nos utilitários do LPI? ____
+= tracepath6
+> `tracepath6` é o nome tradicional da variante IPv6. Em sistemas recentes (iputils atuais), o próprio `tracepath` aceita endereços IPv6 e o executável `tracepath6` pode nem estar instalado, mas é o nome que consta na lista do exame.
+
+### 109.3-034 | unica | 1
+ref: 102:p.471
+tags: nc, netcat
+Qual comando faz o netcat (nc) ficar escutando na porta TCP 1234, aguardando uma conexão?
+= nc -l 1234
+- nc -s 1234
+- nc 1234 -l
+- nc -w 1234
+> A opção `-l` coloca o `nc` em modo de escuta (listener). No outro host, `nc <host> 1234` conecta e envia o que for digitado. Em teste, o texto enviado por um lado apareceu no outro. (Na versão tradicional do netcat a porta de escuta exige `-p`: `nc -l -p 1234`; no OpenBSD netcat e no ncat basta `nc -l 1234`.)
+> `-s` define o endereço de origem, `-w` define um tempo limite e `nc 1234 -l` colocaria o `1234` como host de destino.
+
+### 109.3-035 | unica | 2
+ref: 102:p.471
+tags: nc, udp
+Qual comando envia dados por UDP ao host net2.example.net, porta 1234, usando o netcat?
+= nc -u net2.example.net 1234
+- nc -t net2.example.net 1234
+- nc -l net2.example.net 1234
+- nc --datagram net2.example.net 1234
+> A opção `-u` seleciona UDP (por padrão o `nc` usa TCP). `-l` coloca em modo de escuta, e não de envio. `-t` é utilizada no netcat tradicional para telnet, e `--datagram` não existe.
+
+### 109.3-036 | unica | 2
+ref: 102:p.471, 102:p.475
+tags: nc, porta, teste
+Qual comando testa se a porta TCP 22 do host srv aceita conexões, sem enviar dados?
+= nc -zv srv 22
+- nc -lv srv 22
+- nc -uv srv 22
+- nc -ev srv 22
+> `-z` apenas verifica a conexão (sem enviar dados) e `-v` mostra o resultado, como `Connection to ... succeeded!` ou `Connection refused`. Em teste, a porta aberta respondeu `succeeded!` e a fechada, `Connection refused`.
+> `-l` escuta, `-u` usa UDP e `-e` (quando suportado) executa um programa, o que o torna perigoso.
+
+### 109.3-037 | unica | 3
+ref: 102:p.480
+tags: nc, http
+Usando `nc learning.lpi.org 80`, o que deve ser digitado em seguida para obter uma página por HTTP?
+= A linha GET /index.html HTTP/1.1, o cabeçalho Host e uma linha em branco
+- Somente a URL completa https://learning.lpi.org/index.html e depois Enter
+- O comando wget learning.lpi.org/index.html e depois a tecla Enter, sem mais nada
+- A palavra GET seguida de Ctrl+D, sem cabeçalhos nem linha em branco após ela
+> O `nc` apenas transporta o que for digitado. Uma requisição HTTP/1.1 precisa da linha de requisição (`GET /index.html HTTP/1.1`), do cabeçalho `Host:` e de uma linha em branco para indicar o fim dos cabeçalhos. Em teste, o servidor recebeu exatamente essas linhas.
+
+### 109.3-038 | unica | 2
+ref: 102:p.472-473
+tags: ss, netstat
+O que faz o comando `ss -tulnp`?
+= Lista sockets TCP e UDP em escuta, sem resolver nomes, com o processo de cada um
+- Lista as conexões TCP e UDP já estabelecidas, com resolução de nomes e os processos
+- Exibe estatísticas de uso de TCP e UDP, sem listar sockets nem processos
+- Lista a tabela de rotas para TCP e UDP, em formato numérico e com processos
+> Opções: `-t` TCP, `-u` UDP, `-l` sockets em escuta (listening), `-n` numérico (sem resolver nomes de hosts e portas) e `-p` processo associado (visível para o root). A mesma combinação funciona no `netstat`.
+> Conexões estabelecidas aparecem com `-a`, sem `-l`; estatísticas são `ss -s` ou `netstat -s`; rotas são do `ip route`/`netstat -r`.
+
+### 109.3-039 | multipla | 2
+ref: 102:p.472
+tags: ss, netstat, opções
+Quais descrições de opções, comuns ao `ss` e ao `netstat`, estão corretas?
+= -l mostra os sockets em escuta
+= -n evita a pesquisa de nomes de portas e endereços
+= -p mostra o processo associado ao socket
+- -t mostra as conexões UDP
+- -u mostra as conexões TCP
+- -a mostra apenas os sockets em escuta
+> Corretas: `-l` (listening), `-n` (numérico) e `-p` (processo).
+> `-t` é TCP e `-u` é UDP (as descrições estão trocadas); `-a` mostra todos os sockets, em escuta ou não.
+
+### 109.3-040 | unica | 3
+ref: 102:p.479
+tags: ss, netstat, porta, processo
+Qual comando permite descobrir qual processo está escutando na porta 22?
+= ss -lnp | grep ':22'
+- ss -ln | grep ':22'
+- ss -r | grep ':22'
+- netstat -rn | grep ':22'
+> A opção `-p` associa cada socket ao processo (`users:(("sshd",pid=892,fd=3))`); `-l` restringe aos sockets em escuta e `-n` mantém os números das portas. O `netstat -lnp` faz o mesmo no legado. Normalmente é necessário ser root para ver processos de outros usuários.
+> Sem `-p` (segunda opção), o `ss` lista a porta, mas sem identificar o processo; `ss -r` apenas resolve nomes e `netstat -r` mostra rotas.
+
+### 109.3-041 | multipla | 3
+ref: 102:p.472-473
+tags: ss, saída
+Analise a saída do comando abaixo. Quais conclusões estão corretas?
+
+```
+# ss -tlnp
+State   Recv-Q  Send-Q   Local Address:Port  Peer Address:Port  Process
+LISTEN  0       128            0.0.0.0:22         0.0.0.0:*      users:(("sshd",pid=892,fd=3))
+LISTEN  0       100          127.0.0.1:25         0.0.0.0:*      users:(("master",pid=1099,fd=13))
+```
+= O sshd aceita conexões TCP na porta 22 em todas as interfaces IPv4
+= O serviço da porta 25 (master) aceita conexões somente da própria máquina
+= O processo sshd tem PID 892
+- O serviço da porta 25 está acessível a partir de outros hosts da rede
+- O sshd escuta apenas no endereço de loopback 127.0.0.1
+- Há 128 conexões SSH estabelecidas no momento
+> `0.0.0.0:22` significa todas as interfaces IPv4; `127.0.0.1:25` é só o loopback, portanto o serviço não é acessível de fora; o `pid=892` aparece em `users:(...)`.
+> Nos sockets em escuta, `Send-Q` (128) é o tamanho máximo da fila de conexões pendentes (backlog), não o número de conexões estabelecidas.
+
+### 109.3-042 | lacuna | 1
+ref: 102:p.453
+tags: net-tools, ifconfig
+Em distribuições recentes onde o `ifconfig` não vem instalado, qual pacote fornece os comandos de rede legados? ____
+= net-tools
+> O pacote `net-tools` traz `ifconfig`, `route`, `netstat` e `arp`, entre outros. O `iproute2` (comandos `ip` e `ss`) é o substituto moderno.
+
+### 109.3-043 | multipla | 1
+ref: 102:p.461, 102:p.472
+tags: net-tools, legado
+Quais dos comandos abaixo fazem parte do conjunto legado net-tools?
+= ifconfig
+= route
+= netstat
+- ip
+- ss
+- tracepath
+> `ifconfig`, `route` e `netstat` (com `arp`) são os comandos legados do pacote `net-tools`. Os substitutos modernos do pacote `iproute2` são `ip` (no lugar de `ifconfig` e `route`) e `ss` (no lugar do `netstat`). O `tracepath` é do pacote `iputils`.
+
+### 109.3-044 | unica | 1
+ref: 102:p.461, 102:p.472
+tags: ss, netstat
+Qual comando moderno substitui o `netstat` para listar sockets e conexões de rede?
+= ss
+- ip
+- nc
+- lsof
+> `ss` (do iproute2) é o substituto do `netstat` para listar sockets, com opções praticamente iguais. `ip` substitui `ifconfig` e `route`; `nc` abre conexões arbitrárias; `lsof`, embora liste sockets abertos, é uma ferramenta geral de arquivos abertos.
+
+### 109.3-045 | unica | 2
+ref: 102:p.453
+tags: ifconfig, saída, máscara
+Uma interface mostra, na saída do `ifconfig`, a linha `inet 192.168.1.24  netmask 255.255.255.0  broadcast 192.168.1.255`. Qual é o prefixo em notação CIDR?
+= /24
+- /16
+- /25
+- /32
+> A máscara 255.255.255.0 tem 24 bits "1", ou seja, `/24`. Com essa máscara, o broadcast da rede 192.168.1.0 é 192.168.1.255, como mostra a saída.
+
+### 109.3-046 | unica | 2
+ref: 102:p.453, 102:p.451
+tags: hostname
+Qual opção do comando `hostname` lista todos os endereços IP configurados nas interfaces da máquina (exceto loopback)?
+= -I
+- -i
+- -f
+- -s
+> `hostname -I` (maiúsculo) mostra todos os endereços IP dos adaptadores. `-i` mostra o endereço associado ao nome do host pela resolução de nomes (por exemplo, via `/etc/hosts`), `-f` mostra o nome completo (FQDN) e `-s` o nome curto.
+
+### 109.3-047 | unica | 2
+ref: 102:p.451
+tags: hostname, /etc/hostname
+Um administrador executa `hostname novo` como root. Qual é o efeito?
+= Muda o nome até o próximo boot; para persistir, edita-se /etc/hostname
+- O nome do host muda e é gravado em /etc/hostname, permanecendo após reiniciar
+- O nome do host muda e também é adicionado ao arquivo /etc/hosts
+- O comando falha, pois o nome do host só pode ser alterado com o hostnamectl
+> O comando `hostname <nome>` define o nome no kernel em tempo de execução, e o efeito dura até a próxima reinicialização. Para tornar a mudança permanente, edita-se `/etc/hostname` (ou usa-se `hostnamectl set-hostname`, que também grava no arquivo).
+> Apenas o root pode mudar o nome (`hostname: you must be root to change the host name`).
+
+### 109.3-048 | unica | 3
+ref: 102:p.464
+tags: ip link, vlan
+Qual comando cria a sub-interface enp0s9.20 para a VLAN 20 sobre a interface enp0s9?
+= ip link add link enp0s9 name enp0s9.20 type vlan id 20
+- ip link set dev enp0s9 vlan 20 name enp0s9.20 type vlan
+- ip addr add vlan 20 dev enp0s9 label enp0s9.20 type vlan
+- ip route add vlan 20 dev enp0s9 via enp0s9.20 id 20
+> As VLANs são criadas como dispositivos de enlace do tipo `vlan`: `ip link add link <pai> name <novo> type vlan id <n>`. (Em teste, o comando criou `veth0.20` com `vlan protocol 802.1Q id 20`.)
+> `ip link set` altera um dispositivo existente, `ip addr` atribui endereços e `ip route` cuida de rotas.
+
+### 109.3-049 | unica | 2
+ref: 102:p.464
+tags: ip neigh, arp
+Qual subcomando do ip exibe o cache de vizinhos (ARP) da máquina?
+= ip neigh
+- ip link
+- ip route
+- ip tunnel
+> `ip neigh` (ou `ip neighbour`) exibe a tabela de vizinhos, que associa endereços IP a endereços MAC (`lladdr`), com estados como `REACHABLE`. A documentação está em `man ip-neighbour`.
+
+### 109.3-050 | unica | 3
+ref: 102:p.464
+tags: ip route, backup
+Qual par de comandos faz o backup da tabela de rotas para um arquivo e depois restaura?
+= ip route save > rotas.bak e ip route restore < rotas.bak
+- ip route backup > rotas.bak e ip route load < rotas.bak
+- ip route show > rotas.bak e ip route add < rotas.bak
+- ip route dump > rotas.bak e ip route import < rotas.bak
+> `ip route save` grava as rotas em formato binário na saída padrão, e `ip route restore` as lê da entrada padrão. Em teste, após remover todas as rotas, o `restore` as recriou.
+> `show` produz texto, não utilizável por `ip route add < arquivo`; `backup`, `load`, `dump` e `import` não existem.
+
+### 109.3-051 | multipla | 2
+ref: 102:p.455-456
+tags: ip route, route, netstat, ipv6
+Quais comandos mostram a tabela de rotas IPv6?
+= ip -6 route
+= route -6
+= netstat -6rn
+- ip -6 addr
+- ifconfig -6
+- ss -6
+> Para rotas IPv6, usam-se `ip -6 route`, `route -6` e `netstat -6r` (a opção `-n` deixa a saída numérica). Sem a opção `-6`, `route` e `netstat -r` mostram só as rotas IPv4.
+> `ip -6 addr` lista endereços IPv6, `ifconfig` não tem a opção `-6` e `ss -6` lista sockets IPv6.
+
+### 109.3-052 | unica | 2
+ref: 102:p.455-456
+tags: route, flags
+Na saída de `route -n`, a rota padrão aparece com os flags `UG`. O que eles significam?
+= U: rota ativa (up); G: o destino é alcançado por meio de um gateway
+- U: rota de usuário (user); G: rota global, válida para todas as interfaces
+- U: interface desconectada (unplugged); G: gateway desativado
+- U: rota que usa UDP (UDP); G: rota aprendida de um grupo (group)
+> O flag `U` indica rota ativa (up) e `G` indica que o próximo salto é um gateway. Rotas de redes conectadas diretamente aparecem somente com `U`. Um `!` indica rota rejeitada.
+
+### 109.3-053 | unica | 2
+ref: 102:p.455
+tags: route, -n
+Qual é a diferença entre `route` e `route -n`?
+= Com -n, os endereços aparecem numericamente e a rota padrão vira 0.0.0.0
+- Com -n, só as rotas ativas são exibidas, e as rejeitadas são omitidas
+- Com -n, a tabela inclui as rotas IPv6, que são omitidas na forma sem a opção
+- Com -n, a saída é ordenada por métrica, em vez de por destino
+> A opção `-n` evita a resolução de nomes: a rota padrão, que aparece como `default` na saída padrão, é exibida como `0.0.0.0`. (Em teste: `default         172.17.0.1 ...` sem `-n` e `0.0.0.0         172.17.0.1 ...` com `-n`.)
+> Para IPv6 é preciso usar `route -6`.
+
+### 109.3-054 | unica | 2
+ref: 102:p.453
+tags: ifconfig, ip link
+Depois de `ip link set dev enp0s8 down`, o comando `ifconfig` (sem opções) não lista a enp0s8. Qual é o motivo?
+= O ifconfig, sem -a, mostra somente as interfaces ativas
+- A interface foi removida do sistema pelo comando ip link
+- O ifconfig só lista interfaces configuradas com IPv4
+- O ifconfig não enxerga interfaces criadas pelo comando ip
+> Sem opções, o `ifconfig` omite as interfaces desativadas; com `-a`, ele lista todas. Em teste, a interface desativada só apareceu em `ifconfig -a`. O comando `ip link` continua listando a interface.
+
+### 109.3-055 | lacuna | 2
+ref: 102:p.453
+tags: /sys/class/net
+Qual diretório do sysfs lista as interfaces de rede existentes no sistema? ____
+= /sys/class/net
+= /sys/class/net/
+> `ls /sys/class/net` mostra um item por interface (lo, enp0s3, ...), desde que o sistema de arquivos `sys` esteja montado.
+
+### 109.3-056 | unica | 2
+ref: 102:p.453-454
+tags: ip, permissões
+Um usuário comum executa `ip link show` e, em seguida, `ip addr add 10.1.1.1/24 dev eth0`. Qual é o resultado?
+= O primeiro funciona e o segundo falha com Operation not permitted
+- Ambos falham, pois o comando ip só pode ser usado pelo root
+- Ambos funcionam, pois o ip aplica as alterações apenas ao usuário
+- O primeiro falha e o segundo funciona, pois só alterações exigem sudo
+> Consultar (`ip link show`, `ip addr show`, `ip route`) não exige privilégios, mas alterar a configuração de rede (adicionar endereços, rotas, ativar ou desativar interfaces) exige root, com `su` ou `sudo` (o `ip` responde `RTNETLINK answers: Operation not permitted`; o `ifconfig`, `SIOCSIFFLAGS: Operation not permitted`).

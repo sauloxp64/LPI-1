@@ -1,0 +1,38 @@
+{
+  "id": "f103-2-top-ips",
+  "obj": "103.2",
+  "titulo": "Ranking de IPs por código HTTP",
+  "nivel": 2,
+  "minutos": 7,
+  "params": {
+    "n": {
+      "faixa": [
+        3,
+        5
+      ]
+    },
+    "codigo": {
+      "escolha": [
+        "401",
+        "403",
+        "404",
+        "500",
+        "502"
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-2-top-ips/` está o `acesso.log` de um servidor web (formato *combined* simplificado: o IP é o primeiro campo e o **código de status HTTP** é o campo logo depois da requisição entre aspas, por exemplo `... \"GET /login HTTP/1.1\" 404 1532`).\n\nO time de segurança quer saber quem mais está recebendo erros **{codigo}**. Grave em `topips.txt` (na mesma pasta) os **{n} IPs** com mais respostas de status **{codigo}**, do maior para o menor, **uma linha por IP, com a contagem e depois o IP** (por exemplo `27 203.0.113.9`).\n\nCuidado: alguns caminhos (`/produto/{codigo}`) e tamanhos de resposta também valem {codigo}, mas isso **não** é o status.",
+  "verifica": [
+    "`topips.txt` tem {n} linhas, no formato `contagem IP`",
+    "as contagens consideram só linhas cujo **status** é {codigo}",
+    "a ordem é da maior contagem para a menor",
+    "`acesso.log` continua intacto"
+  ],
+  "dicas": [
+    "Quatro etapas: selecionar as linhas do status certo, ficar só com o IP, contar repetições e ordenar pelo número.",
+    "`uniq` só junta linhas **adjacentes** iguais: ordene antes com `sort`. `uniq -c` já escreve a contagem na frente.",
+    "Para selecionar pelo campo (e não pelo texto solto), `awk '$9 == 404'` testa a 9ª coluna; com `grep`, é preciso um padrão que case o status entre espaços.",
+    "Ordene as contagens com `sort -rn` (numérico, decrescente) e limite com `head -n`."
+  ],
+  "solucao": "```\ncd ~/lab/f103-2-top-ips\nawk '$9 == {codigo} {print $1}' acesso.log | sort | uniq -c | sort -rn | head -n {n} > topips.txt\n```\n`awk '$9 == {codigo}'` filtra pelo **campo** do status (o 9º, contando a partir do IP) — `grep {codigo}` pegaria também caminhos como `/produto/{codigo}` e tamanhos iguais a {codigo}. `sort` agrupa os IPs iguais, `uniq -c` conta cada grupo, `sort -rn` ordena numericamente do maior para o menor e `head -n {n}` fica com o topo. Pegadinha clássica: esquecer o primeiro `sort` (o `uniq` só vê repetições vizinhas) ou ordenar sem `-n` (\"9\" viria depois de \"27\" na ordem alfabética)."
+}

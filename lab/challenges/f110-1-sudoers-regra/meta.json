@@ -1,0 +1,30 @@
+{
+  "id": "f110-1-sudoers-regra",
+  "obj": "110.1",
+  "titulo": "Regra de sudo para um grupo, validada com visudo",
+  "nivel": 3,
+  "minutos": 10,
+  "params": {
+    "grupo": { "escolha": ["noc-lab", "suporte-lab", "plantao-lab"] },
+    "m1": { "escolha": ["op-lara", "op-igor", "op-sofia"] },
+    "m2": { "escolha": ["op-lara", "op-igor", "op-sofia"] },
+    "fora": { "escolha": ["op-davi", "op-rita"] },
+    "cmd_a": { "escolha": ["/usr/bin/lsof", "/usr/bin/ss", "/usr/bin/last"] },
+    "cmd_b": { "escolha": ["/usr/sbin/logrotate", "/usr/sbin/rsyslogd", "/usr/bin/crontab"] }
+  },
+  "distintos": [["m1", "m2"]],
+  "enunciado": "O grupo **`{grupo}`** (membros: `{m1}` e `{m2}`) precisa executar dois comandos como `root`, e o usuário `{fora}`, que **não** é do grupo, não pode ganhar nada. Configure o `sudo` assim (com `sudo`, claro):\n\n* os membros do grupo `{grupo}` (a regra deve ser para o **grupo**, não para cada usuário) podem executar **`{cmd_a}`** como `root` **sem digitar senha**;\n* e também **`{cmd_b}`** como `root`, mas **com** senha (comportamento padrão do sudo);\n* **nenhum outro comando** (nada de `ALL`) e nenhum poder para `{fora}`.\n\nCrie a regra em um arquivo dentro de **`/etc/sudoers.d/`** (nome à sua escolha; lembre que o sudo é exigente com nome, dono e modo desses arquivos). Antes de instalar, escreva um rascunho em `~/lab/sudoers/` e **valide a sintaxe com `visudo`**; só depois copie para o lugar certo. A configuração final precisa estar sintaticamente válida.",
+  "verifica": [
+    "existe, em `/etc/sudoers.d/`, um arquivo que menciona `%{grupo}`, com nome aceito (sem ponto nem `~`), dono `root:root` e modo `0440`",
+    "`visudo -c` valida toda a configuração, incluindo o arquivo",
+    "`sudo -l -U {m1}` e `{m2}` mostram `{cmd_a}` como `NOPASSWD` e `{cmd_b}` pedindo senha, como `root`, e nenhum comando além desses",
+    "`{fora}` continua sem permissão para usar o sudo"
+  ],
+  "dicas": [
+    "Formato de uma regra do sudoers: `QUEM ONDE=(COMO_QUEM) COMANDOS`. Grupos são escritos com `%` na frente: `%nomedogrupo ALL=(root) ...`. Comandos com caminho absoluto, separados por vírgula.",
+    "A senha é dispensada com a etiqueta `NOPASSWD:` antes do comando. A etiqueta vale para os comandos seguintes da mesma regra; `PASSWD:` volta ao padrão. Pode usar duas linhas, uma para cada comando.",
+    "Arquivos de `/etc/sudoers.d/` devem ser do `root`, modo `0440`, e o nome não pode conter `.` nem terminar em `~` (senão o sudo os ignora). Instale com `sudo install -m 440 -o root -g root rascunho /etc/sudoers.d/NOME`.",
+    "Valide com `visudo -cf ~/lab/sudoers/rascunho` (só checa o arquivo) e depois com `sudo visudo -c`. Para ver o efeito: `sudo -l -U {m1}`."
+  ],
+  "solucao": "```\nmkdir -p ~/lab/sudoers && cd ~/lab/sudoers\ncat > rascunho <<'X'\n%{grupo} ALL=(root) NOPASSWD: {cmd_a}\n%{grupo} ALL=(root) {cmd_b}\nX\nvisudo -cf rascunho                        # valida só o rascunho\nsudo install -m 440 -o root -g root rascunho /etc/sudoers.d/{grupo}\nsudo visudo -c                              # valida tudo\nsudo -l -U {m1}                             # confira o efeito\n```\nRegra: `usuário/%grupo  máquina=(runas)  [TAG:] comandos`. `NOPASSWD:` dispensa senha; sem tag vale o padrão (pede senha). Sempre use caminhos absolutos nos comandos (o sudo compara o caminho) e nunca `ALL` quando bastam comandos específicos. Edite sempre com `visudo` (ou valide com `visudo -cf`): um erro de sintaxe pode deixar o sudo inutilizável. Para `/etc/sudoers.d/`, o sudo ignora arquivos cujo nome tenha `.` ou termine em `~`, e `visudo -c` reclama de dono/modo diferentes de `root` e `0440`. Dica de prova: `sudo -l` mostra o que o próprio usuário pode fazer, e `sudo -l -U usuario` (como root) mostra o de outro."
+}

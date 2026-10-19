@@ -1,0 +1,28 @@
+{
+  "id": "f109-4-resolucao-local",
+  "obj": "109.4",
+  "titulo": "Resolução de nomes local: /etc/hosts, getent e nsswitch",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "alias": { "escolha": ["wiki", "intranet", "backup", "painel"] },
+    "dominio": { "escolha": ["interno.lab", "corp.lab"] },
+    "o3": { "faixa": [1, 254] },
+    "o4": { "faixa": [2, 250] }
+  },
+  "enunciado": "O servidor `{alias}.{dominio}` ainda não está no DNS, então a equipe decidiu resolver o nome localmente, no **`/etc/hosts` real deste servidor** (use `sudo`). O endereço correto é **`10.20.{o3}.{o4}`**.\n\nDeixe a resolução funcionando para os dois nomes: o completo **`{alias}.{dominio}`** e o curto **`{alias}`**. Alguém já tentou configurar o apelido curto antes, com outro endereço: **essa entrada antiga não pode continuar valendo**. Não apague as demais linhas do arquivo.\n\nNota do ambiente: no Docker o `/etc/hosts` é um arquivo montado; o `sed -i` não consegue substituí-lo. Use um editor (`vim`) ou `tee`/redirecionamento.\n\nDepois, na pasta `~/lab/dns/`:\n\n1. `getent.txt`: a saída **exata** de `getent hosts {alias}`.\n2. `ordem.txt`: as **fontes** da linha `hosts:` do `/etc/nsswitch.conf` deste sistema, **uma por linha, na ordem de consulta**.\n3. `resolvem.txt`: entre `getent`, `ping`, `host` e `dig`, escreva (um por linha) os comandos que **conseguem resolver `{alias}` usando o `/etc/hosts`** (descubra testando cada um).",
+  "verifica": [
+    "`/etc/hosts` associa `{alias}.{dominio}` e `{alias}` ao IP `10.20.{o3}.{o4}` e a nenhum outro; as linhas originais continuam",
+    "`getent hosts {alias}` e `getent hosts {alias}.{dominio}` devolvem `10.20.{o3}.{o4}`",
+    "`getent.txt` tem a saída real de `getent hosts {alias}`",
+    "`ordem.txt` lista as fontes de `hosts:` do `/etc/nsswitch.conf` na ordem certa",
+    "`resolvem.txt` lista exatamente os comandos que usam o resolvedor do sistema (nsswitch) e por isso enxergam o `/etc/hosts`"
+  ],
+  "dicas": [
+    "Linha do `/etc/hosts`: `IP  nome-canônico  apelido ...`. Quando o mesmo nome aparece em duas linhas, vale a **primeira**; por isso a entrada antiga tem de ser corrigida ou removida, não apenas contornada com uma nova.",
+    "`getent hosts NOME` consulta o NSS exatamente como os programas comuns fazem, respeitando a ordem do `/etc/nsswitch.conf`. Veja a linha com `grep ^hosts /etc/nsswitch.conf`.",
+    "`host` e `dig` são ferramentas de DNS: perguntam direto ao servidor do `/etc/resolv.conf` e **não** passam pelo nsswitch (no laboratório o DNS externo nem é alcançável, então vão acusar timeout). `ping` usa o resolvedor do sistema.",
+    "Para corrigir a linha antiga com o `vim`: `sudo vim /etc/hosts`, edite a linha do apelido e salve. Para conferir: `getent hosts {alias}`."
+  ],
+  "solucao": "```\nsudo vim /etc/hosts       # troque a linha antiga '10.77... {alias}' por:\n10.20.{o3}.{o4}   {alias}.{dominio} {alias}\n\ngetent hosts {alias}\ngetent hosts {alias}.{dominio}\ngetent hosts {alias} > ~/lab/dns/getent.txt\ngrep '^hosts' /etc/nsswitch.conf        # ex.: hosts: files dns\nprintf 'files\\ndns\\n' > ~/lab/dns/ordem.txt   # na ordem que aparece na linha\nprintf 'getent\\nping\\n' > ~/lab/dns/resolvem.txt\n```\nO nome canônico vem primeiro e os demais são apelidos; a **primeira** linha que casar com o nome vence, então uma entrada duplicada mais abaixo é ignorada (e a antiga, mais acima, continuaria vencendo). A ordem em `hosts: files dns` significa: consultar primeiro `/etc/hosts` e só depois o DNS. `getent hosts` e `ping` (e praticamente todo programa, via `getaddrinfo`) passam pelo NSS e enxergam o `/etc/hosts`; `host` e `dig` falam direto com o servidor DNS do `/etc/resolv.conf`, por isso **não** veem entradas locais — é a pegadinha clássica de prova (para consultar o DNS ignorando o hosts use `dig`/`host`, e para o que o sistema enxerga use `getent`)."
+}

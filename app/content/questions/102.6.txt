@@ -1,0 +1,207 @@
+### 102.6-001 | unica | 1
+ref: 101:p.163
+tags: hipervisor, Tipo 1, Xen
+Qual das opções é um hipervisor de Tipo 1 (bare-metal), que não depende de um sistema operacional subjacente para funcionar?
+- Oracle VM VirtualBox
+= Xen
+- libvirt
+- cloud-init
+> O Xen é um hipervisor de Tipo 1: o computador inicializa diretamente nele, e as máquinas virtuais são executadas por cima.
+> O VirtualBox é um aplicativo que roda sobre um sistema operacional (Tipo 2). O `libvirt` é um daemon e uma API para gerenciar máquinas virtuais, e o `cloud-init` pré-configura instâncias na primeira inicialização, mas nenhum dos dois é hipervisor.
+
+### 102.6-002 | unica | 2
+ref: 101:p.163-164, 101:p.179
+tags: virtualização total, VT-x, AMD-V, /proc/cpuinfo
+Quais extensões de CPU precisam estar habilitadas em hardware x86 para executar convidados totalmente virtualizados, e como verificá-las no Linux?
+- PAE ou NX; com `grep -E "pae|nx" /proc/cpuinfo`
+- SSE ou AVX; com `grep -E "sse|avx" /proc/cpuinfo`
+= Intel VT-x ou AMD-V; com `grep -E "vmx|svm" /proc/cpuinfo`
+- LM (long mode) ou HT (Hyper-Threading); com `grep -E "lm|ht" /proc/cpuinfo`
+> A virtualização total em x86 exige Intel VT-x (flag `vmx`) ou AMD-V (flag `svm`), que podem precisar ser habilitadas no menu de firmware da BIOS ou UEFI. Se `grep -E "vmx|svm" /proc/cpuinfo` não retorna nada, a extensão não está disponível ou está desligada.
+> As demais flags são extensões de CPU comuns (PAE, NX, SSE, AVX, modo longo de 64 bits, Hyper-Threading), mas nenhuma delas oferece suporte de hardware à virtualização.
+
+### 102.6-003 | lacuna | 1
+ref: 101:p.164, 101:p.180
+tags: AMD-V, svm, /proc/cpuinfo
+Qual flag aparece na linha `flags` de `/proc/cpuinfo` quando a CPU tem a extensão de virtualização **AMD-V**?
+Observação: em CPUs Intel com VT-x, a flag equivalente é `vmx`.
+= svm
+> Em CPUs AMD, a extensão AMD-V (também chamada SVM) é indicada pela flag `svm`; em CPUs Intel, a VT-x aparece como `vmx`. A checagem típica é `grep -E "vmx|svm" /proc/cpuinfo`.
+
+### 102.6-004 | unica | 2
+ref: 101:p.164
+tags: paravirtualização, drivers de convidado
+Qual característica descreve um convidado **paravirtualizado**?
+- Não sabe que é virtual, roda sem modificações e tem as instruções traduzidas pelo hipervisor para o hardware
+- É um processo isolado que compartilha o kernel do hospedeiro e não possui kernel próprio
+= Sabe que é virtual e usa kernel modificado e drivers especiais para cooperar com o hipervisor
+- Só funciona em hipervisores de Tipo 2, pois depende do sistema operacional do hospedeiro
+> Um convidado paravirtualizado tem consciência de ser uma máquina virtual e usa um kernel modificado e drivers especiais (drivers de convidado) para cooperar com o hipervisor, o que costuma resultar em melhor desempenho.
+> O convidado totalmente virtualizado é o que não percebe que é virtual e roda sem modificações. Compartilhar o kernel do hospedeiro é característica dos contêineres, e a paravirtualização não está restrita ao Tipo 2 (o Xen, de Tipo 1, é um exemplo clássico).
+
+### 102.6-005 | unica | 2
+ref: 101:p.164
+tags: drivers de convidado, virtio, Guest Additions
+Quais são, respectivamente, os drivers de convidado usados com o KVM e com o Oracle VM VirtualBox?
+- Guest Additions e Virtio
+- Virtio e libvirt
+= Virtio e Guest Additions
+- QEMU e VirtualBox Extension Pack
+> O KVM utiliza os drivers do projeto Virtio, e o VirtualBox usa as Guest Additions (Extensões de Convidado), distribuídas em uma imagem ISO.
+> A primeira opção inverte os dois. O `libvirt` é a ferramenta de gerenciamento (não um driver de convidado), o QEMU emula o hardware no lado do hospedeiro, e o Extension Pack do VirtualBox é um complemento do lado do hospedeiro, não os drivers instalados no convidado.
+
+### 102.6-006 | unica | 3
+ref: 101:p.169-170
+tags: qcow2, COW, thin provisioning, raw
+Em um hipervisor KVM, o arquivo de disco `/var/lib/libvirt/images/rhel8` ocupa 5,5 GB, mas dentro da máquina virtual o `lsblk` mostra um disco de 23,3 GB. Qual é a explicação?
+- A imagem está em formato raw com todo o espaço pré-alocado, e o `lsblk` exibe um tamanho incorreto
+- O hipervisor compactou o disco do convidado, e o `lsblk` mostra o tamanho original, sem compactação
+= A imagem é COW (como qcow2) com provisionamento fino: o arquivo só cresce conforme o convidado grava
+- O convidado usa armazenamento em bloco de um provedor de nuvem, e a diferença é a parte que fica remota
+> Em imagens COW (thin provisioning, como o `qcow2` do QEMU), o convidado enxerga o limite máximo configurado (23,3 GB), mas o arquivo no hospedeiro só ocupa o que já foi gravado (5,5 GB).
+> Uma imagem raw com o espaço pré-alocado ocuparia os 23,3 GB no hospedeiro (e entregaria melhor desempenho), e o `lsblk` mostra o tamanho real do disco virtual, não um valor incorreto. Compactação e armazenamento remoto não são a causa descrita.
+
+### 102.6-007 | unica | 3
+ref: 101:p.171-172
+tags: D-Bus, machine-id, clonagem, dbus-uuidgen
+Duas máquinas virtuais clonadas do mesmo modelo têm o mesmo D-Bus machine ID. Qual procedimento gera um novo ID em uma delas?
+- Executar `dbus-uuidgen --get > /etc/machine-id` e reiniciar o serviço de mensagens
+- Executar `dbus-uuidgen --ensure`, sem remover antes o arquivo que já existe
+= Remover `/etc/machine-id` e executar `dbus-uuidgen --ensure=/etc/machine-id`
+- Alterar o conteúdo de `/etc/hostname` e reiniciar a máquina virtual clonada
+> Como `dbus-uuidgen --ensure` não sobrescreve um ID existente, o arquivo precisa ser removido antes: `rm -f /etc/machine-id` e depois `dbus-uuidgen --ensure=/etc/machine-id`. Se `/var/lib/dbus/machine-id` não for um link simbólico para `/etc/machine-id`, ele também deve ser removido.
+> `--get` apenas imprime o ID atual, então redirecioná-lo gravaria o mesmo valor. O hostname é outra propriedade da máquina e não altera o machine ID.
+
+### 102.6-008 | lacuna | 2
+ref: 101:p.171
+tags: dbus-uuidgen, machine-id
+Complete o comando para exibir o D-Bus machine ID atual do sistema:
+
+```
+$ dbus-uuidgen ____
+```
+= --get
+> `dbus-uuidgen --get` imprime o ID de máquina atual (uma sequência de 32 caracteres hexadecimais). Duas máquinas em execução não devem ter o mesmo ID.
+
+### 102.6-009 | multipla | 2
+ref: 101:p.171-172
+tags: clonagem, template, machine-id, chaves SSH do host, MAC
+Uma máquina virtual será clonada para criar novas máquinas. Quais propriedades **devem ser exclusivas** em cada clone, e por isso precisam ser regeneradas ou alteradas?
+= As chaves SSH do host (`/etc/ssh/ssh_host_*`)
+= O D-Bus machine ID (`/etc/machine-id`)
+= O endereço MAC da interface de rede virtual
+- A versão do kernel instalado
+- A lista de pacotes instalados no modelo
+- Os arquivos de ajuda em `/usr/share/doc`
+> Cada máquina precisa de identidade própria: chaves de host SSH diferentes (para evitar impressões digitais repetidas e avisos de segurança), D-Bus machine ID exclusivo e MAC único na rede. O nome do host e a configuração de rede também costumam mudar.
+> Kernel, pacotes e documentação fazem parte do conteúdo do modelo, e não precisam ser diferentes entre os clones.
+
+### 102.6-010 | unica | 3
+ref: 101:p.171-174
+tags: chaves SSH do host, clonagem, ssh-keygen
+Todos os servidores criados a partir da mesma imagem apresentam a mesma impressão digital (fingerprint) de host SSH. Qual é a causa e qual a correção?
+- Os usuários copiaram o mesmo arquivo `~/.ssh/authorized_keys`; basta apagá-lo em cada servidor
+= As chaves de host em `/etc/ssh/ssh_host_*` vieram da imagem; apague-as e gere novas com `ssh-keygen -A`
+- O arquivo `~/.ssh/known_hosts` do cliente está corrompido; basta recriá-lo
+- O `ssh-copy-id` foi executado com a mesma chave pública em todos; é preciso executar `ssh-keygen -R` no servidor
+> As chaves de host do servidor OpenSSH (`/etc/ssh/ssh_host_*_key` e `.pub`) identificam a máquina. Se vierem na imagem, todos os clones terão a mesma identidade. Elas devem ser removidas e regeneradas (`ssh-keygen -A` cria as que faltarem), por exemplo no primeiro boot.
+> `authorized_keys` guarda chaves de usuários autorizados e `known_hosts` guarda hosts já visitados, mas nenhum dos dois define a identidade do servidor. `ssh-keygen -R` remove uma entrada do `known_hosts` do cliente.
+
+### 102.6-011 | lacuna | 3
+ref: 101:p.173
+tags: ssh-keygen, chaves de host
+Qual opção do `ssh-keygen` gera todos os tipos de chave de host (RSA, ECDSA, ED25519) que ainda não existem em `/etc/ssh`?
+
+```
+# ssh-keygen ____
+```
+= -A
+> `ssh-keygen -A` cria as chaves de host que estiverem faltando em `/etc/ssh`, sem alterar as existentes. É usado depois de apagar as chaves herdadas de um modelo de máquina virtual.
+
+### 102.6-012 | lacuna | 2
+ref: 101:p.173
+tags: ssh-copy-id, authorized_keys
+Em qual arquivo do servidor remoto o `ssh-copy-id` grava a chave pública do usuário?
+Informe o caminho a partir do diretório pessoal.
+= ~/.ssh/authorized_keys
+= .ssh/authorized_keys
+= $HOME/.ssh/authorized_keys
+> `ssh-copy-id` acrescenta a chave pública a `~/.ssh/authorized_keys` do usuário no servidor e ajusta as permissões. Com isso, o acesso por chave passa a funcionar sem senha.
+
+### 102.6-013 | unica | 2
+ref: 101:p.173-174
+tags: SSH, permissões, chave privada
+Quais permissões, em octal, devem ter, respectivamente, a chave **privada** e a chave **pública** SSH de um usuário?
+- 0644 (privada) e 0600 (pública)
+- 0755 (privada) e 0644 (pública), para que o servidor consiga lê-las
+= 0600 (privada) e 0644 (pública)
+- 0640 (privada) e 0600 (pública)
+> A chave privada deve ser legível somente pelo dono (0600), caso contrário o cliente SSH a recusa. A chave pública pode ser lida por outros (0644).
+> A primeira opção inverte os valores. 0755 deixaria a chave privada legível por todos, e 0640 permitiria que o grupo a lesse. Nos dois casos o cliente SSH recusa a chave privada.
+
+### 102.6-014 | unica | 2
+ref: 101:p.174
+tags: cloud-init, cloud-config, YAML
+Qual deve ser a primeira linha de um arquivo no formato `cloud-config`, usado pelo `cloud-init`?
+- # cloud-config
+= #cloud-config
+- #!/usr/bin/cloud-config
+- %cloud-config
+> O arquivo de dados de usuário em YAML do `cloud-init` começa com `#cloud-config`, sem espaço entre `#` e `cloud-config`.
+> Com um espaço, a linha seria apenas um comentário comum. `#!` indica um script executável (por exemplo, `#!/bin/bash`), e `%cloud-config` não é um marcador válido.
+
+### 102.6-015 | unica | 1
+ref: 101:p.174
+tags: cloud-init
+Para que serve o `cloud-init`?
+- Para migrar máquinas virtuais em execução de um hipervisor para outro sem precisar desligá-las nem interromper os serviços
+- Para limitar CPU, memória, disco e banda de contêineres e de aplicativos individuais usando os cgroups do kernel
+= Para pré-configurar a instância no primeiro boot (hostname, usuários, pacotes, chaves SSH) via YAML
+- Para criar imagens de disco no formato qcow2 a partir de um disco físico ou de uma máquina virtual em execução
+> O `cloud-init` lê arquivos YAML (cloud-config) na inicialização da instância e aplica rede, pacotes, contas de usuário, chaves SSH, hostname e localidade. Funciona em vários provedores IaaS e também com contêineres como o LXD.
+> Migração ao vivo é uma função do hipervisor, os limites de recursos de contêineres são aplicados por cgroups, e a criação de imagens é feita por ferramentas como o `qemu-img`.
+
+### 102.6-016 | multipla | 2
+ref: 101:p.172-173
+tags: IaaS, instâncias de computação, armazenamento em bloco, rede
+Quais afirmações sobre elementos de uma nuvem IaaS estão corretas?
+= Instâncias de computação são as máquinas virtuais provisionadas, e o custo costuma depender do tempo de CPU ou da quantidade de instâncias em execução
+= O armazenamento em bloco fornece volumes que podem ser usados por uma instância para guardar arquivos
+= A rede virtual pode ser projetada pelo cliente, com sub-redes, rotas e regras de firewall
+- O cliente é responsável por manter o hardware físico e o hipervisor do provedor
+- O armazenamento de acesso mais rápido costuma ser o mais barato
+> Em IaaS, o provedor mantém a infraestrutura física e o hipervisor, e o cliente cria instâncias, volumes de armazenamento em bloco e redes virtuais (inclusive com DNS e VPN, em alguns provedores).
+> Quem cuida do hardware e do hipervisor é o provedor. Quanto ao custo, o armazenamento mais rápido costuma custar mais, e os dados "em repouso" (arquivamento) são os mais baratos.
+
+### 102.6-017 | unica | 2
+ref: 101:p.175
+tags: contêineres, máquina virtual, cgroups, kernel
+Qual afirmação compara corretamente máquinas virtuais e contêineres?
+- Contêineres emulam um computador completo, com BIOS e controladores de disco, e por isso têm mais sobrecarga
+- Máquinas virtuais compartilham o kernel do hospedeiro, e contêineres executam cada um o seu próprio kernel
+= Contêineres compartilham o kernel do hospedeiro e usam cgroups para dividir recursos, com menos sobrecarga
+- Contêineres só funcionam em hospedeiros com hipervisor de Tipo 1, enquanto máquinas virtuais só com o Tipo 2
+> Uma máquina virtual emula um computador inteiro (BIOS, discos, CPU) e executa seu próprio kernel. Um contêiner usa apenas o software necessário para executar a aplicação, compartilhando o kernel do hospedeiro e usando cgroups para dividir recursos como memória, CPU e rede, com bem menos sobrecarga.
+> As duas primeiras opções descrevem exatamente o contrário. Contêineres não usam hipervisor.
+
+### 102.6-018 | unica | 2
+ref: 101:p.175
+tags: contêiner de aplicação, contêiner Linux, LXC, Docker
+Qual afirmação distingue corretamente um contêiner de aplicação (como os do Docker) de um contêiner Linux de sistema (como os do LXC/LXD)?
+- O contêiner de aplicação emula hardware completo para o aplicativo, enquanto o de sistema não emula nenhum hardware
+- O contêiner de aplicação exige um hipervisor para ser executado, enquanto o de sistema roda direto sobre o hardware
+= O de aplicação executa um único aplicativo e suas dependências; o de sistema se comporta como um Linux completo
+- O de aplicação roda um kernel próprio, enquanto o de sistema usa o kernel compartilhado do hospedeiro Linux
+> Um contêiner de aplicação empacota e executa uma aplicação (em geral um processo principal) com suas dependências. Um contêiner Linux de sistema (LXC/LXD) roda um espaço de usuário completo, com init e vários serviços, parecido com uma máquina virtual leve.
+> Os dois tipos usam o kernel do hospedeiro e recursos de isolamento do kernel (como cgroups e namespaces), sem emular hardware nem exigir hipervisor.
+
+### 102.6-019 | unica | 2
+ref: 101:p.164-166
+tags: libvirt, KVM, XML
+Em um hospedeiro KVM gerenciado por `libvirt`, em qual diretório ficam, por padrão, os arquivos XML que definem as máquinas virtuais?
+- /var/lib/libvirt/images/
+= /etc/libvirt/qemu/
+- /etc/qemu/vms/
+- /usr/share/libvirt/domains/
+> As definições (domínios) das máquinas virtuais ficam em arquivos XML em `/etc/libvirt/qemu/`. Esses arquivos são gerados automaticamente e devem ser editados com `virsh edit nome`, e não diretamente.
+> `/var/lib/libvirt/images/` guarda as imagens de disco (por exemplo, qcow2). Os outros dois caminhos não fazem parte da estrutura padrão do libvirt.

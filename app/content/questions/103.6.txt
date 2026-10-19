@@ -1,0 +1,301 @@
+### 103.6-001 | lacuna | 1
+ref: 101:p.368
+tags: nice, valor padrão
+Qual é o valor nice padrão de um processo comum recém-criado, quando nenhum ajuste foi feito?
+= 0
+> Todo processo normal começa com valor nice 0, que corresponde à prioridade estática 120. O valor pode variar de -20 (maior prioridade) a 19 (menor prioridade).
+
+### 103.6-002 | unica | 1
+ref: 101:p.368
+tags: nice, faixa de valores
+Qual alternativa descreve corretamente a faixa de valores nice no Linux?
+= De -20 (maior prioridade) a 19 (menor prioridade)
+- De 0 (maior prioridade) a 39 (menor prioridade), como o PR do `top`
+- De -19 (menor prioridade) a 20 (maior prioridade)
+- De 1 (maior prioridade) a 100 (menor prioridade)
+> Os valores nice vão de -20 a 19, e valores menores significam prioridade maior (o processo é menos "cortês" com os demais). A faixa de 0 a 39 corresponde à coluna PR do `top` para processos normais (PR = 20 + NI), não ao valor nice.
+
+### 103.6-003 | unica | 1
+ref: 101:p.368
+tags: nice, prioridade
+Três processos normais disputam a CPU, com valores nice 10, 0 e -10. Qual deles tem a maior prioridade?
+= O de nice -10
+- O de nice 0
+- O de nice 10
+- Todos têm a mesma prioridade, pois o nice não influencia o escalonamento
+> Quanto menor o valor nice, maior a prioridade e mais tempo de CPU o processo tende a receber. O valor nice influencia o escalonador entre processos de política normal.
+
+### 103.6-004 | lacuna | 1
+ref: 101:p.368
+tags: renice
+Qual comando altera o valor nice de um processo que já está em execução?
+= renice
+> `renice` muda a prioridade de processos em execução (por PID, grupo de processos ou usuário). O `nice`, por sua vez, só serve para iniciar um comando com valor nice ajustado.
+
+### 103.6-005 | unica | 1
+ref: 101:p.368
+tags: nice, -n
+Qual comando inicia `./backup.sh` com valor nice igual a 15?
+= `nice -n 15 ./backup.sh`
+- `renice -n 15 ./backup.sh`
+- `nice -p 15 ./backup.sh`
+- `nice 15 ./backup.sh`
+> `nice -n 15 comando` inicia o comando com ajuste de 15. `renice` age sobre processos já existentes, identificados por PID, e não aceita um programa para executar. O `nice` não tem a opção `-p`, e em `nice 15 ./backup.sh` o `15` seria interpretado como o nome do programa a executar.
+
+### 103.6-006 | lacuna | 2
+ref: 101:p.368
+tags: nice, ajuste padrão
+Em um shell com valor nice 0, qual valor nice terá o processo iniciado por `nice sleep 60` (sem a opção `-n`)?
+= 10
+> Sem a opção `-n`, o `nice` aplica o ajuste padrão de 10: soma 10 ao valor nice herdado. Como o shell estava em 0, o resultado é 10.
+
+### 103.6-007 | lacuna | 3
+ref: 101:p.368
+tags: nice, herança, soma
+Um shell tem valor nice 5. Qual será o valor nice do processo iniciado por `nice -n 3 sleep 100` nesse shell?
+= 8
+> O argumento de `-n` é somado ao valor nice herdado (`add integer N to the niceness`): 5 + 3 = 8. O `nice` não define um valor absoluto, ao contrário do `renice`.
+
+### 103.6-008 | unica | 3
+ref: 101:p.368
+tags: nice, root, permissão
+Um usuário comum, sem privilégios, executa `nice -n -5 ./job.sh`. O que ocorre?
+= O `nice` avisa `cannot set niceness: Permission denied` e o script roda com o valor nice herdado
+- O script roda normalmente com valor nice -5, pois o usuário é o dono do processo
+- O script não é executado, pois o `nice` aborta com código de saída 1
+- O script roda com valor nice 5, pois o sinal negativo é ignorado
+> Só o root (ou quem tem a capacidade apropriada) pode diminuir o valor nice abaixo do atual. Para usuários comuns, o `nice` do GNU coreutils exibe o aviso `nice: cannot set niceness: Permission denied` e executa mesmo assim o comando, com o valor nice herdado (nada de -5 ou 5).
+
+### 103.6-009 | unica | 2
+ref: 101:p.368
+tags: renice, -p
+Qual comando altera para 10 o valor nice do processo em execução de PID 2164?
+= `renice 10 -p 2164`
+- `nice -n 10 -p 2164`
+- `renice 2164 -p 10`
+- `nice 10 2164`
+> A sintaxe é `renice [-n] prioridade [-g|-p|-u] identificador`: o novo valor vem primeiro e, depois, o PID (`-p` é o padrão). `renice -n 10 -p 2164` é equivalente. O `nice` não age sobre processos em execução (não existe `-p`). Em `renice 2164 -p 10` os argumentos estão trocados (tentaria aplicar o valor 2164, limitado a 19, ao processo 10).
+
+### 103.6-010 | unica | 2
+ref: 101:p.368
+tags: renice, -u, usuário
+Qual comando define o valor nice 5 para todos os processos do usuário `carol`?
+= `renice 5 -u carol`
+- `renice 5 -p carol`
+- `renice 5 -g carol`
+- `nice -n 5 -u carol`
+> A opção `-u` interpreta os identificadores seguintes como nomes de usuário ou UIDs. `-p` espera PIDs numéricos e `-g` espera IDs numéricos de grupos de processos; com `carol`, ambas respondem com erro (`bad process ID value` e `bad process group ID value`). O `nice` só inicia comandos.
+
+### 103.6-011 | unica | 3
+ref: 101:p.368
+tags: renice, valor absoluto
+Um processo está com valor nice 4. Qual será o valor nice dele depois do comando abaixo, executado pelo dono do processo?
+
+```
+$ renice 6 -p 3050
+```
+= 6, pois o `renice` define o valor, e não soma
+- 10, pois o `renice` soma 6 ao valor atual
+- 2, pois o `renice` subtrai 6 do valor atual
+- 4, pois o valor só pode ser alterado pelo root
+> O `renice` aplica um valor absoluto: a saída informa `old priority 4, new priority 6`. Quem soma ao valor herdado é o `nice -n`. Aumentar o valor (diminuir a prioridade) é permitido ao dono do processo, então o root não é necessário aqui.
+
+### 103.6-012 | unica | 2
+ref: 101:p.375
+tags: renice, permissão, root
+Um usuário comum aumentou de 0 para 5 o valor nice de um de seus processos. Ao tentar voltar para 2 com `renice 2 -p PID`, o que ocorre?
+= Falha com `Permission denied`: só o root pode reduzir o valor nice
+- O valor volta para 2, pois o usuário é dono do processo
+- O valor volta para 0, o menor valor permitido a usuários comuns
+- O comando só funciona se for executado com `nice -n 2`
+> Um usuário sem privilégios só pode aumentar o valor nice (diminuir a prioridade) de seus processos; reduzi-lo, mesmo para recuperar um valor anterior, exige privilégios de root. A mensagem é `renice: failed to set priority for PID (process ID): Permission denied`.
+
+### 103.6-013 | unica | 2
+ref: 101:p.368-369
+tags: top, renice, teclas
+O que faz a tecla `r` (minúscula) dentro do `top`?
+= Pede o PID e o novo valor nice de um processo (renice)
+- Inverte a ordem de classificação da lista
+- Pede o PID e o sinal a enviar a um processo
+- Reinicia o processo selecionado
+> `r` ("renice") pede primeiro o PID (o padrão é o primeiro da lista) e depois o novo valor nice. Valores negativos, ou menores que o atual, só podem ser definidos pelo root. A inversão da ordem é feita pela tecla `R` (maiúscula) e o envio de sinais, pela `k`.
+
+### 103.6-014 | multipla | 2
+ref: 101:p.367-368
+tags: top, tempo real, PR
+Observe o trecho de `top` abaixo. Quais PIDs correspondem a processos de tempo real?
+
+```
+  PID USER   PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+    1 root   20   0  171420  10668   7612 S   0.0   0.1   9:59.15 systemd
+    4 root    0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par_gp
+   12 root   rt   0       0      0      0 S   0.0   0.0   0:00.00 migration/0
+   16 root  -51   0       0      0      0 S   0.0   0.0   0:26.01 watchdog/1
+   30 root   39  19       0      0      0 S   0.0   0.0   0:00.00 ksmd
+```
+= PID 12
+= PID 16
+- PID 1
+- PID 4
+- PID 30
+> No `top`, a coluna PR de processos de tempo real aparece como `rt` ou como um número negativo (PR = -1 - prioridade de tempo real). Os processos normais mostram PR de 0 a 39: o PID 4 (nice -20) tem PR 0, o PID 1 tem 20 (nice 0) e o PID 30 tem 39 (nice 19).
+
+### 103.6-015 | unica | 2
+ref: 101:p.367-368
+tags: top, PR, faixa
+No `top`, em qual faixa ficam os valores da coluna `PR` de processos com política de escalonamento normal?
+= De 0 a 39
+- De -20 a 19
+- De 100 a 139
+- De 0 a 99
+> O `top` exibe a prioridade estática menos 100: processos normais (100 a 139) aparecem com PR de 0 a 39, ou seja, PR = 20 + NI. A faixa -20 a 19 é a do valor nice (coluna NI), e 0 a 99 é a faixa das prioridades de tempo real no kernel.
+
+### 103.6-016 | unica | 3
+ref: 101:p.367
+tags: ps, PRI, prioridade estática
+Na saída de `ps -el`, um processo normal sem ajuste de nice mostra `PRI` 80 e `NI` 0. Qual valor de prioridade estática (campo `prio` de `/proc/PID/sched`) corresponde a ele?
+= 120, pois o `ps` exibe a prioridade menos 40
+- 80, pois o `ps` mostra o valor real do kernel
+- 100, pois o `ps` exibe a prioridade menos 20
+- 60, pois o `ps` exibe a prioridade mais 20
+> Por razões históricas, o `ps -el` mostra a prioridade subtraída de 40: a prioridade real é `PRI + 40` (80 + 40 = 120), o padrão para processos normais. Um processo com nice 5 mostraria PRI 85 e prioridade estática 125.
+
+### 103.6-017 | lacuna | 2
+ref: 101:p.367
+tags: /proc, sched, prioridade
+Qual é o valor da linha `prio` em `/proc/PID/sched` para um processo normal com valor nice 0?
+= 120
+> A prioridade estática padrão dos processos normais é 120 (a faixa vai de 100 a 139, e menores valores significam prioridade maior). Soma-se o valor nice a 120: um processo com nice 10 teria prio 130.
+
+### 103.6-018 | unica | 2
+ref: 101:p.367
+tags: prioridade estática, tempo real
+Quais faixas de prioridade estática o Linux reserva para processos de tempo real e para processos normais, respectivamente?
+= Tempo real: 0 a 99; normais: 100 a 139
+- Tempo real: 100 a 139; normais: 0 a 99
+- Tempo real: -20 a -1; normais: 0 a 19 (valores nice)
+- Tempo real: 1 a 40; normais: 41 a 99
+> O Linux reserva as prioridades estáticas de 0 a 99 para processos em tempo real e de 100 a 139 para os normais (40 níveis, que correspondem aos nice de -20 a 19). Valores menores indicam prioridade maior, e qualquer processo de tempo real tem precedência sobre os normais.
+
+### 103.6-019 | unica | 1
+ref: 101:p.366, 101:p.374
+tags: preempção, escalonador
+Em um sistema preemptivo como o Linux, o que ocorre quando um processo de prioridade mais alta fica pronto enquanto outro, de prioridade mais baixa, usa a CPU?
+= O de menor prioridade é pausado e o de maior assume a CPU
+- O de prioridade mais alta espera o outro terminar de executar
+- Os dois dividem a CPU em partes iguais até que ambos terminem
+- O de prioridade mais baixa é encerrado pelo kernel por falta de CPU
+> Em um sistema preemptivo, o escalonador pode tirar a CPU de um processo em execução, mesmo que ele não faça chamadas de sistema, e devolvê-la à fila para dar lugar a um processo mais importante. O processo interrompido não é encerrado, ele volta à fila de execução.
+
+### 103.6-020 | unica | 3
+ref: 101:p.366
+tags: tempo real, nice, política
+Qual afirmação sobre o valor nice e os processos de tempo real é correta?
+= O nice só afeta processos normais; os de tempo real têm precedência
+- Nice -20 coloca um processo normal acima de qualquer um de tempo real
+- O nice substitui a prioridade de tempo real quando o valor é negativo
+- Processos de tempo real também obedecem ao nice, com o sinal invertido
+> O valor nice só afeta processos com política de escalonamento normal. Os de tempo real são escalonados diretamente por suas prioridades estáticas, e qualquer processo de tempo real tem precedência sobre qualquer processo normal, mesmo que este tenha nice -20.
+
+### 103.6-021 | unica | 2
+ref: 101:p.368
+tags: nice, herança
+Um shell tem valor nice 5. Qual valor nice terá um processo iniciado normalmente por esse shell, sem usar o `nice`?
+= 5, herdado do shell
+- 0, pois todo processo novo começa em 0
+- 10, que é o ajuste padrão do `nice`
+- 15, soma do valor do shell com o ajuste padrão
+> Um processo filho herda o valor nice do pai. O valor 0 é apenas o ponto de partida do primeiro processo de usuário (o shell de login). Só ocorre soma quando o `nice` é usado, por exemplo `nice -n 10 comando`.
+
+### 103.6-022 | unica | 2
+ref: 101:p.368
+tags: ps, NI, nice
+Qual comando exibe o valor nice do processo de PID 1234?
+= `ps -o pid,ni,comm -p 1234`
+- `ps -o pid,pri,comm -p 1234`
+- `ps -p 1234 --nice`
+- `nice -p 1234`
+> A coluna `NI` do `ps` mostra o valor nice; pode ser selecionada com `-o ni` ou aparece em `ps -l`. `pri` mostra a prioridade, que é outro valor. O `ps` não tem a opção `--nice` e o `nice` não tem `-p`: sem argumentos, ele apenas mostra o valor nice do próprio shell.
+
+### 103.6-023 | unica | 2
+ref: 101:p.368
+tags: nice, sem argumentos
+O que o comando `nice`, executado sem nenhum argumento, exibe?
+= O valor nice atual do próprio shell
+- O ajuste padrão do `nice`, sempre 10
+- A lista de processos com nice alterado
+- O valor nice do último processo iniciado
+> Sem comando para executar, o `nice` imprime o valor nice atual (herdado pelo shell). Em um shell comum, o resultado é `0`, e `nice -n 5 nice` imprimiria `5`.
+
+### 103.6-024 | multipla | 2
+ref: 101:p.368, 101:p.375
+tags: nice, renice, permissão
+Quais afirmações sobre `nice` e `renice` estão corretas?
+= O root pode definir valores nice negativos
+= Um usuário comum só pode aumentar o nice de seus próprios processos
+= O `renice` atua em processos que já estão em execução
+- O `nice` altera o valor de um processo em execução, com a opção `-p`
+- Valores nice maiores significam prioridade maior
+- Um usuário comum pode reduzir o nice de volta a 0 quando quiser
+> Somente o root pode definir valor nice negativo ou reduzir o valor de um processo; o `renice` altera processos em execução, enquanto o `nice` apenas inicia comandos. Valores maiores significam prioridade menor. O aumento do nice feito por um usuário comum não pode ser desfeito por ele mesmo (sem privilégios).
+
+### 103.6-025 | unica | 2
+ref: 101:p.368
+tags: renice, cenário
+Um processo de backup (PID 3000) consome muita CPU e prejudica um servidor web. Qual comando diminui a prioridade dele, sem encerrá-lo?
+= `renice 19 -p 3000`
+- `renice -20 -p 3000`
+- `nice -n 19 -p 3000`
+- `kill -19 3000`
+> `renice 19 -p 3000` coloca o processo na menor prioridade possível (ele só usa a CPU quando ninguém precisa dela). O valor -20 faria o contrário e exige root. O `nice` não tem `-p`. `kill -19` envia SIGSTOP (sinal 19), que paralisa o processo em vez de diminuir sua prioridade.
+
+### 103.6-026 | lacuna | 2
+ref: 101:p.368
+tags: renice, -u
+Complete o comando para alterar para 5 o valor nice de todos os processos do usuário `carol`:
+
+`renice 5 ____ carol`
+= -u
+= --user
+> `-u` (`--user`) faz o `renice` interpretar os identificadores como nomes de usuário ou UIDs. Usa-se `-p` (padrão) para PIDs e `-g` para IDs de grupos de processos.
+
+### 103.6-027 | lacuna | 2
+ref: 101:p.367-368
+tags: top, PR, NI
+Um processo normal tem `PR` 20 e `NI` 0 no `top`. Qual será o valor de `PR` exibido se o `NI` for alterado para 5?
+= 25
+> Para processos normais, o `top` mostra PR = 20 + NI (a prioridade estática 120 + NI, menos 100). Com nice 5, o PR passa a 25. O valor mínimo é 0 (nice -20) e o máximo é 39 (nice 19).
+
+### 103.6-028 | unica | 2
+ref: 101:p.376
+tags: ps, --sort, ordenação
+Qual comando lista os processos com formato longo (`-el`) ordenados pelo uso de CPU, do menor para o maior?
+= `ps -el --sort=pcpu`
+- `ps -el --sort=-pcpu`
+- `ps -el --sort=pmem`
+- `ps -el | sort cpu`
+> A chave de ordenação de `ps --sort` é o nome do campo; sem o sinal `-`, a ordem é crescente. Com `-pcpu` seria decrescente (os maiores consumidores primeiro). `pmem` ordena pelo uso de memória, não de CPU, e em `sort cpu` o `cpu` seria tratado como nome de arquivo.
+
+### 103.6-029 | multipla | 2
+ref: 101:p.367-368
+tags: nice, ps, top, NI
+Quais opções exibem o valor nice (e não outra prioridade) de um processo?
+= A coluna `NI` do `top`
+= `ps -o pid,ni,comm`
+= A coluna `NI` de `ps -el`
+- A coluna `PR` do `top`
+- A coluna `PRI` de `ps -el`
+- O campo `prio` de `/proc/PID/sched`
+> O valor nice aparece na coluna `NI` do `top` e do `ps -l`/`-el` e pode ser pedido com `ps -o ni`. `PR` (do `top`), `PRI` (do `ps`) e `prio` (de `/proc/PID/sched`) mostram a prioridade do kernel em escalas diferentes: `PR` = 20 + NI, `PRI` = 80 + NI e `prio` = 120 + NI.
+
+### 103.6-030 | multipla | 2
+ref: 101:p.366-367
+tags: prioridade estática, escalonador
+Quais afirmações sobre as prioridades estáticas do kernel Linux estão corretas?
+= Os processos normais usam as prioridades de 100 a 139
+= Valores menores indicam prioridade maior
+= A prioridade padrão de um processo normal é 120
+- Os processos de tempo real usam as prioridades de 100 a 139
+- A prioridade padrão de um processo normal é 100
+- Valores maiores indicam prioridade maior
+> As prioridades estáticas de 0 a 99 são reservadas ao tempo real e as de 100 a 139 aos processos normais, que começam em 120 (nice 0). Em todo o escalonamento do Linux, um número menor significa prioridade maior; é o contrário do que muita gente espera.

@@ -1,0 +1,378 @@
+### 106.1-001 | unica | 1
+ref: 102:p.135
+tags: arquitetura, servidor X, cliente X
+No X Window System, qual componente roda na máquina que possui a tela, o teclado e o mouse e desenha na tela o que os aplicativos solicitam?
+- O cliente X
+= O servidor X
+- O gerenciador de exibição
+- O gerenciador de janelas
+- O kit de ferramentas GTK
+> No X, o servidor X controla os dispositivos de exibição e entrada e desenha o que os clientes pedem. Os clientes X são os aplicativos (terminal, navegador, jogo), que informam ao servidor o tamanho e a posição de suas janelas e o que desenhar nelas. O gerenciador de janelas e o gerenciador de exibição são clientes especiais, e o GTK é uma biblioteca de widgets.
+
+### 106.1-002 | unica | 2
+ref: 102:p.135-136
+tags: arquitetura, servidor X, rede
+Um administrador executa um navegador em um servidor Linux remoto e o exibe na tela do seu notebook usando o protocolo X11. Qual afirmação descreve corretamente os papéis?
+- O servidor remoto é o servidor X porque hospeda o aplicativo
+- Tanto o navegador quanto o servidor X rodam no servidor remoto
+= O navegador é o cliente X e o servidor X roda no notebook
+- O navegador é o servidor X e o cliente X roda no notebook
+- O notebook é o cliente X porque solicita a janela ao servidor remoto
+> No modelo do X, "servidor" e "cliente" são definidos em relação ao display: o servidor X fica onde estão tela, teclado e mouse (o notebook) e o aplicativo, mesmo rodando em outra máquina, é o cliente que envia pedidos de desenho pela rede. É a inversão do uso comum dos termos, e por isso é uma pegadinha frequente.
+
+### 106.1-003 | unica | 1
+ref: 102:p.137
+tags: DISPLAY
+Em um terminal gráfico, `echo $DISPLAY` exibe `:0`. O que isso significa?
+- A sessão gráfica foi encerrada e o display está desativado
+- O aplicativo usará o Wayland em vez do X
+- Existem zero telas configuradas no servidor X
+= Servidor X local, display 0, tela padrão 0
+- O servidor X está em outra máquina, na porta 0
+> O formato é `hostname:displaynumber.screennumber`. Sem o nome do host, o servidor é o da própria máquina; `0` é o primeiro display (a numeração começa em 0) e, como há apenas uma tela lógica, o número da tela é omitido (padrão 0).
+
+### 106.1-004 | unica | 2
+ref: 102:p.137
+tags: DISPLAY
+Um terminal está aberto na terceira tela independente do display 0 da máquina `lab01`. Qual valor de `DISPLAY` identifica essa tela?
+- `lab01:2.0`
+= `lab01:0.2`
+- `:0.2`
+- `lab01:3.0`
+- `lab01:0.3`
+> O formato é `hostname:displaynumber.screennumber`. O display é o 0 e a terceira tela independente é a de número 2, pois a numeração de telas também começa em 0. `lab01:0.3` e `lab01:3.0` erram a contagem ou trocam os campos. `:0.2` indicaria a tela local, sem o nome da máquina.
+
+### 106.1-005 | lacuna | 1
+ref: 102:p.137
+tags: DISPLAY, variável de ambiente
+Qual variável de ambiente informa a um cliente X em qual servidor, display e tela ele deve ser exibido?
+= DISPLAY
+> O nome do display (`hostname:displaynumber.screennumber`) fica na variável `DISPLAY`. Para abrir um programa em outra tela, basta atribuí-la antes do comando, como em `DISPLAY=:0.1 firefox &`.
+
+### 106.1-006 | unica | 2
+ref: 102:p.133
+tags: xhost, controle de acesso
+Qual é o efeito do comando `xhost +` (sem nenhum nome após o sinal de mais) executado na máquina do servidor X?
+- Autoriza somente a máquina local a se conectar ao servidor X
+- Reinicia o servidor X com as configurações padrão
+- Gera um novo cookie de autenticação no arquivo `~/.Xauthority`
+= Desativa o controle de acesso e libera qualquer host
+- Lista os hosts atualmente autorizados a usar o servidor X
+> Segundo a página de manual, `+` sem nome concede acesso a todos, mesmo os que não estão na lista, ou seja, desliga o controle de acesso (é inseguro). `xhost -` religa o controle e restringe o acesso à lista. A listagem dos hosts autorizados é obtida com `xhost` sem argumentos, e os cookies ficam em `~/.Xauthority`, gerenciados pelo `xauth`.
+
+### 106.1-007 | multipla | 3
+ref: 102:p.133
+tags: xhost, controle de acesso
+Quais afirmações sobre o comando `xhost` estão corretas?
+= `xhost +` desativa o controle de acesso e libera conexões de qualquer host
+- `xhost -` apaga a lista de hosts e reinicia o servidor X
+- `xhost -lab02` derruba imediatamente as conexões já abertas por `lab02`
+- `xhost` sem argumentos edita o conteúdo do arquivo `~/.Xauthority`
+= `xhost +lab02` inclui `lab02` na lista de hosts autorizados a conectar ao servidor X
+> `xhost +nome` adiciona um host (ou um nome completo, como `si:localuser:ana`) à lista, e `xhost +` libera todos. Remover um nome com `-nome` não encerra conexões existentes, apenas impede novas; o `xhost` trabalha com a lista de hosts do servidor, e quem manipula o `~/.Xauthority` é o `xauth`; `xhost -` apenas reativa o controle de acesso, sem reiniciar o servidor.
+
+### 106.1-008 | unica | 2
+ref: 102:p.133
+tags: xhost, controle de acesso
+Qual comando, executado na máquina do servidor X, autoriza especificamente a máquina `lab02` a exibir aplicativos gráficos nesse servidor?
+- `export DISPLAY=lab02:0`
+- `xhost +`
+- `xhost -lab02`
+- `xauth add lab02`
+= `xhost +lab02`
+> `xhost +nome` adiciona o host à lista de acesso. `xhost -lab02` remove-o, `xhost +` libera o acesso para qualquer máquina (não só `lab02`), `xauth add` exige display, protocolo e chave e trabalha com cookies, e `DISPLAY` é definido no lado do cliente para escolher o servidor, sem conceder acesso.
+
+### 106.1-009 | lacuna | 2
+ref: 102:p.133
+tags: ssh, DISPLAY, X remoto
+Qual opção do `ssh` habilita o encaminhamento (forwarding) de conexões X11, permitindo exibir na tela local um aplicativo gráfico executado no servidor remoto? `ssh ____ usuario@servidor`
+= -X
+= -Y
+= -o ForwardX11=yes
+> `ssh -X` (ou `-Y`, o modo confiável) ativa o encaminhamento X11: o servidor SSH define a variável `DISPLAY` na sessão remota e o tráfego gráfico passa pelo túnel criptografado, usando um cookie gerenciado automaticamente. Isso é bem mais seguro do que liberar o acesso com `xhost +`.
+
+### 106.1-010 | unica | 3
+ref: 102:p.136
+tags: DISPLAY, diagnóstico, xhost
+Em uma sessão SSH (sem encaminhamento X11), o administrador executa `xhost` e recebe:
+
+```
+xhost:  unable to open display ""
+```
+
+Qual é a causa mais provável?
+- O pacote que fornece o `xhost` não está instalado
+- O arquivo `/etc/X11/xorg.conf` não existe nesse sistema
+= `DISPLAY` está vazia: não há servidor X associado
+- O gerenciador de janelas não foi iniciado
+- O usuário não pertence a um grupo com acesso ao X
+> Os clientes X obtêm o servidor a ser usado pela variável `DISPLAY`. Vazia, não há servidor para contatar, e o nome entre aspas na mensagem aparece vazio (`""`). Se o `xhost` não estivesse instalado, a mensagem seria "command not found"; o `xorg.conf` é opcional nas instalações modernas; e a falta de autorização produziria uma mensagem que cita um display real (por exemplo `:0`).
+
+### 106.1-011 | unica | 2
+ref: 102:p.133
+tags: xauth, Xauthority
+Qual arquivo guarda, por padrão, as credenciais (cookies MIT-MAGIC-COOKIE-1) que o usuário apresenta ao servidor X e que são manipuladas pelo `xauth`?
+- `/etc/X11/Xauthority`
+- `~/.Xresources`
+- `~/.xsession-errors`
+= `~/.Xauthority`
+- `/etc/X11/xorg.conf`
+> O `xauth` edita o arquivo de autoridade X, que é `$XAUTHORITY` se a variável existir e, caso contrário, `~/.Xauthority`. `~/.xsession-errors` recebe as mensagens de erro da sessão, `~/.Xresources` guarda preferências de aplicativos X e `xorg.conf` configura o servidor, não a autenticação.
+
+### 106.1-012 | unica | 3
+ref: 102:p.133
+tags: xauth, X remoto
+Qual comando copia a autorização do display atual para o arquivo de autoridade do mesmo usuário no host `outro`, para que clientes X executados lá possam usar o servidor X local?
+= `xauth extract - $DISPLAY | ssh outro xauth merge -`
+- `xauth generate $DISPLAY . | ssh outro xauth add -`
+- `xauth list $DISPLAY | ssh outro xhost +$(hostname)`
+- `xhost extract - $DISPLAY | ssh outro xhost merge -`
+- `xauth merge - $DISPLAY | ssh outro xauth extract -`
+> O exemplo da página de manual do `xauth` é exatamente esse: `extract` grava na saída padrão (`-`) a entrada do display e o `merge -` do outro lado a lê da entrada padrão, incorporando-a ao arquivo de autoridade. As demais alternativas invertem os subcomandos, atribuem ao `xhost` comandos que ele não possui ou usam `generate`/`add` de forma incompatível. O envio deve ocorrer por canal seguro, como o SSH.
+
+### 106.1-013 | unica | 1
+ref: 102:p.136
+tags: gerenciador de exibição
+Qual componente fornece a tela de login gráfica, inicia a sessão do servidor X para o usuário autenticado e mantém o servidor X em funcionamento?
+- O gerenciador de pacotes
+- O compositor Wayland
+- O gerenciador de janelas (window manager)
+= O gerenciador de exibição
+- O emulador de terminal
+> O gerenciador de exibição, como GDM, SDDM ou LightDM, apresenta o login e inicia e supervisiona o servidor X. O gerenciador de janelas cuida apenas de posição e decoração das janelas depois que a sessão começou.
+
+### 106.1-014 | multipla | 1
+ref: 102:p.136
+tags: gerenciador de exibição, GDM, SDDM, LightDM
+Quais dos itens abaixo são gerenciadores de exibição (display managers)?
+= SDDM
+- twm
+- Xfce
+= GDM
+- Window Maker
+= LightDM
+> GDM, SDDM e LightDM fornecem o login gráfico. Window Maker e twm (Tab Window Manager) são gerenciadores de janelas, e o Xfce é um ambiente de desktop completo.
+
+### 106.1-015 | unica | 1
+ref: 102:p.134
+tags: gerenciador de janelas
+Qual componente controla a posição das janelas e adiciona a barra de título e os botões de minimizar, maximizar e fechar?
+- O arquivo `xorg.conf`
+- O comando `xdpyinfo`
+= O gerenciador de janelas
+- O gerenciador de exibição
+- O servidor X
+> A aparência e o comportamento das janelas (decorações, posicionamento, alternância) são definidos pelo gerenciador de janelas, como Window Maker ou twm, ou pelo gerenciador embutido em um ambiente de desktop (KDE, GNOME, Xfce). O servidor X só desenha o que os clientes pedem e não dita a aparência das janelas.
+
+### 106.1-016 | unica | 2
+ref: 102:p.138
+tags: xorg.conf.d, InputClass, XkbLayout
+Considere o arquivo `/etc/X11/xorg.conf.d/00-keyboard.conf`:
+
+```
+Section "InputClass"
+    Identifier "system-keyboard"
+    MatchIsKeyboard "on"
+    Option "XkbLayout" "us"
+    Option "XkbModel" "pc105"
+EndSection
+```
+
+Para qual finalidade serve a diretiva `Option "XkbLayout" "us"`?
+= Definir a disposição das teclas (layout) do teclado
+- Definir o modelo físico do teclado, como `pc105` ou `abnt2`
+- Habilitar a extensão XKEYBOARD no servidor
+- Definir o idioma das mensagens do servidor X
+- Definir o dispositivo de ponteiro padrão
+> `XkbLayout` escolhe o layout das teclas (por exemplo `us`, `br`, `gr(polytonic)`), enquanto `XkbModel` define o modelo do teclado (como `pc105`). Os valores aceitos estão em `xkeyboard-config(7)`. O idioma das mensagens depende das variáveis de localidade, não do Xorg.
+
+### 106.1-017 | unica | 2
+ref: 102:p.139
+tags: setxkbmap, teclado
+Qual comando altera o layout do teclado para o português do Brasil apenas na sessão X em execução, sem modificar nenhum arquivo de configuração?
+- `xhost +layout br`
+- `Xorg -configure -layout br`
+- `localectl set-x11-keymap br`
+- `xauth layout br`
+= `setxkbmap -layout br`
+> O `setxkbmap` usa a extensão X Keyboard (XKB) para trocar o layout na sessão atual; a mudança é perdida ao encerrar a sessão. O `localectl set-x11-keymap` grava a configuração de modo permanente em `/etc/X11/xorg.conf.d/00-keyboard.conf`. As demais opções não existem para esse fim.
+
+### 106.1-018 | unica | 2
+ref: 102:p.139
+tags: localectl, teclado, xorg.conf.d
+Qual comando, em sistemas com systemd, define o layout de teclado do X e cria automaticamente o arquivo `/etc/X11/xorg.conf.d/00-keyboard.conf`?
+- `timedatectl set-keymap br`
+- `xdpyinfo --keyboard br`
+- `setxkbmap -layout br -model abnt2`
+= `localectl set-x11-keymap br`
+- `loadkeys br`
+> O `localectl set-x11-keymap` altera o layout para o servidor X de forma permanente, criando o arquivo em `xorg.conf.d`. O `setxkbmap` vale só para a sessão atual, `timedatectl` cuida de data e hora, `loadkeys` ajusta o mapa do console de texto e o `xdpyinfo` apenas exibe informações do servidor X.
+
+### 106.1-019 | lacuna | 1
+ref: 102:p.143
+tags: Xorg, -configure, xorg.conf
+Qual opção do comando `X` (um link para o `Xorg`) faz o servidor gerar um novo arquivo de configuração `xorg.conf.new` a partir do hardware detectado? `X ____`
+= -configure
+> A opção `-configure` detecta o hardware e gera `xorg.conf.new` no diretório atual (normalmente executada como root). Se já houver um X em execução, é preciso indicar outro display, como em `Xorg :1 -configure`.
+
+### 106.1-020 | unica | 2
+ref: 102:p.143
+tags: Xorg, -configure, xorg.conf
+Depois de executar `sudo Xorg -configure`, o que o administrador deve fazer para que a configuração gerada seja usada pelo servidor X?
+- Copiar `xorg.conf.new` para `~/.Xauthority`
+= Mover `xorg.conf.new` para `/etc/X11/xorg.conf`
+- Executar `xhost +` para carregar o arquivo
+- Nada: o Xorg lê o arquivo `xorg.conf.new` sozinho
+- Renomear o arquivo para `00-keyboard.conf`
+> O `Xorg -configure` cria `xorg.conf.new` no diretório atual, e esse nome não é lido pelo servidor. É preciso movê-lo para `/etc/X11/` com o nome `xorg.conf`. `~/.Xauthority` guarda cookies de autenticação, e `00-keyboard.conf` é um arquivo de `xorg.conf.d` específico para teclado.
+
+### 106.1-021 | unica | 2
+ref: 102:p.141
+tags: xorg.conf.d, diretórios
+Em uma distribuição moderna, onde ficam os arquivos de configuração do Xorg fornecidos pela distribuição e onde o administrador deve criar seus ajustes personalizados?
+- Ambos em `/usr/lib/xorg/`, em subdiretórios distintos
+- Pela distribuição em `/etc/X11/xorg.conf.d/`; personalizados em `/usr/share/X11/xorg.conf.d/`
+- Fornecidos em `/var/lib/X11/`; personalizados em `/etc/X11/xorg.conf.d/`
+= Fornecidos em `/usr/share/X11/xorg.conf.d/`; personalizados em `/etc/X11/xorg.conf.d/`
+- Ambos em `/etc/X11/xorg.conf`, em seções separadas
+> Os arquivos da distribuição ficam em `/usr/share/X11/xorg.conf.d/` e os ajustes locais, em `/etc/X11/xorg.conf.d/`, de modo que atualizações de pacotes não sobrescrevem as alterações do administrador. O arquivo único `/etc/X11/xorg.conf` ainda é aceito, mas é opcional nas instalações modernas.
+
+### 106.1-022 | unica | 2
+ref: 102:p.140
+tags: xorg.conf, seções, Screen
+Em um arquivo `xorg.conf`, qual seção associa uma seção `Monitor` a uma seção `Device` (placa de vídeo)?
+= `Screen`
+- `ServerFlags`
+- `InputClass`
+- `ServerLayout`
+- `Files`
+> A seção `Screen` reúne um monitor e um dispositivo de vídeo (placa). A `ServerLayout` está um nível acima e agrupa telas e dispositivos de entrada em uma única configuração do servidor; `InputClass` define dispositivos de entrada e `ServerFlags` trata de opções globais do servidor.
+
+### 106.1-023 | unica | 2
+ref: 102:p.138
+tags: xorg.conf.d, InputClass, InputDevice
+Qual seção do Xorg, normalmente encontrada em arquivos de `/etc/X11/xorg.conf.d/`, é usada para configurar uma classe de dispositivos (por exemplo, todos os teclados) em vez de um modelo específico de hardware?
+- `Device`
+= `InputClass`
+- `Monitor`
+- `ServerLayout`
+- `InputDevice`
+> `InputClass` aplica opções a todos os dispositivos de entrada que atendam a um critério (como `MatchIsKeyboard`). `InputDevice` configura um modelo específico, `Device` descreve a placa de vídeo, `Monitor` o monitor físico e `ServerLayout` agrupa todos os componentes.
+
+### 106.1-024 | unica | 3
+ref: 102:p.149
+tags: xorg.conf.d, ServerFlags, quiosque
+Um sistema de quiosque deve impedir que o usuário troque para os terminais virtuais com Ctrl+Alt+F1 a F6. Qual opção, dentro de uma seção `ServerFlags` em um arquivo de `/etc/X11/xorg.conf.d/`, atende ao requisito?
+- `Option "AutoAddDevices" "false"`
+- `Option "DisableVT" "true"`
+= `Option "DontVTSwitch" "true"`
+- `Option "DontZap" "true"`
+- `Option "NoVirtualTerminals" "true"`
+> `DontVTSwitch` desabilita a troca de terminal virtual por teclado. `DontZap` desabilita o encerramento do servidor com Ctrl+Alt+Backspace, `AutoAddDevices` controla a detecção automática de dispositivos de entrada, e `NoVirtualTerminals` e `DisableVT` não são opções do Xorg. As opções do servidor estão na página de manual do Xorg.
+
+### 106.1-025 | lacuna | 1
+ref: 102:p.141
+tags: xdpyinfo
+Qual comando exibe informações sobre o servidor X em execução, como versão, extensões carregadas e dimensões da tela?
+= xdpyinfo
+> O `xdpyinfo` mostra o nome do display (igual a `$DISPLAY`), a versão do servidor, a lista de extensões (RANDR, XKEYBOARD, GLX etc.) e dados sobre cada tela.
+
+### 106.1-026 | unica | 2
+ref: 102:p.133
+tags: ~/.xsession-errors, diagnóstico
+Qual arquivo no diretório pessoal do usuário costuma receber as mensagens de erro e a saída dos programas iniciados pela sessão gráfica, sendo útil para diagnosticar problemas após o login gráfico?
+- `~/.xinitrc`
+= `~/.xsession-errors`
+- `~/.Xresources`
+- `~/.Xauthority`
+- `~/.bash_history`
+> Em muitas distribuições o script de sessão (por exemplo `/etc/X11/Xsession` no Debian) redireciona a saída padrão e de erro da sessão para `~/.xsession-errors`. `~/.Xauthority` guarda cookies, `~/.Xresources` preferências de aplicativos, `~/.bash_history` os comandos digitados no Bash e `~/.xinitrc` é um script de inicialização lido pelo `startx`. Em sistemas que usam o journal do systemd para a sessão, as mensagens podem aparecer lá em vez do arquivo.
+
+### 106.1-027 | lacuna | 2
+ref: 102:p.144
+tags: Wayland, WAYLAND_DISPLAY
+Qual variável de ambiente, equivalente à `DISPLAY` do X, identifica a sessão Wayland em uso (com valor como `wayland-0`)?
+= WAYLAND_DISPLAY
+> Assim como o X usa `DISPLAY`, o Wayland usa `WAYLAND_DISPLAY`. A variável não existe em sistemas que utilizam apenas o X.
+
+### 106.1-028 | unica | 2
+ref: 102:p.144
+tags: Wayland, XWayland
+Qual é a função do XWayland?
+- Exibir aplicativos Wayland em um servidor X remoto
+- Converter arquivos `xorg.conf` em configurações do Wayland
+- Fornecer o login gráfico para sessões Wayland
+= Executar, em uma sessão Wayland, aplicativos que ainda dependem do X
+- Permitir que o Wayland substitua o gerenciador de exibição
+> O XWayland é um servidor X separado que roda como cliente Wayland, de forma que aplicativos que ainda não suportam o Wayland continuem funcionando dentro da sessão. Não converte arquivos de configuração nem substitui o gerenciador de exibição.
+
+### 106.1-029 | unica | 2
+ref: 102:p.143
+tags: Wayland, compositor
+Qual afirmação sobre o Wayland é correta?
+- Ele foi criado como extensão do Xorg, mantendo o servidor X
+- Ele depende da variável `DISPLAY` para localizar o servidor
+= O compositor Wayland gerencia a entrada, as janelas e a composição da imagem
+- Ele é um protocolo de rede, como o XDMCP, para sessões remotas
+- Ele é configurado principalmente por arquivos em `/etc/X11/xorg.conf.d/`
+> O Wayland é um protocolo de exibição criado para substituir o X. O compositor combina os elementos renderizados pelos clientes na tela e trata a entrada e o gerenciamento das janelas. A configuração do Xorg não se aplica a ele, a variável usada é `WAYLAND_DISPLAY` e ele não é uma extensão do Xorg.
+
+### 106.1-030 | lacuna | 1
+ref: 102:p.143
+tags: Xorg, X
+Em algumas distribuições o comando `X` é um link simbólico para qual executável?
+= Xorg
+= /usr/bin/Xorg
+> O comando `X` pode ser usado no lugar de `Xorg`, pois ele é um link simbólico para o servidor X.Org. As mesmas opções valem para ambos, como `-configure`.
+
+### 106.1-031 | lacuna | 1
+ref: 102:p.133
+tags: xhost, controle de acesso
+Qual comando administra a lista de hosts autorizados a se conectar ao servidor X (por exemplo, `xhost +lab02`)?
+= xhost
+> O `xhost` adiciona (`+nome`) e remove (`-nome`) hosts da lista de acesso do servidor X e, sem argumentos, mostra se o controle de acesso está ativo e quais hosts estão autorizados. É um controle rudimentar; a autenticação por cookies fica a cargo do `xauth`.
+
+### 106.1-032 | lacuna | 1
+ref: 102:p.133
+tags: xauth, Xauthority
+Qual utilitário edita e exibe as credenciais de autorização (cookies) do arquivo `~/.Xauthority`?
+= xauth
+> O `xauth` manipula o arquivo de autoridade X, com subcomandos como `list`, `add`, `extract` e `merge`. Já o `xhost` trabalha com a lista de hosts mantida pelo próprio servidor.
+
+### 106.1-033 | lacuna | 2
+ref: 102:p.139
+tags: setxkbmap, teclado
+Qual comando altera, na sessão X em execução, o layout de teclado para o português do Brasil? Complete: `____ -layout br`
+= setxkbmap
+> O `setxkbmap` usa a extensão X Keyboard para trocar layout e modelo do teclado na sessão atual. Para tornar a mudança permanente, usa-se o `localectl set-x11-keymap` ou se edita um arquivo de `/etc/X11/xorg.conf.d/`.
+
+### 106.1-034 | lacuna | 2
+ref: 102:p.140
+tags: xorg.conf, ServerLayout
+Qual seção do `xorg.conf` agrupa as telas e os dispositivos de entrada (mouse, teclado) em uma única configuração do servidor X?
+= ServerLayout
+> A seção `ServerLayout` reúne `Screen` e `InputDevice` (ou dispositivos de entrada) em uma só interface do X Window System; a seção `Screen`, por sua vez, associa um `Monitor` a um `Device`.
+
+### 106.1-035 | multipla | 2
+ref: 102:p.140
+tags: xorg.conf, seções
+Quais seções podem aparecer em um arquivo de configuração `xorg.conf`?
+- `Kernel`
+= `Monitor`
+- `Shell`
+= `Screen`
+- `Bootloader`
+= `ServerLayout`
+> `Monitor` descreve o monitor físico, `Screen` associa monitor e placa de vídeo e `ServerLayout` agrupa tudo. `Device` e `InputClass`/`InputDevice` também são válidas. `Kernel`, `Bootloader` e `Shell` não são seções do Xorg.
+
+### 106.1-036 | multipla | 2
+ref: 102:p.141
+tags: xorg.conf, xorg.conf.d, diretórios
+Quais caminhos são lidos pelo servidor Xorg em busca de configuração?
+= `/etc/X11/xorg.conf.d/`
+= `/usr/share/X11/xorg.conf.d/`
+= `/etc/X11/xorg.conf`
+- `~/.Xauthority`
+- `/etc/X11/Xsession.d/`
+- `~/.xsession-errors`
+> O Xorg lê o arquivo opcional `/etc/X11/xorg.conf` e os fragmentos dos diretórios `/etc/X11/xorg.conf.d/` (ajustes do administrador) e `/usr/share/X11/xorg.conf.d/` (fornecidos pela distribuição). `~/.Xauthority` guarda cookies, `~/.xsession-errors` registra a saída da sessão e `/etc/X11/Xsession.d/` contém scripts da sessão do usuário, não configuração do servidor.

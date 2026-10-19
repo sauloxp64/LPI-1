@@ -1,0 +1,504 @@
+### 103.2-001 | unica | 1
+ref: 101:p.209-210
+tags: cat, stdin, EOF
+O comando `cat > anotacoes.txt` lê o teclado e grava o texto digitado no arquivo. Qual combinação de teclas sinaliza o fim da entrada (EOF) para o `cat`?
+= Ctrl+D
+- Ctrl+C
+- Ctrl+Z
+- Ctrl+X, seguido de Ctrl+C
+> Ctrl+D, no início de uma linha, informa ao programa que a entrada acabou, e o `cat` termina normalmente. Ctrl+C envia SIGINT e interrompe o programa (as linhas já terminadas com Enter acabam gravadas, mas não é um fim de entrada). Ctrl+Z suspende o processo, e Ctrl+X seguido de Ctrl+C é o atalho de saída do Emacs/nano, sem efeito no `cat`.
+
+### 103.2-002 | unica | 1
+ref: 101:p.211-212, 101:p.227
+tags: bzcat, compactação
+Qual comando exibe o conteúdo de `relatorio.txt.bz2` no terminal, sem criar um arquivo descompactado em disco?
+= bzcat relatorio.txt.bz2
+- zcat relatorio.txt.bz2
+- xzcat relatorio.txt.bz2
+- bunzip2 relatorio.txt.bz2
+> `bzcat` lê arquivos compactados com bzip2 (extensão `.bz2`) e escreve o conteúdo descompactado na saída padrão. `zcat` é para gzip (`.gz`), `xzcat` para xz (`.xz`). `bunzip2 relatorio.txt.bz2` descompacta para o disco: cria `relatorio.txt` e remove o `.bz2`.
+
+### 103.2-003 | multipla | 2
+ref: 101:p.211-212, 101:p.227
+tags: xzcat, xz
+Quais comandos exibem na tela o conteúdo de `dados.txt.xz` sem remover o arquivo `.xz` nem criar `dados.txt`?
+= xzcat dados.txt.xz
+= xz -dc dados.txt.xz
+= unxz -c dados.txt.xz
+- zcat dados.txt.xz
+- unxz dados.txt.xz
+> `xzcat` equivale a `xz -dc` (`-d` descompacta, `-c` escreve na saída padrão e preserva o original) e também a `unxz -c`. `unxz dados.txt.xz` sem `-c` cria `dados.txt` e remove o `.xz`. `zcat` só entende o formato gzip.
+
+### 103.2-004 | unica | 3
+ref: 101:p.211-212
+tags: zcat, gzip, erro
+O que acontece ao executar `zcat dados.txt.xz` em um arquivo realmente compactado com xz?
+= O `zcat` recusa o arquivo, informando que ele não está no formato gzip
+- O `zcat` detecta sozinho o formato xz e mostra o texto original normalmente
+- O `zcat` descompacta o arquivo e remove o `dados.txt.xz` do disco
+- O `zcat` imprime o conteúdo compactado como bytes binários na tela
+> `zcat` é o `gunzip -c` e só entende gzip; para outros formatos existem `bzcat` (bzip2) e `xzcat` (xz). A mensagem é `gzip: dados.txt.xz: not in gzip format`. Nenhum dos `*cat` altera ou remove o arquivo compactado.
+
+### 103.2-005 | unica | 1
+ref: 101:p.213
+tags: less, paginador
+Dentro do `less`, qual tecla encerra o programa e devolve o controle ao shell?
+= q
+- Ctrl+X
+- Esc, seguido de :wq
+- Ctrl+D
+> No `less`, `q` (ou `Q`) sai do paginador. Ctrl+D rola meia tela para baixo, e Ctrl+X e Esc não encerram o programa; `:wq` é um comando de edição do `vi`, que o `less` não usa.
+
+### 103.2-006 | unica | 2
+ref: 101:p.213
+tags: less, busca
+Dentro do `less`, qual sequência procura a palavra `error` para frente a partir da posição atual?
+= /error
+- ?error
+- :search error
+- Ctrl+F error
+> No `less`, `/padrão` pesquisa para frente e `?padrão` pesquisa para trás (como no `vi`). Depois, `n` repete a busca na mesma direção e `N` na direção oposta.
+
+### 103.2-007 | unica | 2
+ref: 101:p.213-215
+tags: head, tail, pipe
+Qual pipeline imprime exatamente as linhas 11 a 20 de `arquivo.txt`, que tem 100 linhas?
+= head -n 20 arquivo.txt | tail -n 10
+- head -n 10 arquivo.txt | tail -n 20
+- tail -n 20 arquivo.txt | head -n 10
+- tail -n 11 arquivo.txt | head -n 20
+> `head -n 20` entrega as linhas 1 a 20, e `tail -n 10` fica com as 10 últimas delas, as linhas 11 a 20. A segunda opção imprime as linhas 1 a 10; a terceira, as linhas 81 a 90; a quarta, as linhas 90 a 100.
+
+### 103.2-008 | unica | 3
+ref: 101:p.213-215
+tags: tail
+Um arquivo CSV tem um cabeçalho na primeira linha. Qual comando imprime todas as linhas, exceto o cabeçalho?
+= tail -n +2 dados.csv
+- tail -n 2 dados.csv
+- head -n 2 dados.csv | tail -n 1
+- tail -n -2 dados.csv
+> Com o sinal de `+`, `tail -n +N` começa a imprimir a partir da linha N (aqui, a segunda) até o fim. `tail -n 2` e `tail -n -2` mostram as duas últimas linhas, e `head -n 2 | tail -n 1` imprime somente a segunda linha.
+
+### 103.2-009 | lacuna | 1
+ref: 101:p.227, 101:p.239
+tags: tail, follow
+Qual opção faz o `tail` continuar exibindo as novas linhas à medida que são acrescentadas ao arquivo?
+
+`tail ____ /var/log/syslog`
+= -f
+= -F
+= --follow
+= --follow=name
+> `tail -f` (`--follow`) mantém o arquivo aberto e mostra o que for gravado nele, o que é ótimo para acompanhar logs ao vivo (por exemplo, ao plugar um pendrive e ver as mensagens do kernel). `-F` também segue o arquivo, mas tenta reabri-lo se ele for recriado, como acontece na rotação de logs.
+
+### 103.2-010 | lacuna | 1
+ref: 101:p.214-215
+tags: wc
+Qual opção do `wc` faz com que ele conte apenas o número de linhas?
+
+`wc ____ arquivo.txt`
+= -l
+= --lines
+> `wc -l` conta linhas; `-w` conta palavras, `-c` bytes e `-m` caracteres. Sem opções, `wc` imprime linhas, palavras e bytes, nessa ordem.
+
+### 103.2-011 | unica | 2
+ref: 101:p.214-215, 101:p.228
+tags: wc
+Um arquivo `texto.txt` tem 3 linhas, 6 palavras e 31 bytes. Qual é a saída de `wc texto.txt`, desconsiderando o alinhamento dos espaços?
+= 3 6 31 texto.txt
+- 31 6 3 texto.txt
+- 6 3 31 texto.txt (palavras, linhas e bytes)
+- 3 31 6 texto.txt
+> Sem opções, `wc` mostra, nesta ordem, o número de linhas, de palavras e de bytes, seguidos do nome do arquivo. Para obter só um valor, use `-l`, `-w` ou `-c`; com `wc -l < texto.txt` o nome do arquivo também deixa de aparecer.
+
+### 103.2-012 | unica | 2
+ref: 101:p.227, 101:p.231
+tags: sort
+Qual é a saída de `printf '10\n9\n100\n2\n' | sort`, sem nenhuma opção?
+= 10, 100, 2 e 9, em linhas separadas
+- 2, 9, 10 e 100, em linhas separadas
+- 100, 10, 9 e 2, em linhas separadas
+- 10, 9, 100 e 2, sem nenhuma reordenação
+> Sem opções, o `sort` compara caracter por caracter (ordem alfabética), por isso `10` e `100` vêm antes de `2` e `9`. Para ordem numérica use `sort -n` (resultado 2, 9, 10, 100); `-r` inverte a ordem.
+
+### 103.2-013 | unica | 3
+ref: 101:p.227, 101:p.231
+tags: sort, campos
+Qual comando ordena `/etc/passwd` numericamente pelo UID, o terceiro campo, separado por dois-pontos?
+= sort -t: -k3 -n /etc/passwd
+- sort -t: -k3 /etc/passwd
+- sort -k3 -n /etc/passwd
+- sort -t: -k3 -nr /etc/passwd
+> `-t:` define o delimitador, `-k3` escolhe o terceiro campo como chave e `-n` pede comparação numérica. Sem `-n`, 1000 viria antes de 2, pois a comparação seria textual. Sem `-t:`, o separador seria espaço em branco, e a linha toda seria um único campo. Com `-nr`, a ordem numérica sairia invertida (do maior UID para o menor).
+
+### 103.2-014 | lacuna | 2
+ref: 101:p.227, 101:p.234
+tags: sort, aleatório
+Qual opção do `sort` embaralha as linhas em ordem aleatória?
+
+`sort ____ nomes.txt`
+= -R
+= --random-sort
+= --sort=random
+> `sort -R` ordena por um hash aleatório das chaves. Combinado com `head -1`, serve para sortear uma linha de um arquivo. Atenção: linhas idênticas ficam juntas, pois têm o mesmo hash, e o `-r` minúsculo apenas inverte a ordenação.
+
+### 103.2-015 | unica | 2
+ref: 101:p.227-228, 101:p.234
+tags: uniq
+Qual é a saída de `printf 'a\na\nb\na\n' | uniq | wc -l`?
+= 3
+- 2
+- 4
+- 1
+> O `uniq` só junta linhas repetidas que estejam adjacentes. A entrada tem `a`, `a`, `b`, `a`; as duas primeiras viram uma, mas o último `a` não é vizinho delas, então sobram 3 linhas. Com `sort | uniq` o resultado seria 2.
+
+### 103.2-016 | unica | 3
+ref: 101:p.227-228, 101:p.234
+tags: uniq, sort, pipe
+Qual pipeline mostra os 3 shells mais usados em `/etc/passwd` (sétimo campo), com a contagem de cada um?
+= cut -d: -f7 /etc/passwd | sort | uniq -c | sort -rn | head -3
+- cut -d: -f7 /etc/passwd | uniq -c | sort -rn | head -3
+- cut -d: -f7 /etc/passwd | sort | uniq -c | sort -n | head -3
+- cut -d: -f7 /etc/passwd | sort | uniq -d | sort -rn | head -3
+> É preciso ordenar antes de `uniq -c`, porque ele só conta linhas adjacentes; depois, `sort -rn` coloca as maiores contagens primeiro, e `head -3` fica com as três do topo. Sem o primeiro `sort`, as contagens saem fragmentadas. Com `sort -n` (sem `-r`), a ordem é crescente e o topo traria os 3 shells menos usados. `uniq -d` apenas lista linhas repetidas, sem contar.
+
+### 103.2-017 | unica | 3
+ref: 101:p.227-228, 101:p.234
+tags: uniq
+Quais linhas imprime `printf 'a\na\nb\nc\nc\n' | uniq -u`?
+= Somente b
+- a, b e c, uma vez cada
+- Somente a e c
+- a, a, b, c e c, sem alteração
+> `uniq -u` imprime apenas as linhas que não têm repetição adjacente: aqui, só `b`. Sem opções, o resultado seria `a`, `b`, `c`. Já `uniq -d` imprimiria uma cópia de cada linha repetida (`a` e `c`).
+
+### 103.2-018 | lacuna | 2
+ref: 101:p.227-228, 101:p.234
+tags: uniq, contagem
+Qual opção do `uniq` coloca, antes de cada linha, o número de vezes que ela apareceu em sequência?
+
+`sort nomes.txt | uniq ____`
+= -c
+= --count
+> `uniq -c` (`--count`) prefixa cada linha com o número de ocorrências consecutivas. O `sort` antes dele agrupa as linhas iguais, para que fiquem adjacentes.
+
+### 103.2-019 | unica | 2
+ref: 101:p.230-233
+tags: cut
+Qual é a saída de `echo "a:b:c:d" | cut -d: -f2,3`?
+= b:c
+- b c
+- b
+- a:b:c
+> `-d:` define o delimitador e `-f2,3` seleciona o segundo e o terceiro campos. Quando mais de um campo é selecionado, a saída usa o mesmo delimitador da entrada, resultando em `b:c`. Um intervalo como `-f2-` mostraria do segundo campo até o fim (`b:c:d`).
+
+### 103.2-020 | unica | 1
+ref: 101:p.227-228
+tags: cut, caracteres
+Qual é a saída de `echo abcdefgh | cut -c3-5`?
+= cde
+- bcd
+- abc
+- cdefgh
+> `cut -c3-5` seleciona os caracteres das posições 3 a 5 (contando a partir de 1): `c`, `d` e `e`.
+
+### 103.2-021 | unica | 3
+ref: 101:p.230-233
+tags: cut, delimitador
+Qual é a saída de `echo "a:b:c" | cut -f2`, sem a opção `-d`?
+= a:b:c
+- b
+- a
+- cut: invalid field
+> O delimitador padrão do `cut` é a tabulação (TAB). Como a linha não contém TAB, ela é tratada como um único campo e, por padrão, as linhas sem o delimitador são impressas por inteiro. Para obter `b`, o comando deveria ser `cut -d: -f2`. A opção `-s` suprimiria as linhas sem delimitador.
+
+### 103.2-022 | unica | 3
+ref: 101:p.237-238
+tags: cut, tr, espaços
+Uma linha contém `a   b c`, com três espaços entre `a` e `b`. Qual comando imprime `b`?
+= echo 'a   b c' | tr -s ' ' | cut -d' ' -f2
+- echo 'a   b c' | cut -d' ' -f2
+- echo 'a   b c' | tr -d ' ' | cut -d' ' -f2
+- echo 'a   b c' | cut -d' ' -f2,3 | tr -s ' '
+> O `cut` considera cada espaço um delimitador, então `a   b c` tem campos vazios entre os espaços e o campo 2 é vazio. O `tr -s ' '` comprime os espaços repetidos em um só (`a b c`), e então `-f2` resulta em `b`. Com `tr -d ' '` todos os espaços somem, e o `cut` receberia `abc`; sem `-d`, o delimitador seria a tabulação.
+
+### 103.2-023 | unica | 2
+ref: 101:p.235-236
+tags: paste
+Os arquivos `f1` (linhas 1, 2, 3) e `f2` (linhas a, b, c) têm o mesmo número de linhas. Qual é a saída de `paste -d, f1 f2`?
+= 1,a  2,b  3,c, cada par em uma linha
+- 1,2,3 e a,b,c, em duas linhas
+- 1  a  2  b  3  c, separados por tabulação
+- 1 2 3 a b c, em uma única linha
+> O `paste` junta as linhas correspondentes dos arquivos lado a lado, usando TAB por padrão. A opção `-d,` troca o separador por vírgula, produzindo `1,a`, `2,b` e `3,c`. Para juntar as linhas de um único arquivo em uma só, existe `paste -s`.
+
+### 103.2-024 | unica | 1
+ref: 101:p.227-228, 101:p.235-236
+tags: tr
+Qual comando converte todas as letras minúsculas da entrada padrão em maiúsculas?
+= tr a-z A-Z
+- tr A-Z a-z
+- tr -d a-z
+- tr -s a-z A-Z
+> `tr a-z A-Z` traduz cada caractere do primeiro conjunto pelo correspondente do segundo (`tr '[:lower:]' '[:upper:]'` é equivalente). A segunda opção faz o inverso. `-d` apaga os caracteres do conjunto, e `-s` comprime repetições, o que não é o caso aqui.
+
+### 103.2-025 | unica | 2
+ref: 101:p.235-236
+tags: tr, stdin
+Qual é a forma correta de aplicar `tr a-z A-Z` ao conteúdo do arquivo `arquivo.txt`?
+= tr a-z A-Z < arquivo.txt
+- tr a-z A-Z arquivo.txt
+- tr arquivo.txt a-z A-Z
+- tr a-z A-Z -f arquivo.txt
+> O `tr` não aceita nomes de arquivo como argumento: ele lê somente a entrada padrão, e os argumentos são os conjuntos de caracteres. Por isso se usa redirecionamento (`< arquivo.txt`) ou pipe (`cat arquivo.txt | tr ...`). Escrever o arquivo como argumento resulta em `tr: extra operand`.
+
+### 103.2-026 | unica | 2
+ref: 101:p.235-236
+tags: tr, dos2unix
+Um arquivo veio do Windows e cada linha termina em CR+LF (`\r\n`). Qual comando remove os retornos de carro (`\r`), deixando só as quebras de linha do Unix?
+= tr -d '\r' < entrada.txt > saida.txt
+- tr -s '\r' < entrada.txt > saida.txt
+- tr '\r' '\n' < entrada.txt > saida.txt
+- tr -d '\n' < entrada.txt > saida.txt
+> `tr -d '\r'` apaga todos os caracteres CR e preserva os `\n`. A opção `-s` apenas comprime repetições de CR, que continuariam lá. `tr '\r' '\n'` troca cada CR por uma quebra de linha, e com isso cada linha ganharia uma linha em branco extra. `tr -d '\n'` apagaria as quebras de linha e juntaria o texto todo.
+
+### 103.2-027 | lacuna | 2
+ref: 101:p.237-238
+tags: tr, squeeze
+Qual opção do `tr` comprime sequências repetidas do mesmo caractere em uma única ocorrência, como em `ls -l | tr ____ ' '`, que transforma vários espaços seguidos em um só?
+= -s
+= --squeeze-repeats
+> `tr -s ' '` substitui cada sequência de espaços por um único espaço. Isso é muito usado antes de `cut -d' '`, que não trata vários espaços seguidos como um só delimitador.
+
+### 103.2-028 | unica | 1
+ref: 101:p.216-217
+tags: sed, substituição
+Qual é a saída de `echo banana | sed 's/a/X/g'`?
+= bXnXnX
+- bXnana
+- banana
+- XXXXXX
+> A expressão `s/a/X/g` substitui toda ocorrência de `a` por `X`: a flag `g` (global) faz a troca em todas as ocorrências da linha. Sem o `g`, apenas a primeira ocorrência de cada linha é substituída, resultando em `bXnana`.
+
+### 103.2-029 | unica | 3
+ref: 101:p.216-217
+tags: sed, p, -n
+Qual é a saída de `printf 'cat\ncut\n' | sed '/cat/p'`, sem a opção `-n`?
+= cat, cat e cut, cada um em uma linha
+- Somente a linha cat, pois o comando p imprime apenas as que casam
+- cat e cut, cada um em uma linha, sem nenhuma repetição
+- Somente a linha cut, pois o comando p exclui as que casam
+> Sem `-n`, o `sed` imprime automaticamente todas as linhas e, além disso, o comando `p` imprime de novo as que casam com `/cat/`. Por isso `cat` aparece duas vezes. Com `sed -n '/cat/p'` só a linha `cat` seria impressa.
+
+### 103.2-030 | unica | 2
+ref: 101:p.216-217
+tags: sed, d
+Qual comando mostra o conteúdo de `config.conf` sem as linhas de comentário (as que começam com `#`)?
+= sed '/^#/d' config.conf
+- sed -n '/^#/p' config.conf
+- sed 's/^#//' config.conf
+- sed '/#$/d' config.conf
+> `/^#/d` apaga as linhas cujo início (`^`) é `#`, e as demais são impressas. `sed -n '/^#/p'` faria o contrário, mostrando só os comentários. `s/^#//` apenas remove o `#` inicial, mantendo o texto do comentário. `/#$/d` apaga linhas que terminam com `#`.
+
+### 103.2-031 | unica | 2
+ref: 101:p.218
+tags: sed, -i, backup
+Depois de executar `sed -i.bak 's/linha/LINHA/' config.txt`, qual é o resultado?
+= `config.txt` é alterado e `config.txt.bak` guarda a versão original
+- `config.txt` fica intacto e `config.txt.bak` recebe a versão alterada
+- O texto alterado é apenas impresso na tela e nenhum arquivo é modificado
+- `config.txt` é alterado e nenhuma cópia é guardada, pois `.bak` é ignorado
+> Com `-i`, o `sed` edita o arquivo no lugar. Se houver um sufixo logo após o `-i` (aqui `.bak`), o arquivo original é salvo com esse sufixo antes da modificação. Sem sufixo (`sed -i`), nenhum backup é criado. Sem `-i`, o resultado só é impresso na saída padrão.
+
+### 103.2-032 | lacuna | 1
+ref: 101:p.218
+tags: sed, -i
+Qual opção do `sed` edita o arquivo diretamente, em vez de apenas imprimir o resultado na tela?
+
+`sed ____ 's/velho/novo/' arquivo.txt`
+= -i
+= --in-place
+> `-i` (`--in-place`) grava as alterações no próprio arquivo. Quando acompanhada de um sufixo (`-i.bak`), mantém uma cópia do original.
+
+### 103.2-033 | unica | 3
+ref: 101:p.229-230
+tags: sed, contagem de linhas
+O que faz o comando `sed -n '$=' arquivo.txt`?
+= Imprime o número da última linha, isto é, o total de linhas
+- Imprime o conteúdo da última linha do arquivo, como o `tail -n 1`
+- Apaga a última linha do arquivo e imprime todas as demais
+- Imprime só as linhas que terminam com `=`, sem numerá-las
+> Em `sed`, `$` é o endereço da última linha e `=` é o comando que imprime o número da linha atual. Com `-n`, nada mais é impresso. O resultado equivale a `wc -l`. Para imprimir o conteúdo da última linha seria `sed -n '$p'`, e para apagá-la, `sed '$d'`.
+
+### 103.2-034 | unica | 2
+ref: 101:p.231
+tags: sed, endereços
+Qual comando imprime somente as linhas 2 e 3 de `arquivo.txt`?
+= sed -n '2,3p' arquivo.txt
+- sed '2,3p' arquivo.txt
+- sed -n '2,3d' arquivo.txt
+- sed -n '2,3!p' arquivo.txt
+> O endereço `2,3` seleciona o intervalo e o comando `p` imprime, enquanto `-n` suprime a impressão automática das demais linhas. Sem o `-n`, as linhas 2 e 3 sairiam duplicadas no meio das outras. Com `d`, as linhas 2 e 3 seriam removidas (e `-n` com `d` não imprimiria nada). O `!` inverte o endereço: `2,3!p` imprime todas as linhas menos a 2 e a 3.
+
+### 103.2-035 | unica | 2
+ref: 101:p.237
+tags: split
+Um arquivo `livro` tem 250 linhas. Que arquivos o comando `split -l 100 livro` cria no diretório atual?
+= xaa, xab e xac, com 100, 100 e 50 linhas
+- xaa e xab, com 125 linhas cada um
+- livro1, livro2 e livro3, com 100, 100 e 50 linhas
+- xaa, xab e xac, com 100 linhas cada um, descartando as 50 restantes
+> Sem o argumento de prefixo, o `split` usa `x` e acrescenta sufixos alfabéticos (`aa`, `ab`, `ac`...). Cada pedaço tem até 100 linhas e o último guarda as que sobram (50). Nenhum dado é descartado. Para usar outro prefixo, ele vai depois do nome do arquivo: `split -l 100 livro parte_`.
+
+### 103.2-036 | unica | 2
+ref: 101:p.237
+tags: split, -d
+Que nomes de arquivo o comando `split -l 100 -d livro parte_` gera para um arquivo de 250 linhas?
+= parte_00, parte_01 e parte_02
+- parte_aa, parte_ab e parte_ac
+- parte_1, parte_2 e parte_3
+- xaa, xab e xac, ignorando o prefixo informado
+> O argumento `parte_` é o prefixo, e a opção `-d` troca os sufixos alfabéticos por numéricos, começando em `00`. Sem `-d`, os nomes seriam `parte_aa`, `parte_ab` e `parte_ac`. O prefixo padrão `x` só é usado quando nenhum prefixo é informado.
+
+### 103.2-037 | lacuna | 2
+ref: 101:p.237
+tags: split, cat
+Os pedaços `xaa`, `xab` e `xac`, criados pelo `split`, precisam ser reunidos de novo, nessa ordem, em `livro.txt`. Qual comando faz isso?
+
+`____ xaa xab xac > livro.txt`
+= cat
+> `cat` concatena os arquivos na ordem em que são informados, reconstruindo o original (`cat xa? > livro.txt` também funciona, pois o shell expande os nomes em ordem alfabética). `paste` juntaria as linhas lado a lado, e não uma depois da outra.
+
+### 103.2-038 | lacuna | 2
+ref: 101:p.237
+tags: split, -l
+Qual opção do `split` define o número máximo de linhas de cada arquivo gerado?
+
+`split ____ 1000 grande.log`
+= -l
+= --lines
+> `split -l N` limita cada pedaço a N linhas. Para dividir por tamanho, existe `-b` (bytes, aceita sufixos como `M`), e `-n N` divide em N pedaços.
+
+### 103.2-039 | unica | 2
+ref: 101:p.218-219
+tags: sha512sum, hash
+Qual comando gera uma soma de verificação de 128 caracteres hexadecimais?
+= sha512sum
+- sha256sum
+- sha1sum
+- md5sum
+> O tamanho do resumo depende do algoritmo: `md5sum` gera 128 bits (32 caracteres hexadecimais), `sha1sum` 160 bits (40), `sha256sum` 256 bits (64) e `sha512sum` 512 bits (128).
+
+### 103.2-040 | lacuna | 1
+ref: 101:p.219
+tags: sha256sum, verificação
+Qual opção do `sha256sum` verifica os arquivos listados em um arquivo de somas, como em `sha256.txt`, em vez de calcular novas somas?
+
+`sha256sum ____ sha256.txt`
+= -c
+= --check
+> `sha256sum -c sha256.txt` recalcula a soma de cada arquivo citado em `sha256.txt` e compara com o valor registrado, imprimindo `OK` ou `FAILED` para cada um. A mesma opção existe em `md5sum` e `sha512sum`.
+
+### 103.2-041 | unica | 2
+ref: 101:p.219-220
+tags: sha256sum, integridade
+Depois de `sha256sum ftu.txt > sha256.txt`, o conteúdo de `ftu.txt` foi alterado. O que `sha256sum -c sha256.txt` mostra?
+= `ftu.txt: FAILED` e o aviso de que 1 soma calculada não confere
+- `ftu.txt: OK`, pois o nome do arquivo continua o mesmo
+- O novo valor da soma, que passa a substituir o antigo em sha256.txt
+- `sha256sum: ftu.txt: No such file or directory`
+> A verificação recalcula o hash do arquivo atual e compara com o registrado. Como o conteúdo mudou, o resultado é `ftu.txt: FAILED`, seguido de `sha256sum: WARNING: 1 computed checksum did NOT match`, e o comando termina com código de saída diferente de zero. O nome do arquivo não influencia o hash, e o `sha256.txt` nunca é reescrito pelo `-c`.
+
+### 103.2-042 | unica | 3
+ref: 101:p.218-220
+tags: md5sum, echo, printf
+Por que `echo abc | md5sum` e `printf abc | md5sum` produzem resultados diferentes?
+= O `echo` acrescenta uma quebra de linha, que entra no cálculo do hash
+- O `printf` converte o texto para maiúsculas antes de calcular o hash
+- O `md5sum` ignora entradas vindas de `echo`, calculando o hash de uma entrada vazia
+- O `md5sum` usa algoritmos diferentes conforme o comando que fornece a entrada
+> `echo abc` envia 4 bytes (`abc` e `\n`), e `printf abc` envia 3. Qualquer diferença de um byte muda completamente o hash. Para ignorar a quebra de linha do `echo`, usa-se `echo -n abc | md5sum`, que equivale a `printf abc | md5sum`.
+
+### 103.2-043 | multipla | 2
+ref: 101:p.220-221
+tags: od, cat -A, caracteres invisíveis
+Um script vindo do Windows falha por causa de caracteres invisíveis, como o retorno de carro (`\r`). Quais comandos revelam esses caracteres?
+= od -c script.sh
+= cat -A script.sh
+- wc -l script.sh
+- nl script.sh
+- uniq -c script.sh
+> `od -c` mostra cada byte como caractere ou sequência de escape (`\n`, `\t`, `\r`), e `cat -A` marca o fim de cada linha com `$`, as tabulações com `^I` e os retornos de carro com `^M`. `wc`, `nl` e `uniq` operam sobre linhas e palavras e não exibem esses caracteres.
+
+### 103.2-044 | unica | 3
+ref: 101:p.220-221
+tags: od, hexadecimal
+Qual é a saída de `printf 'Hi\n' | od -An -tx1`, desconsiderando espaços iniciais?
+= 48 69 0a
+- 110 151 012
+- 72 105 10
+- H i \n
+> `-tx1` mostra cada byte (1 byte por unidade) em hexadecimal: `H` é 0x48, `i` é 0x69 e a quebra de linha é 0x0a. `-An` suprime a coluna de deslocamento. A saída em octal (`-b`) seria `110 151 012`, em decimal (`-tu1`) `72 105 10`, e `-c` mostraria `H i \n`.
+
+### 103.2-045 | multipla | 2
+ref: 101:p.214
+tags: nl, cat -n
+Um arquivo tem cinco linhas: `a`, uma linha vazia, `b`, outra linha vazia e `c`. Quais comandos numeram as cinco linhas, inclusive as vazias?
+= nl -ba arquivo
+= cat -n arquivo
+- nl arquivo
+- nl -bt arquivo
+- nl -bn arquivo
+> Por padrão, o `nl` numera apenas as linhas não vazias (`-bt`); `-ba` numera todas, e `-bn` não numera nenhuma. O `cat -n` numera todas as linhas, vazias ou não. Com `nl arquivo` ou `nl -bt arquivo`, o resultado seria numeração 1, 2 e 3 só para `a`, `b` e `c`.
+
+### 103.2-046 | multipla | 2
+ref: 101:p.213-215, 101:p.230
+tags: head, sed
+Quais comandos imprimem somente a primeira linha de `arquivo.txt`?
+= head -n 1 arquivo.txt
+= head -1 arquivo.txt
+= sed -n 1p arquivo.txt
+- tail -n 1 arquivo.txt
+- cut -c1 arquivo.txt
+> `head -n 1` (ou a forma antiga `head -1`) e `sed -n 1p` imprimem a linha 1. `tail -n 1` imprime a última linha, e `cut -c1` imprime o primeiro caractere de cada linha.
+
+### 103.2-047 | multipla | 2
+ref: 101:p.214-215, 101:p.229-230
+tags: wc, sed, contagem
+Quais comandos imprimem o número de linhas de `arquivo.txt`?
+= wc -l < arquivo.txt
+= sed -n '$=' arquivo.txt
+- wc -w < arquivo.txt
+- wc -c < arquivo.txt
+- sed -n '$p' arquivo.txt
+> `wc -l` conta linhas e `sed -n '$='` imprime o número da última linha, que é o total. `wc -w` conta palavras, `wc -c` conta bytes e `sed -n '$p'` imprime o conteúdo da última linha, não o seu número.
+
+### 103.2-048 | lacuna | 1
+ref: 101:p.212, 101:p.227
+tags: zcat, gzip
+Qual comando exibe o conteúdo de `ftu.txt.gz` na tela, sem descompactar o arquivo em disco?
+
+`____ ftu.txt.gz`
+= zcat
+= gzip -dc
+= gzip -cd
+= gzip -d -c
+= gunzip -c
+> `zcat` lê arquivos compactados com gzip e escreve o conteúdo descompactado na saída padrão, mantendo o `.gz`. Equivale a `gzip -dc` e a `gunzip -c`.
+
+### 103.2-049 | lacuna | 1
+ref: 101:p.230-233
+tags: cut, delimitador
+Qual opção do `cut` define o caractere delimitador dos campos, como em `cut ____: -f1 /etc/passwd`?
+= -d
+= --delimiter=
+> `-d:` (ou `--delimiter=:`) define os dois-pontos como delimitador, e `-f1` seleciona o primeiro campo (o nome do usuário em `/etc/passwd`). Sem `-d`, o delimitador padrão é a tabulação.
+
+### 103.2-050 | lacuna | 1
+ref: 101:p.227-228, 101:p.235-236
+tags: paste
+Qual comando junta as linhas de dois arquivos lado a lado, em colunas separadas por tabulação?
+
+`____ nomes.txt notas.txt`
+= paste
+> `paste` junta linhas correspondentes de cada arquivo, separando-as por TAB (ou pelo delimitador de `-d`). `cat` apenas coloca um arquivo depois do outro.

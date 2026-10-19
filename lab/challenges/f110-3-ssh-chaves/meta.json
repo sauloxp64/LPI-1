@@ -1,0 +1,26 @@
+{
+  "id": "f110-3-ssh-chaves",
+  "obj": "110.3",
+  "titulo": "Gerar chave SSH e deixar ~/.ssh com as permissões corretas",
+  "nivel": 2,
+  "minutos": 9,
+  "params": {
+    "modelo": { "escolha": ["ed25519", "rsa-3072", "rsa-4096", "ecdsa-384", "ecdsa-521"] },
+    "arquivo": { "escolha": ["id_deploy", "id_backup", "id_lab", "chave_ci"] },
+    "comentario": { "escolha": ["aluno@estacao-lab", "deploy@ci-lab", "backup@srv-lab"] }
+  },
+  "enunciado": "Você vai preparar o acesso por chave SSH do usuário `aluno` (trabalhe como `aluno`, na pasta `~/.ssh`). Hoje a pasta está bagunçada: com permissões abertas demais e já tem um `authorized_keys` com uma chave antiga que **precisa ser mantida**.\n\n1. Gere um novo par de chaves **sem passphrase** com estas características: tipo/tamanho **`{modelo}`** (formato `tipo-bits`; no `ed25519` o tamanho é fixo), **comentário** `{comentario}`, gravado no arquivo **`~/.ssh/{arquivo}`** (e `~/.ssh/{arquivo}.pub`).\n2. **Acrescente** a chave pública nova ao `~/.ssh/authorized_keys`, sem apagar a chave antiga que já está lá.\n3. Corrija as permissões, como o `sshd` (com `StrictModes`) exige: o diretório `~/.ssh` deve ser `700`; as chaves **privadas** (`{arquivo}` e a antiga `id_velha`) devem ser `600`; o `authorized_keys` não pode ser gravável por grupo/outros (`600`).\n4. Grave em `~/lab/ssh/impressao-digital.txt` a **impressão digital** (fingerprint SHA256) da chave pública nova, exatamente como o `ssh-keygen` a mostra (o campo que começa com `SHA256:`).",
+  "verifica": [
+    "existe o par `~/.ssh/{arquivo}` / `{arquivo}.pub`, do tipo e tamanho `{modelo}`, com comentário `{comentario}` e a chave privada sem passphrase",
+    "o `authorized_keys` contém a chave pública nova (uma vez) e ainda contém a chave antiga",
+    "permissões: `~/.ssh` = 700, `{arquivo}` = 600, `id_velha` = 600, `authorized_keys` sem escrita para grupo/outros; tudo do usuário `aluno`",
+    "`impressao-digital.txt` contém o fingerprint SHA256 da chave nova"
+  ],
+  "dicas": [
+    "`ssh-keygen` aceita `-t` (tipo: `ed25519`, `rsa`, `ecdsa`), `-b` (bits, quando aplicável), `-C` (comentário), `-f` (arquivo de saída) e `-N` (passphrase; `-N \"\"` deixa vazia).",
+    "Para instalar a chave: `cat ~/.ssh/ARQUIVO.pub >> ~/.ssh/authorized_keys` (`>>` acrescenta; `>` apagaria a antiga). Também existe o `ssh-copy-id`, mas ele precisa de um servidor alcançável.",
+    "`chmod 700 ~/.ssh`, `chmod 600 ~/.ssh/arquivo ~/.ssh/id_velha ~/.ssh/authorized_keys`. O `ssh` recusa chave privada com permissão aberta (`UNPROTECTED PRIVATE KEY FILE!`).",
+    "`ssh-keygen -lf ~/.ssh/ARQUIVO.pub` imprime `bits SHA256:xxxx comentário (TIPO)`: copie o campo `SHA256:...`."
+  ],
+  "solucao": "```\nssh-keygen -t TIPO [-b BITS] -C {comentario} -f ~/.ssh/{arquivo} -N \"\"\n  # {modelo}: ed25519 -> -t ed25519 ; rsa-3072 -> -t rsa -b 3072 ; rsa-4096 -> -t rsa -b 4096 ;\n  #            ecdsa-384 -> -t ecdsa -b 384 ; ecdsa-521 -> -t ecdsa -b 521\ncat ~/.ssh/{arquivo}.pub >> ~/.ssh/authorized_keys\nchmod 700 ~/.ssh\nchmod 600 ~/.ssh/{arquivo} ~/.ssh/id_velha ~/.ssh/authorized_keys\nssh-keygen -lf ~/.ssh/{arquivo}.pub | awk '{print $2}' > ~/lab/ssh/impressao-digital.txt\n```\nO `ssh-keygen` cria dois arquivos: a chave **privada** (nunca sai da máquina; precisa ser `600`) e a **pública** `.pub` (vai para o `authorized_keys` do servidor, uma por linha). O `sshd` com `StrictModes yes` ignora `authorized_keys` quando o arquivo, `~/.ssh` ou o home são graváveis por outros; o cliente `ssh` recusa chaves privadas legíveis por outros. O fingerprint (`-l`, `-E sha256`) identifica a chave sem expor seu conteúdo. Chaves de servidor ficam em `/etc/ssh/ssh_host_*` e o `known_hosts` guarda as chaves de servidores já visitados."
+}

@@ -1,0 +1,61 @@
+{
+  "id": "f103-1-env-exportar",
+  "obj": "103.1",
+  "titulo": "Variáveis de ambiente para um script",
+  "nivel": 1,
+  "minutos": 4,
+  "params": {
+    "serv": {
+      "escolha": [
+        "vitrine",
+        "faturamento",
+        "estoque",
+        "catalogo",
+        "entregas"
+      ]
+    },
+    "var": {
+      "escolha": [
+        "MODO_OPERACAO",
+        "PERFIL_AMBIENTE",
+        "NIVEL_SERVICO",
+        "REGIAO_NUVEM",
+        "CANAL_ALERTA"
+      ]
+    },
+    "valor": {
+      "escolha": [
+        "producao",
+        "homologacao",
+        "contingencia",
+        "auditoria",
+        "piloto"
+      ]
+    },
+    "varporta": {
+      "escolha": [
+        "PORTA_HTTP",
+        "PORTA_API",
+        "PORTA_METRICAS",
+        "PORTA_ADMIN"
+      ]
+    },
+    "porta": {
+      "faixa": [
+        2000,
+        9999
+      ]
+    }
+  },
+  "enunciado": "Em `~/lab/f103-1-env-exportar/` há o script `mostra.sh`, que prepara a subida do serviço **{serv}**. Ele só funciona se o **ambiente do processo** tiver estas duas variáveis:\n\n* `{var}` valendo `{valor}`\n* `{varporta}` valendo `{porta}`\n\nSe você rodar `./mostra.sh` do jeito que está, ele reclama e termina com erro.\n\nFaça o script rodar **com as duas variáveis definidas**, **sem editar o script**, e grave a saída dele (a saída normal) em `~/lab/f103-1-env-exportar/saida.txt`.",
+  "verifica": [
+    "o script `mostra.sh` continua intacto",
+    "`saida.txt` é exatamente a saída do script rodando com `{var}={valor}` e `{varporta}={porta}` no ambiente"
+  ],
+  "dicas": [
+    "Uma variável comum do shell (`X=1`) não é herdada pelos programas que você executa; só as variáveis do ambiente são.",
+    "Há dois jeitos: colocar `VAR=valor` na frente do comando (vale só para aquela execução) ou usar `export` antes de rodar.",
+    "Exemplo do padrão: `export NOME=valor` e depois `./programa > arquivo`. Confira com `env | grep NOME`."
+  ],
+  "solucao": "```\ncd ~/lab/f103-1-env-exportar\nexport {var}={valor} {varporta}={porta}\n./mostra.sh > saida.txt\n```\nou, numa linha só e sem poluir a sessão:\n```\n{var}={valor} {varporta}={porta} ./mostra.sh > saida.txt\n```\nO script é um **processo filho** do shell: ele só enxerga as variáveis **exportadas** (ambiente) — uma atribuição simples `{var}={valor}` numa linha separada cria variável só do shell, que o filho não herda (pegadinha clássica). Prefixar o comando com `VAR=valor` coloca a variável no ambiente apenas daquele comando. `env` e `export -p` mostram o que está exportado."
+}

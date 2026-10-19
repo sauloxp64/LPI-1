@@ -1,0 +1,551 @@
+### 107.3-001 | unica | 1
+ref: 102:p.247
+tags: LANG, localidade
+O que representam as partes de `LANG=pt_BR.UTF-8`?
+= Idioma (`pt`), região (`BR`) e codificação de caracteres (`UTF-8`)
+- Fuso horário (`pt`), país (`BR`) e formato de data (`UTF-8`) do sistema
+- Idioma (`BR`), região (`pt`) e codificação (`UTF-8`)
+- Teclado (`pt`), moeda (`BR`) e sistema de arquivos (`UTF-8`)
+- Nome da localidade (`pt_BR`) e tamanho de papel (`UTF-8`)
+> O formato é `ab_CD.codificação`: `ab` é o código de idioma (ISO 639), `CD` é o código da região ou país (ISO 3166) e, depois do ponto, vem a codificação de caracteres. Por isso `pt_BR.UTF-8` é o português do Brasil em UTF-8; as demais opções trocam ou inventam o significado dos campos.
+
+### 107.3-002 | lacuna | 1
+ref: 102:p.247
+tags: LANG, localidade
+A configuração de localidade mais básica de uma sessão é a definição da variável de ambiente ____, a partir da qual a maioria dos programas identifica o idioma a ser usado.
+= LANG
+> `LANG` define a localidade padrão para todas as categorias. As variáveis `LC_*` permitem ajustar categorias específicas, e `LC_ALL` sobrepõe todas.
+
+### 107.3-003 | unica | 2
+ref: 102:p.249-250
+tags: LC_ALL, precedência
+Em que idioma o comando abaixo exibe o nome do dia da semana?
+
+```
+$ LC_ALL=C LC_TIME=pt_BR.UTF-8 date +%A
+```
+- Em nenhum: o comando apresenta erro por conflito entre as variáveis
+- No idioma definido pela variável `LANG`
+- Em nenhum: exibe apenas o número do dia da semana
+- Em português do Brasil
+= Em inglês
+> `LC_ALL` sobrepõe todas as demais variáveis de localidade, inclusive `LC_TIME` e `LANG`. Assim, o `date` usa a localidade `C` e exibe o nome do dia em inglês, ainda que `LC_TIME` esteja definida como `pt_BR.UTF-8`.
+
+### 107.3-004 | unica | 2
+ref: 102:p.248-249
+tags: LC_TIME, LANG, precedência
+Um usuário tem `LANG=pt_BR.UTF-8` e executa `LC_TIME=en_US.UTF-8 date +%A`, com `LC_ALL` indefinida. Em que idioma sai o nome do dia da semana?
+= Em inglês
+- Em português do Brasil
+- Metade em inglês e metade em português
+- Em nenhum: a data sai em formato numérico, sem nomes
+- Em nenhum: ocorre erro por haver duas localidades definidas
+> As variáveis `LC_*` específicas têm precedência sobre `LANG`, que é apenas o valor padrão para as categorias não definidas. Como `LC_TIME` controla os nomes de dias e meses e o formato da data, a saída vem em inglês, mesmo com `LANG` em português. Só `LC_ALL` sobrepõe as demais.
+
+### 107.3-005 | unica | 1
+ref: 102:p.248
+tags: LC_COLLATE, ordenação
+Qual variável de localidade define a ordem alfabética usada, por exemplo, na ordenação de nomes de arquivos?
+- `LC_NUMERIC`
+= `LC_COLLATE`
+- `LC_TIME`
+- `LC_CTYPE`
+- `LC_MESSAGES`
+> `LC_COLLATE` define as regras de ordenação (collation). `LC_CTYPE` define a classificação de caracteres (maiúsculas, minúsculas), `LC_NUMERIC` os separadores numéricos, `LC_MESSAGES` o idioma das mensagens e `LC_TIME` o formato de data e hora.
+
+### 107.3-006 | lacuna | 1
+ref: 102:p.248
+tags: LC_MESSAGES, idioma das mensagens
+Qual variável de localidade define o idioma das mensagens exibidas pelos programas?
+= LC_MESSAGES
+> `LC_MESSAGES` define o idioma das mensagens dos programas (principalmente os do projeto GNU). Se não estiver definida, vale `LANG`, e `LC_ALL` sobrepõe ambas.
+
+### 107.3-007 | unica | 2
+ref: 102:p.255
+tags: LC_NUMERIC, uptime
+Em um sistema configurado com localidade `pt_BR.UTF-8`, o `uptime` mostra a carga média com vírgula (`0,32`). Qual comando faz com que as frações sejam exibidas com ponto no restante da sessão, sem alterar o idioma das mensagens?
+- `export LC_TIME=en_US.UTF-8`
+- `export LC_MESSAGES=en_US.UTF-8`
+- `export LC_MONETARY=en_US.UTF-8`
+= `export LC_NUMERIC=en_US.UTF-8`
+- `export LC_COLLATE=en_US.UTF-8`
+> `LC_NUMERIC` define os separadores decimal e de milhar para valores não monetários, e o `uptime` usa a localidade corrente para formatar a carga média. Exportar `LC_ALL=en_US.UTF-8` também funcionaria, mas mudaria todas as categorias, inclusive as mensagens. `LC_TIME` e `LC_MONETARY` tratam de data/hora e moeda, `LC_MESSAGES` do idioma e `LC_COLLATE` da ordenação.
+
+### 107.3-008 | multipla | 2
+ref: 102:p.248-249
+tags: LC_*, variáveis de localidade
+Quais dos nomes abaixo são variáveis de localidade válidas?
+= `LC_MONETARY`
+= `LC_COLLATE`
+- `LC_CURRENCY`
+= `LC_TIME`
+- `LC_DATE`
+- `LC_SORT`
+> `LC_COLLATE` (ordenação), `LC_TIME` (data e hora) e `LC_MONETARY` (moeda) são categorias reais, listadas pelo comando `locale`. `LC_DATE`, `LC_SORT` e `LC_CURRENCY` parecem plausíveis, mas não existem.
+
+### 107.3-009 | unica | 2
+ref: 102:p.249
+tags: locale, locale -a
+Qual comando lista as localidades (locales) instaladas e disponíveis no sistema?
+- `locale -m`
+= `locale -a`
+- `locale -k`
+- `locale --all-vars`
+- `locale -l`
+> `locale -a` (`--all-locales`) lista as localidades instaladas. Sem opções, `locale` mostra as variáveis em uso; `-k` exibe palavras-chave de uma categoria, `-m` lista os mapas de caracteres (charmaps) e `-l` e `--all-vars` não existem.
+
+### 107.3-010 | unica | 3
+ref: 102:p.249
+tags: locale, LC_NUMERIC, LANG
+Observe a saída (parcial) do comando `locale`:
+
+```
+LANG=en_US.UTF-8
+LC_CTYPE="en_US.UTF-8"
+LC_NUMERIC=pt_BR.UTF-8
+LC_TIME="en_US.UTF-8"
+LC_COLLATE="en_US.UTF-8"
+LC_ALL=
+```
+
+O que indica a linha `LC_NUMERIC=pt_BR.UTF-8`, sem aspas e com valor diferente de `LANG`?
+- A variável será ignorada por estar sem aspas
+- A variável contém um valor inválido, por isso o `locale` o exibe sem aspas
+= Foi definida explicitamente, sobrepondo o valor derivado de `LANG`
+- Só os programas do usuário root usam o valor `pt_BR.UTF-8`
+- Foi gerada pela variável `LC_ALL`, que também está definida
+> O `locale` mostra entre aspas as categorias cujo valor é derivado de `LANG` (ou de `LC_ALL`) e sem aspas as que foram definidas explicitamente no ambiente. Aqui, `LC_NUMERIC` foi definida à parte, então números seguem `pt_BR` (vírgula decimal), enquanto o restante usa `en_US`. `LC_ALL=` vazia significa que não há sobreposição geral.
+
+### 107.3-011 | unica | 2
+ref: 102:p.250
+tags: LANG=C, scripts, ordenação
+Por que é recomendável definir `LANG=C` (ou `LC_ALL=C`) em scripts que ordenam ou comparam texto?
+- Ela dispensa o uso de aspas nas variáveis do script
+= Ela compara bytes e dá o mesmo resultado em qualquer sistema
+- Ela faz o script ignorar o fuso horário e a data do sistema
+- Ela converte automaticamente todo o texto processado para UTF-8
+- Ela ativa o suporte a caracteres acentuados em qualquer idioma
+> A localidade `C` faz apenas comparação simples de bytes, o que deixa a ordenação e os formatos de números e datas inequívocos, independentemente da configuração do sistema onde o script roda, e ainda é mais rápida. Ela não adiciona suporte a acentos (é baseada em ASCII), não converte codificações e não tem relação com fuso horário ou aspas.
+
+### 107.3-012 | unica | 3
+ref: 102:p.250
+tags: LANG=C, ls, ordenação
+Em um diretório com os arquivos `banana`, `Abacaxi`, `cereja` e `Damasco`, qual é a saída de `LC_ALL=C ls`?
+- `Abacaxi banana cereja Damasco`
+- `banana Abacaxi cereja Damasco`
+- `banana cereja Abacaxi Damasco`
+= `Abacaxi Damasco banana cereja`
+- `Damasco cereja banana Abacaxi` (ordem inversa)
+> Na localidade `C` a ordem segue o valor numérico dos bytes (ASCII): todas as letras maiúsculas vêm antes das minúsculas, então `Abacaxi` e `Damasco` precedem `banana` e `cereja`. Em localidades como `en_US.UTF-8` ou `pt_BR.UTF-8`, a ordem alfabética ignora a diferença de caixa na comparação principal e sai `Abacaxi banana cereja Damasco`.
+
+### 107.3-013 | unica | 3
+ref: 102:p.249-250
+tags: LC_ALL, LANG=C, scripts, diagnóstico
+O ambiente de um usuário tem `LC_ALL=en_US.UTF-8` exportada no `~/.profile`. Um script dele começa com `export LANG=C` e depois executa `sort lista.txt`, mas a ordenação continua seguindo as regras de `en_US`. Qual é a explicação?
+= `LC_ALL` tem precedência sobre `LANG`; o script deve usar `LC_ALL=C`
+- Um `export` dentro de um script não é herdado pelos comandos que ele executa
+- `LANG` só vale em sessões interativas; em scripts é ignorada
+- A localidade `C` só funciona depois de ser gerada com `locale-gen`
+- O `sort` ignora variáveis de ambiente, pois é um comando externo
+> `LC_ALL` sobrepõe todas as outras variáveis, incluindo `LANG`. Enquanto estiver definida no ambiente, `LANG=C` não surte efeito para a ordenação; é preciso definir `LC_ALL=C` (ou remover `LC_ALL`).
+
+### 107.3-014 | multipla | 2
+ref: 102:p.250
+tags: LANG=C, scripts, vantagens
+Quais são vantagens de executar um script com a localidade `C`?
+- Os caracteres acentuados passam a ser exibidos corretamente
+- O fuso horário é ajustado para UTC
+= As comparações são simples (por bytes), com bom desempenho
+- O script ganha permissão de execução automaticamente
+= A ordenação e os formatos de números e datas ficam previsíveis em qualquer sistema
+= As mensagens dos programas permanecem no idioma original, o que facilita analisar suas saídas
+> Na localidade `C`, o resultado não depende do idioma do usuário (ordenação, separadores, nomes de dias e meses) e a comparação por bytes é rápida. As mensagens dos programas ficam no idioma original (inglês), o que ajuda scripts que analisam a saída de comandos. A localidade `C` não trata acentos, não mexe no fuso horário e não altera permissões.
+
+### 107.3-015 | unica | 1
+ref: 102:p.246
+tags: /etc/localtime, zoneinfo
+O que é o arquivo `/etc/localtime` em um sistema Linux padrão?
+- Um arquivo que lista os fusos disponíveis no sistema
+= Link simbólico para o arquivo de fuso em `/usr/share/zoneinfo/`
+- O arquivo de configuração do cliente NTP
+- Um arquivo de texto com a hora local atual, atualizado a cada minuto
+- Um script que ajusta o relógio no boot
+> `/etc/localtime` aponta para o arquivo de dados do fuso horário correspondente dentro de `/usr/share/zoneinfo/` (por exemplo, `/usr/share/zoneinfo/America/Sao_Paulo`), e esses dados incluem as regras de horário de verão. Ele não contém texto, nem configura NTP, nem lista fusos.
+
+### 107.3-016 | unica | 2
+ref: 102:p.254
+tags: /etc/localtime, ln, zoneinfo
+Qual comando torna `Europe/Brussels` o fuso horário local padrão do sistema, mantendo `/etc/localtime` como link simbólico?
+- `touch /etc/localtime Europe/Brussels`
+- `echo Europe/Brussels > /etc/localtime`
+- `sudo ln -sf /etc/localtime /usr/share/zoneinfo/Europe/Brussels`
+- `mv /usr/share/zoneinfo/Europe/Brussels /etc/localtime`
+= `ln -sf /usr/share/zoneinfo/Europe/Brussels /etc/localtime`
+> O link `/etc/localtime` deve apontar para o arquivo de dados do fuso em `/usr/share/zoneinfo/`; a sintaxe do `ln -s` é `ln -s DESTINO LINK`. A segunda opção inverte os argumentos e sobrescreve o arquivo de dados do fuso com um link circular. `echo` gravaria texto onde se espera um arquivo binário, `mv` retiraria o arquivo do diretório de zoneinfo e `touch` apenas cria ou atualiza arquivos.
+
+### 107.3-017 | unica | 1
+ref: 102:p.246
+tags: /usr/share/zoneinfo
+Qual é o caminho do arquivo de dados do fuso horário `America/Sao_Paulo` em um sistema Linux padrão?
+- `/etc/zoneinfo/America/Sao_Paulo`
+= `/usr/share/zoneinfo/America/Sao_Paulo`
+- `/usr/share/timezones/America/Sao_Paulo`
+- `/etc/timezone/America/Sao_Paulo`
+- `/var/lib/zoneinfo/Sao_Paulo`
+> Os arquivos de todos os fusos ficam em `/usr/share/zoneinfo/`, organizados pelo nome do fuso (`Região/Cidade`). O pacote `tzdata` fornece e atualiza esses arquivos. `/etc/timezone` é um arquivo (não um diretório) e contém só o nome do fuso.
+
+### 107.3-018 | unica | 2
+ref: 102:p.243
+tags: /etc/timezone, Debian
+Em um sistema Debian ou Ubuntu, qual conteúdo do arquivo `/etc/timezone` define o fuso horário de São Paulo?
+- `/usr/share/zoneinfo/America/Sao_Paulo`
+- `Etc/GMT-3`
+= `America/Sao_Paulo`
+- `GMT-3`
+- `-03:00`
+> O `/etc/timezone` guarda o nome do fuso no formato `Região/Cidade` (ou um nome `Etc/GMT±N`), e não o caminho do arquivo. `Etc/GMT-3` representaria UTC+3, pois nesses nomes o sinal é invertido, e `GMT-3` e `-03:00` não são nomes válidos de zona. O que o sistema efetivamente usa para calcular a hora local é o link `/etc/localtime`; distribuições como RHEL e Fedora nem usam `/etc/timezone`.
+
+### 107.3-019 | unica | 2
+ref: 102:p.243
+tags: Etc/GMT, fuso horário, date
+O comando `date` de um sistema mostra `Mon Oct 21 10:45:21 -03 2019`. Qual nome de fuso, no formato genérico `Etc`, corresponde a essa saída?
+- `Etc/GMT-3`
+- `Etc/GMT+03:00`
+- `America/GMT-3`
+- `Etc/UTC-3`
+= `Etc/GMT+3`
+> Nos nomes `Etc/GMT±N` o sinal é invertido em relação à convenção usual: `Etc/GMT+3` representa o horário três horas atrás de UTC, que `date` exibe como `-03`. Foi essa a notação usada no material (`/etc/timezone` com `Etc/GMT+3`). `Etc/GMT-3` seria UTC+3. Os nomes `Etc/UTC-3`, `Etc/GMT+03:00` e `America/GMT-3` não existem.
+
+### 107.3-020 | unica | 3
+ref: 102:p.254
+tags: Etc/GMT, fuso horário, TZ
+Um sistema exibe `Mon Oct 21 18:45:21 +05 2019` na saída do `date`. Qual valor de `TZ` reproduz esse comportamento?
+- `Asia/GMT+5`
+= `Etc/GMT-5`
+- `Etc/GMT+5`
+- `Etc/GMT5`
+- `Etc/GMT-05:00`
+> Nos nomes do banco de dados tz, o sinal é invertido: `Etc/GMT-5` é o fuso cinco horas à frente de UTC, mostrado como `+05`, enquanto `Etc/GMT+5` equivale a UTC−5 (`-05`). Observação: o exercício do material da LPI sobre esta saída indica `Etc/GMT+5`, o que contraria o comportamento real; o teste `TZ=Etc/GMT-5 date` mostra `+05`.
+
+### 107.3-021 | unica | 2
+ref: 102:p.246
+tags: TZ, date, variável de ambiente
+Qual comando exibe a hora atual em Tóquio sem alterar o fuso horário do sistema nem o do restante da sessão?
+= `TZ=Asia/Tokyo date`
+- `LC_TIME=Asia/Tokyo date`
+- `LANG=Asia/Tokyo date`
+- `date --tz Asia/Tokyo`
+- `timedatectl Asia/Tokyo`
+> A variável `TZ` define o fuso horário do processo, sobrepondo o fuso padrão do sistema. Definida na frente do comando (ou com `env TZ=...`), vale só para ele. `LANG` e `LC_TIME` tratam de idioma e formato, não de fuso; o `date` não possui a opção `--tz`; e o `timedatectl` não aceita um nome de fuso como argumento sem subcomando.
+
+### 107.3-022 | unica | 2
+ref: 102:p.246
+tags: TZ, export, sessão
+Qual comando define `Pacific/Auckland` como fuso horário padrão apenas para a sessão de shell atual e seus processos filhos?
+- `timedatectl set-timezone Pacific/Auckland`
+- `ln -sf /usr/share/zoneinfo/Pacific/Auckland /etc/localtime`
+= `export TZ=Pacific/Auckland`
+- `export LANG=Pacific/Auckland`
+- `echo Pacific/Auckland > /etc/timezone`
+> Exportar `TZ` altera o fuso apenas da sessão atual (e dos processos iniciados por ela); para torná-lo permanente para o usuário, a linha deve ir para `~/.profile`. As demais opções tentam alterar o fuso de todo o sistema (e `LANG` nem trata de fuso horário).
+
+### 107.3-023 | lacuna | 1
+ref: 102:p.243
+tags: tzselect
+Qual comando interativo ajuda a descobrir o nome correto do fuso horário, perguntando o continente, o país e a região do usuário?
+= tzselect
+= /usr/bin/tzselect
+> O `tzselect` guia o usuário por menus (continente, país, região) até exibir o valor adequado de `TZ`, por exemplo `America/Sao_Paulo`. Ele faz parte do pacote que acompanha a biblioteca C do GNU.
+
+### 107.3-024 | unica | 2
+ref: 102:p.245-246
+tags: tzselect, TZ, ~/.profile
+Depois que o usuário confirma as escolhas no `tzselect`, o que a ferramenta efetivamente faz?
+- Reinicia o serviço de data e hora do systemd com as novas regras de fuso
+= Apenas exibe o nome do fuso e sugere `TZ='...'; export TZ` no `~/.profile`
+- Atualiza o link `/etc/localtime` para apontar para o fuso escolhido pelo usuário
+- Ajusta o relógio de hardware para UTC e sincroniza o relógio do sistema
+- Reescreve o arquivo `/etc/timezone` com o novo nome de fuso e reinicia os serviços
+> O `tzselect` apenas identifica o fuso: imprime o nome (como `America/Sao_Paulo`) na saída padrão, para uso em scripts, e orienta como tornar o valor permanente para o usuário. Para mudar o fuso do sistema é preciso atualizar `/etc/localtime` (e `/etc/timezone` no Debian), ou usar `timedatectl set-timezone`.
+
+### 107.3-025 | unica | 2
+ref: 102:p.243
+tags: timedatectl, set-timezone
+Em um sistema com systemd, qual comando altera o fuso horário do sistema para `America/Sao_Paulo`?
+= `timedatectl set-timezone America/Sao_Paulo`
+- `timedatectl set-locale America/Sao_Paulo`
+- `timedatectl timezone America/Sao_Paulo`
+- `timedatectl change-timezone America/Sao_Paulo`
+- `timedatectl set-time America/Sao_Paulo`
+> O subcomando `set-timezone` do `timedatectl` altera o fuso do sistema (atualizando o link `/etc/localtime`). `set-time` ajusta data e hora, `set-locale` não existe no `timedatectl` (a localidade é tratada pelo `localectl`) e as outras formas não são válidas. Os fusos disponíveis são listados com `timedatectl list-timezones`.
+
+### 107.3-026 | lacuna | 2
+ref: 102:p.243
+tags: timedatectl, list-timezones
+Qual subcomando do `timedatectl` lista os nomes de fusos horários disponíveis? `timedatectl ____`
+= list-timezones
+> `timedatectl list-timezones` exibe os nomes no formato `Região/Cidade` aceitos por `timedatectl set-timezone`.
+
+### 107.3-027 | unica | 3
+ref: 102:p.243
+tags: timedatectl, RTC, UTC
+Observe a saída de `timedatectl`:
+
+```
+      Local time: Sat 2019-10-19 17:53:18 -03
+  Universal time: Sat 2019-10-19 20:53:18 UTC
+        RTC time: Sat 2019-10-19 20:53:18
+       Time zone: America/Sao_Paulo (-03, -0300)
+RTC in local TZ: no
+```
+
+O que a linha `RTC in local TZ: no` indica?
+- O fuso horário do sistema não foi definido
+= O relógio de hardware (RTC) mantém o horário em UTC
+- O relógio de hardware está no fuso horário local
+- O serviço de sincronização de horário (NTP) está desativado
+- O sistema não consegue ler o relógio de hardware
+> `RTC in local TZ: no` significa que o RTC guarda UTC, o que se confirma pelo `RTC time`, igual ao `Universal time`. Manter o RTC em UTC é a prática recomendada, pois o sistema converte para o fuso local ao exibir. A sincronização por NTP aparece em linhas próprias (`System clock synchronized`).
+
+### 107.3-028 | unica | 2
+ref: 102:p.247
+tags: zoneinfo, tzdata, horário de verão
+Para que as regras de horário de verão dos fusos continuem corretas ao longo do tempo, o que o administrador deve fazer?
+- Definir `LC_TIME=C` no ambiente para desativar o horário de verão
+- Editar manualmente o arquivo `/etc/timezone` sempre que uma regra de horário de verão mudar
+= Manter atualizado, pelo gerenciador de pacotes, o conteúdo de `/usr/share/zoneinfo/`
+- Recriar o link `/etc/localtime` para que aponte para o arquivo de texto `/etc/timezone`
+- Ajustar manualmente o relógio de hardware duas vezes por ano, na troca de horário
+> As regras de horário de verão mudam, e elas estão nos arquivos de `/usr/share/zoneinfo/`, fornecidos pelo pacote `tzdata`. Atualizar o pacote com o gerenciador de pacotes da distribuição mantém as regras em dia. Editar `/etc/timezone` só troca o nome do fuso, e `LC_TIME` não interfere no fuso.
+
+### 107.3-029 | unica | 2
+ref: 102:p.250
+tags: iconv, ISO-8859-1, UTF-8
+Qual comando converte o arquivo `original.txt`, codificado em ISO-8859-1, para UTF-8, gravando o resultado em `converted.txt`?
+- `iconv -l ISO-8859-1 -o UTF-8 original.txt > converted.txt`
+- `iconv -t ISO-8859-1 -f UTF-8 -o original.txt converted.txt`
+- `iconv -f UTF-8 -t ISO-8859-1 original.txt > converted.txt`
+- `iconv ISO-8859-1 UTF-8 original.txt converted.txt`
+= `iconv -f ISO-8859-1 -t UTF-8 original.txt > converted.txt`
+> No `iconv`, `-f` (from) indica a codificação de origem e `-t` (to) a de destino; a saída vai para a saída padrão (redirecionada) ou para o arquivo indicado em `-o`. A segunda opção faz a conversão inversa; a terceira usa `-o` com o arquivo errado e inverte os papéis; a quarta omite as opções; e `-l` apenas lista as codificações.
+
+### 107.3-030 | unica | 2
+ref: 102:p.254
+tags: iconv, WINDOWS-1252, -o
+Qual comando converte `old.txt` (WINDOWS-1252) para `new.txt` (UTF-8), usando a opção `-o` para o arquivo de saída?
+- `iconv -f WINDOWS-1252 -o UTF-8 -t new.txt old.txt`
+= `iconv -f WINDOWS-1252 -t UTF-8 -o new.txt old.txt`
+- `iconv -f WINDOWS-1252 -t UTF-8 -o old.txt new.txt`
+- `iconv --from-code=UTF-8 --to-code=WINDOWS-1252 old.txt -o new.txt`
+- `iconv -f UTF-8 -t WINDOWS-1252 -o new.txt old.txt`
+> A origem vem em `-f` (WINDOWS-1252), o destino em `-t` (UTF-8) e o arquivo de saída em `-o`, seguido do arquivo de entrada. As demais alternativas invertem as codificações, trocam os arquivos de entrada e de saída (tentando gravar sobre `old.txt`) ou colocam os argumentos nas opções erradas.
+
+### 107.3-031 | lacuna | 2
+ref: 102:p.250
+tags: iconv, codificações
+Qual opção do `iconv` lista todas as codificações de caracteres suportadas? `iconv ____`
+= -l
+= --list
+> `iconv -l` (ou `--list`) lista as codificações conhecidas, como `UTF-8`, `ISO-8859-1`, `ASCII` e `WINDOWS-1252`.
+
+### 107.3-032 | unica | 3
+ref: 102:p.247-250
+tags: UTF-8, ISO-8859-1, iconv, bytes
+O arquivo `palavra.txt` está em ISO-8859-1 e contém exatamente a palavra `ção`, sem quebra de linha, ocupando 3 bytes. Após `iconv -f ISO-8859-1 -t UTF-8 palavra.txt`, o resultado ocupa quantos bytes?
+- 8 bytes
+- 4 bytes
+- 6 bytes
+- 3 bytes, pois a conversão não altera o tamanho do arquivo
+= 5 bytes
+> No ISO-8859-1 cada caractere usa 1 byte. No UTF-8, os caracteres ASCII ocupam 1 byte e os acentuados do alfabeto latino, como `ç` e `ã`, ocupam 2 bytes: 2 + 2 + 1 (o `o`) = 5 bytes. O UTF-8 usa de 1 a 4 bytes por caractere e é compatível com o ASCII para os primeiros 128 caracteres.
+
+### 107.3-033 | unica | 3
+ref: 102:p.255
+tags: iconv, ASCII, //TRANSLIT
+Qual comando converte `readme.txt` (UTF-8) para o arquivo `ascii.txt` em ASCII simples, substituindo caracteres sem equivalente por caracteres de aparência semelhante, em vez de interromper a conversão com erro?
+- `iconv -f ASCII//TRANSLIT -t UTF-8 -o ascii.txt readme.txt`
+= `iconv -f UTF-8 -t ASCII//TRANSLIT -o ascii.txt readme.txt`
+- `iconv -f UTF-8 -t ASCII -o ascii.txt readme.txt`
+- `iconv -f UTF-8//TRANSLIT -t ASCII -o ascii.txt readme.txt`
+- `iconv -f UTF-8 -t ASCII --translit -o ascii.txt readme.txt`
+> O sufixo `//TRANSLIT` deve ser anexado à codificação de destino (`-t`). Sem ele, o `iconv` interrompe a conversão ao encontrar um caractere que não existe no destino, como o `ç` em ASCII, com `illegal input sequence`. Nas demais opções o sufixo está na codificação de origem ou é uma opção inexistente. O resultado da transliteração depende da localidade em uso.
+
+### 107.3-034 | unica | 1
+ref: 102:p.247
+tags: ASCII
+Qual é uma limitação importante da codificação ASCII?
+= Baseia-se no alfabeto inglês e não inclui letras acentuadas
+- É um padrão proprietário, que exige licença para uso comercial
+- Não representa letras maiúsculas, apenas minúsculas e dígitos
+- Usa 32 bits por caractere, o que desperdiça espaço em disco e memória
+- Só funciona em sistemas Windows, não sendo reconhecido pelo Linux
+> O ASCII (American Standard Code for Information Interchange) foi o primeiro padrão amplamente usado e tem poucos valores numéricos disponíveis (128 caracteres), baseados no alfabeto inglês. Por isso não contém caracteres acentuados, como `ç` e `ã`, de outros idiomas.
+
+### 107.3-035 | unica | 2
+ref: 102:p.247-248
+tags: Unicode, UTF-8
+Qual afirmação descreve corretamente a relação entre Unicode e UTF-8?
+- O Unicode contém apenas caracteres ocidentais, e o UTF-8 inclui todos os demais
+- O Unicode é uma codificação de 8 bits criada para substituir o ASCII no Linux
+- O UTF-8 atribui o número a cada caractere, e o Unicode é uma codificação do UTF-8
+= O Unicode dá um número único a cada caractere; o UTF-8 é uma codificação dele
+- Unicode e UTF-8 são nomes diferentes do mesmo padrão de 8 bits ISO-8859-1
+> O Padrão Unicode atribui um número exclusivo a cada caractere, em qualquer plataforma, dispositivo ou idioma, e o UTF-8 é uma das codificações que representam esses caracteres em bytes (compatível com o ASCII). O ISO-8859-1 é um padrão diferente, de 8 bits, restrito a caracteres da Europa ocidental.
+
+### 107.3-036 | unica | 2
+ref: 102:p.248
+tags: ISO-8859, UTF-8, preterido
+O que o material de estudo recomenda quanto aos padrões de codificação ISO-8859, como o ISO-8859-1?
+- Mantê-los, pois são mais compatíveis do que o UTF-8 em qualquer sistema
+- Adotá-los como padrão nas novas instalações, por serem mais simples
+- Convertê-los todos para ASCII, que é universalmente compatível
+- Usá-los apenas em scripts, nunca em arquivos de texto comuns
+= Preteri-los em favor das codificações Unicode, como o UTF-8
+> Alguns sistemas ainda usam o ISO-8859-1 para caracteres não ASCII, mas esses padrões devem ser preteridos em favor do Unicode (normalmente UTF-8), adotado por padrão pelos principais sistemas operacionais. Converter para ASCII perderia caracteres.
+
+### 107.3-037 | unica | 3
+ref: 102:p.248
+tags: /etc/locale.conf, gerenciador de exibição, LANG
+Um usuário acrescenta `export LANG=en_US.UTF-8` ao seu `~/.profile`, mas a tela de login gráfica continua no idioma do sistema (português). Qual é o motivo?
+- O `~/.profile` só é lido em terminais de texto, nunca na sessão gráfica
+- A variável `LANG` não afeta a interface gráfica de nenhum programa
+- Falta definir `LC_ALL`, pois só ela altera o gerenciador de exibição
+= A tela de login não é do usuário e usa a localidade padrão do sistema
+- O gerenciador de exibição só aceita o idioma `C`
+> A configuração do usuário só vale depois do login. Antes disso, programas independentes do usuário, como a tela de login do gerenciador de exibição, usam a localidade padrão do sistema (definida, por exemplo, em `/etc/locale.conf`). Por isso é preciso alterar a localidade do sistema, com `localectl set-locale`, para mudar o idioma da tela de login.
+
+### 107.3-038 | unica | 2
+ref: 102:p.248
+tags: localectl, /etc/locale.conf, systemd
+Qual comando, em sistemas com systemd, altera a localidade do sistema para `en_US.UTF-8`?
+- `timedatectl set-locale en_US.UTF-8`
+- `tzselect LANG=en_US.UTF-8`
+= `localectl set-locale LANG=en_US.UTF-8`
+- `localectl set-timezone en_US.UTF-8`
+- `locale --set LANG=en_US.UTF-8 --system`
+> O `localectl` consulta e altera a localidade (e o teclado) do sistema; `set-locale LANG=...` grava a variável em `/etc/locale.conf` (ou no arquivo equivalente da distribuição). O `timedatectl` cuida de data, hora e fuso horário; o `locale` apenas consulta; `tzselect` trata de fusos.
+
+### 107.3-039 | unica | 2
+ref: 102:p.248
+tags: /etc/locale.conf, LANG, arquivo
+Em distribuições com systemd como Fedora e RHEL, em qual arquivo ficam as definições de localidade do sistema, como `LANG=pt_BR.UTF-8`?
+- `/etc/sysconfig/zoneinfo`
+- `/etc/timezone`
+- `/etc/localtime`
+= `/etc/locale.conf`
+- `/etc/locale.gen`
+> As configurações de localidade de todo o sistema ficam em `/etc/locale.conf`, como atribuições de variáveis de shell (`LANG=pt_BR.UTF-8`). No Debian e no Ubuntu o arquivo equivalente é `/etc/default/locale`. `/etc/locale.gen` lista as localidades a gerar no Debian, e `/etc/localtime` e `/etc/timezone` tratam do fuso horário.
+
+### 107.3-040 | unica | 2
+ref: 102:p.243
+tags: date, fuso horário, offset
+O comando `date` exibe `Mon Oct 21 10:45:21 -03 2019`. Qual é o deslocamento do horário local em relação a UTC?
+- O horário local coincide com UTC, e `-03` indica a semana do ano
+- O sistema está configurado para UTC e `-03` é o dia do mês
+= O horário local está três horas atrás de UTC
+- O horário local está 30 minutos atrás de UTC
+- O horário local está três horas à frente de UTC
+> O valor `-03` indica deslocamento de três horas a menos que UTC: quando são 10h45 locais, UTC marca 13h45. Esse é o fuso GMT-3 (UTC−3), que corresponde, por exemplo, a `America/Sao_Paulo`. O `date` mostra o fuso atual além da data e da hora.
+
+### 107.3-041 | lacuna | 1
+ref: 102:p.249
+tags: LC_ALL, precedência
+Qual variável de ambiente sobrepõe todas as outras variáveis de localidade, incluindo `LANG` e as demais `LC_*`?
+= LC_ALL
+> `LC_ALL` tem a maior precedência e, quando definida, substitui `LANG` e todas as categorias `LC_*`. Por isso costuma ser usada para forçar uma localidade, como em `LC_ALL=C comando`.
+
+### 107.3-042 | lacuna | 1
+ref: 102:p.246
+tags: TZ, fuso horário
+Qual variável de ambiente define o fuso horário da sessão de shell, qualquer que seja o fuso horário padrão do sistema?
+= TZ
+> A variável `TZ` (por exemplo, `TZ=Asia/Tokyo`) sobrepõe o fuso horário padrão do sistema para os processos que a herdam. Pode ser definida em `~/.profile` para valer nas sessões futuras do usuário.
+
+### 107.3-043 | lacuna | 1
+ref: 102:p.249
+tags: locale, variáveis
+Qual comando exibe os valores de `LANG`, de todas as variáveis `LC_*` e de `LC_ALL` na configuração de localidade atual?
+= locale
+= /usr/bin/locale
+> O comando `locale`, sem argumentos, lista as variáveis de localidade em uso. Com `-a` lista as localidades instaladas.
+
+### 107.3-044 | lacuna | 2
+ref: 102:p.249
+tags: LC_NUMERIC, separadores
+Qual variável de localidade define os separadores decimal e de milhar dos números que não representam valores monetários?
+= LC_NUMERIC
+> `LC_NUMERIC` define o formato numérico (em `pt_BR` a vírgula é o separador decimal; em `en_US`, o ponto). Valores monetários são tratados por `LC_MONETARY`.
+
+### 107.3-045 | lacuna | 1
+ref: 102:p.250
+tags: iconv, -f, codificação de origem
+Complete o comando para converter de ISO-8859-1 para UTF-8: `iconv ____ ISO-8859-1 -t UTF-8 original.txt`
+= -f
+= --from-code
+> No `iconv`, `-f` (ou `--from-code`) informa a codificação de origem e `-t` (ou `--to-code`) a de destino. A saída é enviada à saída padrão, a menos que se use `-o arquivo`.
+
+### 107.3-046 | lacuna | 2
+ref: 102:p.255
+tags: iconv, TRANSLIT, ASCII
+Complete o sufixo da codificação de destino para que o `iconv` substitua caracteres sem equivalente por outros de aparência semelhante: `iconv -f UTF-8 -t ASCII//____ readme.txt`
+= TRANSLIT
+= translit
+> Com `//TRANSLIT` anexado ao destino, caracteres que não existem na codificação de destino são transliterados (por exemplo, uma letra acentuada pode virar a letra sem acento). Sem ele, o `iconv` interrompe a conversão com erro de sequência ilegal.
+
+### 107.3-047 | lacuna | 1
+ref: 102:p.249
+tags: LC_PAPER, papel
+Qual variável de localidade define o tamanho padrão do papel (por exemplo, A4 ou Letter)?
+= LC_PAPER
+> `LC_PAPER` define o tamanho padrão do papel usado pelos programas de impressão e de edição. É uma das categorias `LC_*` mostradas pelo comando `locale`.
+
+### 107.3-048 | multipla | 2
+ref: 102:p.243
+tags: date, timedatectl, fuso horário
+Quais comandos exibem o fuso horário atualmente em uso pelo sistema?
+= `timedatectl`
+= `date`
+- `tzselect`
+- `locale`
+- `iconv -l`
+> O `date` mostra o deslocamento ou a abreviação do fuso junto com a data e a hora, e o `timedatectl` (systemd) exibe a linha `Time zone`, além do horário local, UTC e RTC. O `tzselect` serve para descobrir o nome do fuso por menus, `locale` lista variáveis de localidade e `iconv -l` lista codificações de caracteres.
+
+### 107.3-049 | multipla | 2
+ref: 102:p.246
+tags: TZ, timedatectl, /etc/localtime, fuso permanente
+Quais comandos alteram o fuso horário padrão do sistema inteiro, de forma permanente?
+= `timedatectl set-timezone Europe/Lisbon`
+= `ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime`
+- `export TZ=Europe/Lisbon`
+- `tzselect`
+- `date -u`
+> O `timedatectl set-timezone` e a recriação do link `/etc/localtime` mudam o fuso padrão do sistema. `export TZ=...` vale só para a sessão atual e seus filhos, o `tzselect` apenas informa o nome do fuso a usar e `date -u` exibe a hora em UTC sem alterar nada.
+
+### 107.3-050 | multipla | 3
+ref: 102:p.247-248
+tags: UTF-8, ASCII, ISO-8859, Unicode
+Quais afirmações sobre codificações de caracteres estão corretas?
+- O ASCII representa todos os caracteres do Unicode
+- O UTF-8 não representa caracteres acentuados
+- O ISO-8859-1 usa 2 bytes por caractere
+= O UTF-8 é compatível com o ASCII para os 128 primeiros caracteres
+= O UTF-8 usa de 1 a 4 bytes por caractere
+> No UTF-8 os caracteres ASCII ocupam 1 byte e os demais usam de 2 a 4 bytes, de modo que um texto ASCII é também UTF-8 válido. O ISO-8859-1 usa 1 byte por caractere, o ASCII tem apenas 128 caracteres e o UTF-8 representa qualquer caractere do Unicode, inclusive os acentuados.
+
+### 107.3-051 | unica | 2
+ref: 102:p.252
+tags: iconv, erro, ASCII
+O que ocorre ao executar `printf 'ação\n' | iconv -f UTF-8 -t ASCII`, sem o sufixo `//TRANSLIT`?
+= A conversão para no primeiro caractere impossível e o `iconv` exibe um erro de sequência ilegal
+- O `iconv` converte o texto para UTF-8, pois o ASCII é um subconjunto dele
+- O `iconv` imprime o texto original sem mudanças, pois a origem já é UTF-8
+- O `iconv` substitui cada caractere acentuado por um ponto de interrogação e termina com sucesso
+- O `iconv` remove os caracteres acentuados em silêncio e termina com sucesso
+> O ASCII não possui `ç` nem `ã`. Sem `//TRANSLIT`, o `iconv` converte o que pode (aqui apenas o `a` inicial), para no primeiro caractere sem equivalente e informa `illegal input sequence at position 1`, terminando com status diferente de 0. Os caracteres só são trocados por semelhantes (ou por `?`, quando não há aproximação) com `//TRANSLIT`, e o resultado depende da localidade. Observação: o material de estudo diz que o `iconv` troca por `?` os caracteres sem equivalente; no GNU iconv (glibc) o comportamento padrão, testado, é abortar com erro.
+
+### 107.3-052 | lacuna | 2
+ref: 102:p.248
+tags: LC_CTYPE, maiúsculas e minúsculas
+Qual variável de localidade define como o sistema classifica os caracteres, por exemplo, quais são considerados letras maiúsculas ou minúsculas?
+= LC_CTYPE
+> `LC_CTYPE` define o tratamento de conjuntos de caracteres, como a classificação em maiúsculas e minúsculas. `LC_COLLATE` trata da ordem alfabética, `LC_MESSAGES` do idioma das mensagens e `LC_TIME` do formato de data e hora.

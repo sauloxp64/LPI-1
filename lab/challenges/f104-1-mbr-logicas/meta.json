@@ -1,0 +1,66 @@
+{
+  "id": "f104-1-mbr-logicas",
+  "obj": "104.1",
+  "titulo": "Disco MBR com estendida e partições lógicas",
+  "nivel": 2,
+  "minutos": 8,
+  "params": {
+    "disco": {
+      "escolha": [
+        "servidor",
+        "backup",
+        "estoque",
+        "vendas",
+        "arquivo"
+      ]
+    },
+    "tam": {
+      "escolha": [
+        128,
+        160,
+        192,
+        256
+      ]
+    },
+    "p1": {
+      "faixa": [
+        20,
+        40
+      ]
+    },
+    "p2": {
+      "faixa": [
+        8,
+        24
+      ]
+    },
+    "n": {
+      "escolha": [
+        2,
+        3
+      ]
+    },
+    "l": {
+      "faixa": [
+        8,
+        16
+      ]
+    }
+  },
+  "enunciado": "Você vai montar o layout de um disco novo, sem tocar em nenhum disco real: crie a imagem de disco `~/lab/particoes-mbr/{disco}.img` com **{tam} MiB** (por exemplo com `truncate` ou `dd`) e grave nela uma tabela de partições **MBR (dos)** com este layout, nesta ordem:\n\n1. partição **primária** de **{p1} MiB**, tipo **Linux (83)**, marcada como **inicializável** (flag de boot);\n2. partição **primária** de **{p2} MiB**, tipo **Linux swap (82)**;\n3. partição **estendida** ocupando **todo o espaço restante** do disco;\n4. dentro da estendida, **{n} partições lógicas** de **{l} MiB** cada, tipo Linux (83).\n\nUse a ferramenta que preferir (`fdisk`, `sfdisk`, `parted` ou `gdisk` em modo MBR). Aceita-se diferença de até 1 MiB nos tamanhos. Não formate as partições.",
+  "verifica": [
+    "a imagem `{disco}.img` existe e tem exatamente {tam} MiB",
+    "tabela de partições do tipo MBR (`dos`)",
+    "partição 1: tipo 83, ~{p1} MiB, com a flag de boot",
+    "partição 2: tipo 82, ~{p2} MiB",
+    "partição 3: estendida, logo após a 2, até o fim do disco",
+    "as {n} partições lógicas (numeradas de 5 em diante): tipo 83, ~{l} MiB cada, dentro da estendida, e nenhuma partição a mais"
+  ],
+  "dicas": [
+    "Primeiro crie o arquivo com o tamanho certo; o `fdisk`/`sfdisk` aceitam um arquivo no lugar de `/dev/sdX`.",
+    "No `fdisk`: `o` (nova tabela dos), `n` (primária, +{p1}M...), `t` (tipo), `a` (boot), `n` com `e` (estendida) e depois `n` com `l` (lógicas). `w` grava. Confira com `fdisk -l` ou `sfdisk -d`.",
+    "O MBR só aceita 4 entradas primárias: por isso a 4ª \"vaga\" vira a estendida e as lógicas passam a ser numeradas a partir de 5.",
+    "Com `sfdisk`: um script `label: dos` seguido de linhas `,TAMANHO,TIPO,BOOT` (ex.: `,{p1}M,L,*`; swap = `S`, estendida = `E`; lógicas vêm depois da linha da estendida)."
+  ],
+  "solucao": "```\ntruncate -s {tam}M ~/lab/particoes-mbr/{disco}.img\nsfdisk ~/lab/particoes-mbr/{disco}.img <<'EOF'\nlabel: dos\n,{p1}M,L,*\n,{p2}M,S\n,,E\n,{l}M,L\nEOF\n```\n(a linha `,{l}M,L` aparece {n} vezes: uma por partição lógica). No `fdisk` interativo o caminho é: `o`, `n p 1 (padrão) +{p1}M`, `a`, `n p 2 ... +{p2}M`, `t 2 82`, `n e 3 (padrão) (padrão)` e `n l` + `+{l}M` para cada lógica, `w`.\nO MBR comporta só **4 partições primárias**; para ter mais, uma delas vira **estendida** (um contêiner) e as **lógicas** ficam dentro dela, numeradas a partir de 5. Confira o resultado com `sfdisk -d disco.img` ou `fdisk -l disco.img`. Pegadinha: a estendida deve cobrir o espaço restante, senão ele fica inutilizável."
+}

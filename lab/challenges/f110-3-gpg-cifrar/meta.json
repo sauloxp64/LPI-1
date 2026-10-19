@@ -1,0 +1,29 @@
+{
+  "id": "f110-3-gpg-cifrar",
+  "obj": "110.3",
+  "titulo": "GnuPG: gerar chave, cifrar para um colega, verificar e decifrar",
+  "nivel": 3,
+  "minutos": 12,
+  "params": {
+    "pessoa": { "escolha": ["marcelo", "tereza", "otavia", "caetano"] },
+    "colega": { "escolha": ["rosana", "vicente", "helena"] },
+    "expira": { "escolha": ["6m", "1y", "2y"] },
+    "senha": { "escolha": ["Verao2026", "Chave-Azul7", "Lab_Secreto9"] },
+    "adulterado": { "escolha": ["sim", "nao"] },
+    "tok": { "faixa": [100000, 999999] }
+  },
+  "enunciado": "Você é **{pessoa}** e vai trocar documentos com a colega **{colega}** usando o GnuPG (como usuário `aluno`; o seu chaveiro `~/.gnupg` está vazio). Em `~/lab/gpg/` você recebeu:\n\n* `colega.pub.asc`: a chave pública de {colega} (`{colega}@parceiro.example`);\n* `ata.txt`: a ata que você precisa enviar para ela com sigilo;\n* `relatorio.txt` e `relatorio.txt.sig`: um relatório e a **assinatura destacada** que {colega} diz ter feito dele;\n* `segredo.txt.gpg`: um arquivo cifrado com **senha** (criptografia simétrica), senha `{senha}`.\n\nFaça, nesta pasta:\n\n1. **Gere o seu par de chaves sem interação** (nada de perguntas nem pedido de passphrase): identidade `{pessoa} <{pessoa}@lab.example>`, algoritmo padrão, validade de **{expira}**.\n2. **Importe** a chave pública da colega e **cifre `ata.txt` somente para ela**; grave o resultado em `ata.txt.gpg` (binário) **ou** `ata.txt.asc` (ASCII armor).\n3. **Verifique** a assinatura destacada do relatório e escreva em `verificacao.txt` a palavra `valida` ou `invalida`, conforme o resultado.\n4. **Decifre** `segredo.txt.gpg` e grave o texto em claro em `segredo.txt`.\n\nDicas de ambiente: no terminal web não há como digitar passphrase via janela gráfica; em lote, use as opções de modo `--batch`. Chaves importadas não são \"confiáveis\" por padrão e o `gpg` em lote recusa cifrar para elas.",
+  "verifica": [
+    "o chaveiro do `aluno` tem a chave `{pessoa} <{pessoa}@lab.example>`, com chave secreta, sem passphrase e validade de {expira}",
+    "`ata.txt.gpg` (ou `.asc`) é decifrável pela colega e cifrado **apenas** para ela; o conteúdo é a `ata.txt` original",
+    "`verificacao.txt` informa corretamente se a assinatura do relatório é válida",
+    "`segredo.txt` tem o texto em claro de `segredo.txt.gpg`"
+  ],
+  "dicas": [
+    "Chave sem interação: `gpg --batch --passphrase '' --quick-gen-key \"Nome <email>\" default default VALIDADE` (a validade aceita formas como `6m`, `1y`, `2y`). Liste com `gpg --list-keys` e `gpg --list-secret-keys`.",
+    "`gpg --import arquivo.asc` importa a chave pública. Para cifrar: `gpg --encrypt --recipient EMAIL --output saida entrada` (`--armor` gera texto). Se acusar que a chave não é confiável, em lote use `--trust-model always` (ou assine a chave localmente).",
+    "`gpg --verify arquivo.sig arquivo` verifica uma assinatura destacada: procure `Good signature` ou `BAD signature`. Para decifrar com senha em lote: `gpg --batch --pinentry-mode loopback --passphrase 'SENHA' --decrypt arquivo.gpg > saida`.",
+    "Confira o resultado com `gpg --list-packets ata.txt.gpg` (mostra para quais chaves foi cifrado) e `cat segredo.txt`."
+  ],
+  "solucao": "```\ncd ~/lab/gpg\ngpg --batch --passphrase '' --quick-gen-key \"{pessoa} <{pessoa}@lab.example>\" default default {expira}\ngpg --list-keys\n\ngpg --import colega.pub.asc\ngpg --batch --trust-model always --recipient {colega}@parceiro.example --output ata.txt.gpg --encrypt ata.txt\n\ngpg --verify relatorio.txt.sig relatorio.txt      # 'Good signature' -> valida ; 'BAD signature' -> invalida\necho valida > verificacao.txt                      # (ou invalida, conforme a saída)\n\ngpg --batch --pinentry-mode loopback --passphrase '{senha}' --decrypt segredo.txt.gpg > segredo.txt\n```\nCriptografia **assimétrica**: você cifra com a chave **pública** do destinatário e só a chave **privada** dele decifra; a **assinatura** funciona ao contrário (assina-se com a privada, verifica-se com a pública, por isso é preciso ter importado a chave da colega para o `--verify`). Uma assinatura `BAD signature` significa que o arquivo foi alterado depois de assinado. `--symmetric` usa uma senha em vez de chaves. `--quick-gen-key ... default default 1y` gera chave e subchave de cifragem com validade; sem `--batch`/`--passphrase ''` o gpg pediria uma passphrase via pinentry. Para revogar uma chave comprometida usa-se o certificado de revogação (`--gen-revoke`, e o `gpg` já guarda um em `~/.gnupg/openpgp-revocs.d/`)."
+}

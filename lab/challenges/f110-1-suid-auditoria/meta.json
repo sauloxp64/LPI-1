@@ -1,0 +1,25 @@
+{
+  "id": "f110-1-suid-auditoria",
+  "obj": "110.1",
+  "titulo": "Auditar arquivos SUID e SGID",
+  "nivel": 1,
+  "minutos": 7,
+  "params": {
+    "alvo": { "escolha": ["utilitario", "backup-tool", "diagnostico", "sincroniza", "monitor-disco"] },
+    "semente": { "faixa": [1, 9999] }
+  },
+  "enunciado": "Uma auditoria de segurança encontrou uma árvore de programas copiada de outro servidor em **`~/lab/suid/arvore/`** (vários subdiretórios, arquivos de dono `root` e do `aluno`). Você precisa mapear quem tem os bits especiais:\n\n1. Grave em `~/lab/suid/lista-suid.txt` os caminhos de todos os **arquivos regulares** (não diretórios) da árvore que têm o bit **SUID**, **um por linha** (qualquer ordem; caminho absoluto ou relativo à árvore).\n2. Grave em `~/lab/suid/lista-sgid.txt` os **arquivos regulares** que têm o bit **SGID**, no mesmo formato.\n3. **Depois** de gravar as listas (elas devem refletir a situação *original*), remova **os dois bits especiais** (SUID e SGID) do arquivo **`{alvo}`**, mantendo as demais permissões como estão. Os outros arquivos **não** devem ser alterados. Use `sudo` onde precisar.\n\nHá diretórios com SGID e sticky bit na árvore de propósito: eles não entram nas listas.",
+  "verifica": [
+    "`lista-suid.txt` contém exatamente os arquivos regulares com SUID da árvore",
+    "`lista-sgid.txt` contém exatamente os arquivos regulares com SGID da árvore",
+    "o arquivo `{alvo}` perdeu SUID e SGID e manteve as outras permissões (rwx)",
+    "nenhum outro arquivo da árvore teve o modo alterado"
+  ],
+  "dicas": [
+    "O `find` testa permissões com `-perm`: `-perm -4000` casa quem tem o bit 4000 (SUID) ligado, `-perm -2000` o bit 2000 (SGID). Restrinja a arquivos regulares com `-type f`.",
+    "`find ~/lab/suid/arvore -type f -perm -4000 > ~/lab/suid/lista-suid.txt` (e o mesmo com `-2000` para SGID). Equivalentes: `-perm /u=s` e `-perm /g=s`.",
+    "Para remover só os bits especiais sem mexer em rwx: `chmod u-s,g-s arquivo` (ou `chmod -s arquivo`). Para achar o arquivo: `find ~/lab/suid/arvore -name NOME`.",
+    "Depois de remover, confira com `ls -l`: o `s` no lugar do `x` deixa de aparecer."
+  ],
+  "solucao": "```\nfind ~/lab/suid/arvore -type f -perm -4000 > ~/lab/suid/lista-suid.txt\nfind ~/lab/suid/arvore -type f -perm -2000 > ~/lab/suid/lista-sgid.txt\nsudo chmod u-s,g-s $(find ~/lab/suid/arvore -type f -name {alvo})\nls -l $(find ~/lab/suid/arvore -type f -name {alvo})\n```\n`-perm -MODO` exige que **todos** os bits de MODO estejam ligados (os demais são ignorados): `-4000` = SUID, `-2000` = SGID, `-6000` = os dois. Já `-perm 4000` (sem sinal) exigiria modo **exatamente** 4000, e `-perm /6000` casa SUID **ou** SGID. Sem `-type f` o SGID de diretórios (que serve para herdar o grupo) polui a lista. Na auditoria real o comando típico é `find / -xdev -perm -4000 -type f 2>/dev/null` (ou `-perm /6000`) e depois se compara com uma lista conhecida. `chmod u-s,g-s` desliga os bits especiais preservando rwx; ficaria errado reescrever o modo inteiro à mão (`chmod 755`) sem olhar o modo original."
+}

@@ -1,0 +1,366 @@
+### 102.4-001 | unica | 1
+ref: 101:p.114
+tags: dpkg, instalar
+Qual comando instala, com o `dpkg`, o arquivo local `sl_5.02-1_amd64.deb`?
+- dpkg -r sl_5.02-1_amd64.deb
+= dpkg -i sl_5.02-1_amd64.deb
+- dpkg -I sl_5.02-1_amd64.deb
+- dpkg --listfiles sl_5.02-1_amd64.deb
+> `dpkg -i` (`--install`) instala ou atualiza o pacote a partir de um arquivo `.deb`. Se já houver uma versão anterior, ela é atualizada.
+> `-r` remove um pacote instalado, `-I` apenas exibe informações do arquivo `.deb` sem instalar, e `-L` (`--listfiles`) lista arquivos de um pacote já instalado.
+
+### 102.4-002 | lacuna | 2
+ref: 101:p.116
+tags: dpkg, purge
+Complete o comando para remover o pacote `nginx` **e também** os seus arquivos de configuração:
+
+```
+# dpkg ____ nginx
+```
+= -P
+= --purge
+> `dpkg -P` (`--purge`) remove o pacote e seus arquivos de configuração. `dpkg -r` (`--remove`) remove os programas, mas deixa os arquivos de configuração no sistema.
+
+### 102.4-003 | unica | 2
+ref: 101:p.116
+tags: dpkg, -r, status
+Depois de executar `dpkg -r meupkg`, o administrador consulta o pacote:
+
+```
+$ dpkg -l meupkg
+||/ Name           Version      Architecture Description
++++-==============-============-============-=================================
+rc  meupkg         1.0-1        all          Pacote de teste
+```
+
+O que significa o `rc` no início da linha?
+- O pacote foi desempacotado, mas ainda não foi configurado
+- O pacote está instalado e configurado normalmente
+- O pacote foi totalmente removido, inclusive os arquivos de configuração
+= Foi removido, mas os arquivos de configuração continuam no sistema
+> `rc` significa "removed, config-files": o programa foi removido (`-r`), mas os arquivos de configuração, como os de `/etc`, permanecem. Para eliminá-los, use `dpkg -P meupkg`.
+> `ii` indica pacote instalado e configurado, e `iU` indica pacote desempacotado, mas não configurado (por exemplo, por dependências ausentes). Um pacote totalmente removido não aparece mais em `dpkg -l` como instalado.
+
+### 102.4-004 | unica | 3
+ref: 101:p.114-115, 101:p.121
+tags: dpkg, dependências, apt-get -f
+Ao instalar um pacote local, o `dpkg` informa dependências ausentes e deixa o pacote sem configurar:
+
+```
+# dpkg -i meupkg_1.0-1_all.deb
+dpkg: dependency problems prevent configuration of meupkg:
+ meupkg depends on cowsay; however:
+  Package cowsay is not installed.
+dpkg: error processing package meupkg (--install):
+ dependency problems - leaving unconfigured
+```
+
+Qual comando resolve a situação, baixando as dependências ausentes e concluindo a configuração?
+- dpkg -i --force-all meupkg_1.0-1_all.deb
+= apt-get install -f
+- dpkg --configure -a
+- apt-get update
+> O `dpkg` não resolve dependências sozinho. `apt-get install -f` (`--fix-broken`) instala os pacotes ausentes a partir dos repositórios e conclui a configuração do pacote pendente.
+> `--force-all` ignora as verificações e pode deixar o sistema inconsistente. `dpkg --configure -a` tenta configurar de novo, mas falha enquanto a dependência não estiver instalada. `apt-get update` só atualiza os índices, sem instalar nada.
+
+### 102.4-005 | unica | 2
+ref: 101:p.117-118
+tags: dpkg, dpkg-query, -S
+Qual comando informa a qual pacote instalado pertence o arquivo `/etc/adduser.conf`?
+- dpkg -L /etc/adduser.conf
+= dpkg -S /etc/adduser.conf
+- dpkg -s /etc/adduser.conf
+- apt-cache show /etc/adduser.conf
+> `dpkg -S` (ou `dpkg-query -S`) procura, entre os pacotes instalados, quem forneceu o arquivo. A saída tem o formato `adduser: /etc/adduser.conf`.
+> `dpkg -L` faz o inverso: recebe um nome de pacote e lista seus arquivos. `dpkg -s` exibe o status de um pacote (também recebe nome de pacote), e `apt-cache show` consulta o índice de pacotes, não arquivos.
+
+### 102.4-006 | unica | 2
+ref: 101:p.126-127, 101:p.133
+tags: apt-file, arquivo, pacote não instalado
+Ao compilar um programa, o erro informa que o cabeçalho `zzip-io.h` não existe. O pacote que o fornece não está instalado. Qual comando indica qual pacote contém esse arquivo?
+- dpkg -S zzip-io.h
+- dpkg -L zzip-io.h
+- apt-cache search --names-only zzip-io.h
+= apt-file search zzip-io.h
+> `apt-file search` consulta o conteúdo de todos os pacotes dos repositórios, instalados ou não (depois de um `apt-file update`).
+> `dpkg -S` só encontra arquivos de pacotes já instalados. `dpkg -L` recebe nome de pacote, não de arquivo, e `apt-cache search` procura em nomes e descrições, não na lista de arquivos dos pacotes.
+
+### 102.4-007 | lacuna | 1
+ref: 101:p.117
+tags: dpkg, -L
+Complete o comando para listar todos os arquivos instalados pelo pacote `unrar`:
+
+```
+# dpkg ____ unrar
+```
+= -L
+= --listfiles
+> `dpkg -L pacote` (`--listfiles`) lista os arquivos que o pacote instalou. `dpkg-query -S arquivo` faz o caminho inverso, indicando o pacote dono do arquivo.
+
+### 102.4-008 | unica | 2
+ref: 101:p.116-117
+tags: dpkg, -c, arquivo .deb
+Qual comando lista os arquivos contidos em um `.deb` que ainda **não** foi instalado?
+- dpkg -L pacote.deb
+- dpkg -I pacote.deb
+= dpkg -c pacote.deb
+- dpkg --get-selections pacote.deb
+> `dpkg -c` (`--contents`) mostra o conteúdo do arquivo `.deb`, com permissões, tamanho e caminhos.
+> `dpkg -I` mostra informações de controle (versão, dependências, mantenedor). `dpkg -L` trabalha com pacotes já instalados e receberia um nome de pacote, não um arquivo. `--get-selections` lista os pacotes conhecidos pelo `dpkg`, sem mostrar arquivos.
+
+### 102.4-009 | unica | 1
+ref: 101:p.116-117
+tags: dpkg, -I, informações
+Antes de instalar, o administrador quer ver versão, arquitetura, mantenedor e dependências declaradas em `pacote.deb`. Qual comando faz isso?
+= dpkg -I pacote.deb
+- dpkg -L pacote.deb
+- dpkg --get-selections pacote.deb
+- dpkg -r pacote.deb
+> `dpkg -I` (`--info`) lê o arquivo `.deb` e exibe os campos de controle (Package, Version, Architecture, Maintainer, Depends, Description), além dos scripts do pacote.
+> `--get-selections` lista os pacotes que o sistema conhece, `-L` lista arquivos de pacotes instalados e `-r` remove um pacote.
+
+### 102.4-010 | unica | 2
+ref: 101:p.116-117
+tags: dpkg, -s, status
+Qual comando exibe o campo `Status` (por exemplo, `install ok installed`), a versão e as dependências de um pacote já registrado no `dpkg`?
+- dpkg -I pacote
+= dpkg -s pacote
+- apt-cache search pacote
+- apt-cache depends pacote
+> `dpkg -s` (`--status`) imprime o registro do pacote na base do `dpkg`, incluindo `Status`, `Version` e `Depends`.
+> `dpkg -I` espera um arquivo `.deb`. `apt-cache search` procura termos nos nomes e descrições do índice, e `apt-cache depends` mostra apenas as dependências do índice, sem o status de instalação.
+
+### 102.4-011 | unica | 3
+ref: 101:p.116-117
+tags: dpkg, -V, integridade
+O administrador suspeita que arquivos de um pacote foram alterados. Ele roda:
+
+```
+# dpkg -V meupkg
+??5?????? c /etc/meupkg.conf
+```
+
+O que essa saída indica?
+- O arquivo `/etc/meupkg.conf` foi apagado do disco e precisa ser recriado pelo pacote
+- As permissões e o dono de `/etc/meupkg.conf` diferem dos valores originais do pacote
+- O pacote `meupkg` possui dependências quebradas e precisa ser reconfigurado
+= A soma MD5 de `/etc/meupkg.conf`, um arquivo de configuração, difere da original gravada no pacote
+> `dpkg -V` (`--verify`) compara os arquivos instalados com os dados do pacote. O `5` na terceira posição indica que a soma MD5 não confere, e o `c` indica que o arquivo é de configuração (conffile). Arquivos de configuração editados pelo administrador aparecem assim com frequência.
+> Um arquivo ausente seria exibido como `missing`. O `dpkg -V` só verifica a soma MD5 do conteúdo (os demais atributos aparecem como `?`), portanto não detecta mudanças de permissão. Dependências quebradas são relatadas por `apt-get check`, não por `-V`.
+
+### 102.4-012 | unica | 1
+ref: 101:p.119
+tags: apt-get, update, índice
+Qual comando atualiza o índice local de pacotes de acordo com os repositórios configurados em `/etc/apt/`?
+- apt-cache update
+- apt-get upgrade
+= apt-get update
+- apt-get clean
+> `apt-get update` (ou `apt update`) baixa os índices de pacotes dos repositórios listados em `sources.list` e `sources.list.d`.
+> `apt-get upgrade` instala versões mais novas dos pacotes já instalados, e `apt-get clean` esvazia o cache de arquivos `.deb`. O `apt-cache` não possui operação `update`.
+
+### 102.4-013 | unica | 3
+ref: 101:p.119, 101:p.126
+tags: apt-get, sources.list.d, update
+O administrador criou `/etc/apt/sources.list.d/extra.list` com a linha de um novo repositório. Em seguida:
+
+```
+# apt-get install ferramenta-extra
+E: Unable to locate package ferramenta-extra
+```
+
+O pacote existe no novo repositório. Qual é a causa mais provável?
+- É preciso reiniciar o sistema para que o APT leia o novo arquivo
+- O arquivo deveria ter sido criado como `/etc/apt/sources.list.d/extra.conf`
+- O pacote só pode ser instalado com `dpkg -i`
+= O índice de pacotes ainda não foi atualizado com `apt-get update`
+> Depois de adicionar ou alterar um repositório, é preciso executar `apt-get update` para que o APT baixe o índice do novo repositório. Até então, o pacote não existe para ele, e a mensagem é "Unable to locate package".
+> Não é necessário reiniciar. Os arquivos em `sources.list.d` usam a extensão `.list` (ou `.sources`, no formato mais recente), e o APT resolve dependências e baixa o pacote quando o índice está atualizado.
+
+### 102.4-014 | unica | 1
+ref: 101:p.124-125
+tags: sources.list, sintaxe
+Observe a linha de `/etc/apt/sources.list`:
+
+```
+deb http://deb.debian.org/debian bookworm main contrib
+```
+
+O que representa a palavra `bookworm`?
+- O tipo de arquivo do repositório (binário ou código-fonte)
+- O componente do repositório, isto é, o conjunto de pacotes oferecido
+= O codinome da distribuição para a qual os pacotes são fornecidos
+- O nome do servidor espelho (mirror) que hospeda os pacotes do repositório
+> A sintaxe é: tipo (`deb` ou `deb-src`), URL, distribuição (codinome ou suíte, como `bookworm`) e um ou mais componentes (`main`, `contrib`...).
+> `deb` é o tipo, `http://deb.debian.org/debian` é a URL, e `main` e `contrib` são os componentes.
+
+### 102.4-015 | unica | 2
+ref: 101:p.124, 101:p.133
+tags: sources.list, deb-src, código-fonte
+Qual linha de `/etc/apt/sources.list` habilita o acesso aos **pacotes-fonte** do componente `main` do Debian `bookworm`?
+- deb http://deb.debian.org/debian bookworm main source
+- src http://deb.debian.org/debian bookworm main
+= deb-src http://deb.debian.org/debian bookworm main
+- deb-src bookworm main http://deb.debian.org/debian
+> O tipo `deb-src` indica repositório de código-fonte, enquanto `deb` serve para pacotes binários. A ordem dos campos é fixa: tipo, URL, distribuição e componentes.
+> `source` não é um componente e `src` não é um tipo válido. A última opção troca a ordem da URL e da distribuição.
+
+### 102.4-016 | multipla | 2
+ref: 101:p.124-126
+tags: sources.list, sources.list.d, comentários
+Quais afirmações sobre a configuração de repositórios do APT estão corretas?
+= Linhas de `/etc/apt/sources.list` iniciadas por `#` são comentários
+= Repositórios adicionais podem ser colocados em arquivos `.list` dentro de `/etc/apt/sources.list.d/`
+= Após alterar a lista de repositórios, deve-se executar `apt-get update`
+- A lista de repositórios fica em `/etc/apt/apt.d/sources.conf`
+- As alterações só passam a valer após reiniciar o sistema
+- Repositórios em CD-ROM ou disco local não podem ser usados pelo APT
+> O APT lê `/etc/apt/sources.list` (com `#` para comentários) e os arquivos `.list` de `/etc/apt/sources.list.d/`. Depois de qualquer mudança, `apt-get update` atualiza o índice. Distribuições recentes também aceitam o formato `.sources` (deb822), mas o princípio é o mesmo.
+> O caminho `/etc/apt/apt.d/sources.conf` não existe. Não é necessário reiniciar, e repositórios podem ser servidores remotos, locais ou até CD-ROM.
+
+### 102.4-017 | unica | 2
+ref: 101:p.125
+tags: sources.list, componentes, contrib
+No Debian, qual componente reúne pacotes compatíveis com as DFSG (software livre), mas que dependem de software que não está no `main`?
+- main
+- non-free
+= contrib
+- backports
+> `contrib` contém software livre (compatível com as DFSG) que depende de itens fora do `main`.
+> `main` reúne pacotes livres e autossuficientes, que fazem parte da distribuição. `non-free` contém pacotes que não atendem às DFSG, e `backports` fornece versões mais novas de pacotes da distribuição estável.
+
+### 102.4-018 | lacuna | 1
+ref: 101:p.123
+tags: apt-cache, show
+Complete o comando para exibir a ficha completa do pacote `gimp` no índice do APT (versão, dependências, descrição):
+
+```
+$ apt-cache ____ gimp
+```
+= show
+> `apt-cache show` imprime o registro do pacote conforme o índice, incluindo `Version`, `Depends`, `Description` e outros campos. `apt show` é o equivalente do comando mais novo.
+
+### 102.4-019 | unica | 3
+ref: 101:p.123-124
+tags: apt-cache, search, descrição
+A busca `apt-cache search wget` lista a linha `wput - tiny wget-like ftp-client for uploading files`, mesmo sem a palavra `wget` no nome do pacote. Por quê?
+- O `wput` depende do pacote `wget`, e a busca também inclui os pacotes dependentes
+= A busca também examina a descrição dos pacotes, e o texto do `wput` cita `wget`
+- O índice local do APT está desatualizado e retornou uma correspondência incorreta
+- O `apt-cache search` usa correspondência aproximada (fonética) entre os nomes dos pacotes
+> `apt-cache search` procura o padrão em nomes e descrições. Com `apt-cache show wput`, vê-se que a descrição ("tiny wget-like ftp-client...") cita o `wget`, e por isso o pacote aparece (testado no Debian 12).
+> A busca não segue dependências (o `wput` depende apenas de bibliotecas, como `libc6`) nem usa correspondência fonética, e um índice desatualizado faria faltar pacotes, não inventaria correspondências.
+
+### 102.4-020 | unica | 2
+ref: 101:p.123
+tags: apt-cache, depends
+Qual comando lista as dependências de `cowsay` de acordo com o índice do APT, sem instalar nada?
+- apt-cache rdepends cowsay
+- apt-cache policy cowsay
+= apt-cache depends cowsay
+- dpkg -L cowsay
+> `apt-cache depends` mostra de quais pacotes `cowsay` depende (campos `Depends`, `Suggests`, etc.).
+> `apt-cache rdepends` faz o inverso, listando quem depende de `cowsay`. `apt-cache policy` mostra versões instalada e candidata e a origem. `dpkg -L` lista arquivos de um pacote instalado.
+
+### 102.4-021 | multipla | 2
+ref: 101:p.116, 101:p.121
+tags: dpkg, apt-get, purge
+Quais comandos removem o pacote `nginx` **e também** seus arquivos de configuração?
+= dpkg -P nginx
+= apt-get purge nginx
+= apt-get remove --purge nginx
+- dpkg -r nginx
+- apt-get remove nginx
+> `dpkg -P`, `apt-get purge` e `apt-get remove --purge` eliminam o pacote e seus arquivos de configuração.
+> `dpkg -r` e `apt-get remove` removem apenas o pacote, deixando a configuração (por exemplo, em `/etc/nginx`) no sistema, o que é útil para uma reinstalação posterior.
+
+### 102.4-022 | lacuna | 2
+ref: 101:p.122
+tags: apt-get, clean, cache
+Qual é o diretório padrão onde o APT guarda os arquivos `.deb` baixados e que é esvaziado por `apt-get clean`?
+Informe o caminho absoluto.
+= /var/cache/apt/archives
+= /var/cache/apt/archives/
+> O APT guarda os `.deb` baixados em `/var/cache/apt/archives/` (e os parciais em `partial/`). `apt-get clean` remove esses arquivos para liberar espaço em disco.
+
+### 102.4-023 | unica | 2
+ref: 101:p.119, 101:p.121-122
+tags: apt-get, update, upgrade
+Qual é a diferença entre `apt-get update` e `apt-get upgrade`?
+- `update` instala versões novas dos pacotes, e `upgrade` baixa a lista de repositórios
+= `update` atualiza o índice de pacotes, e `upgrade` instala as versões mais novas dos pacotes já instalados
+- `update` atualiza apenas o kernel, e `upgrade` atualiza o restante do sistema
+- Os dois fazem a mesma coisa, mas `upgrade` pergunta antes de continuar
+> `apt-get update` apenas sincroniza o índice local com os repositórios. `apt-get upgrade` usa esse índice para atualizar os pacotes instalados. Por isso a ordem recomendada é `update` e depois `upgrade`.
+> A primeira opção inverte os papéis dos comandos. Nenhum dos dois se restringe ao kernel, e os dois pedem confirmação do mesmo jeito.
+
+### 102.4-024 | lacuna | 1
+ref: 101:p.118
+tags: dpkg-reconfigure, tzdata
+Complete o comando para executar novamente a etapa de configuração do pacote `tzdata` (por exemplo, para trocar o fuso horário):
+
+```
+# ____ tzdata
+```
+= dpkg-reconfigure
+> `dpkg-reconfigure pacote` reexecuta a configuração de um pacote já instalado (o script de pós-instalação e as perguntas do debconf), permitindo mudar as respostas dadas na instalação.
+
+### 102.4-025 | multipla | 3
+ref: 101:p.123, 101:p.127
+tags: apt-cache, apt-file, dpkg, pacotes não instalados
+Quais comandos conseguem fornecer informações sobre pacotes que **não** estão instalados no sistema?
+= apt-cache show gimp
+= apt-file search libSDL2.so
+= apt-cache search editor
+- dpkg -L gimp
+- dpkg -S /usr/bin/gimp
+> `apt-cache show` e `apt-cache search` consultam o índice dos repositórios, e `apt-file search` consulta o conteúdo dos pacotes dos repositórios, instalados ou não.
+> `dpkg -L` e `dpkg -S` só funcionam com a base de pacotes instalados. Para um pacote não instalado, `dpkg -L` responde "package is not installed".
+
+### 102.4-026 | unica | 3
+ref: 101:p.121-122
+tags: apt-get, upgrade, dist-upgrade, kept back
+Depois de `apt-get upgrade`, a saída informa:
+
+```
+The following packages have been kept back:
+   gnome-control-center
+```
+
+O que isso indica?
+- O pacote foi marcado como corrompido pelo `dpkg` e precisa ser reinstalado com `dpkg -i`
+= A atualização exigiria instalar ou remover outros pacotes, e o `upgrade` não faz isso; o pacote ficou como estava
+- O pacote não existe mais nos repositórios e foi removido do índice local
+- O pacote já está na versão mais recente que os repositórios oferecem
+> Pacotes "mantidos" (kept back) são atualizações que dependeriam de instalar novos pacotes ou remover algum já instalado. O `apt-get upgrade` nunca faz isso, então deixa o pacote como está. `apt-get dist-upgrade` (ou `apt full-upgrade`) resolve essas mudanças de dependências, e por isso pode remover pacotes.
+> Se o pacote já estivesse na versão mais recente, ele não seria listado como retido.
+
+### 102.4-027 | unica | 2
+ref: 101:p.115-116, 101:p.132
+tags: dpkg, -r, dependências
+O administrador executa `dpkg -r unzip`, mas o pacote `file-roller` depende de `unzip` e a remoção é recusada. Qual é o procedimento correto, sem comprometer a integridade do sistema?
+- dpkg -r --force-depends unzip
+- dpkg -P unzip
+= dpkg -r file-roller unzip
+- dpkg -i unzip
+> O `dpkg` não remove um pacote de que outro pacote instalado dependa. A solução correta é remover também o pacote dependente, o que se faz informando os dois nomes no mesmo `dpkg -r`.
+> `--force-depends` ignora a verificação e deixa `file-roller` quebrado. `dpkg -P` remove a configuração, mas respeita a mesma verificação de dependências e é recusado do mesmo modo. `dpkg -i unzip` exigiria um arquivo `.deb` e não removeria nada.
+
+### 102.4-028 | lacuna | 2
+ref: 101:p.121
+tags: apt-get, install -f, dependências quebradas
+Complete o comando para corrigir dependências quebradas instalando as que estão ausentes:
+
+```
+# apt-get install ____
+```
+= -f
+= --fix-broken
+> `apt-get install -f` (`--fix-broken`) tenta consertar pacotes com dependências quebradas, instalando as ausentes ou concluindo configurações pendentes. Também funciona como `apt install -f`.
+
+### 102.4-029 | lacuna | 1
+ref: 101:p.124
+tags: sources.list
+Qual é o caminho do arquivo principal onde o APT lê a lista de repositórios de pacotes?
+= /etc/apt/sources.list
+> `/etc/apt/sources.list` lista os repositórios do APT. Repositórios adicionais podem ficar em arquivos `.list` em `/etc/apt/sources.list.d/`. Em algumas imagens (como as de contêiner do Debian 12) a configuração fica em `/etc/apt/sources.list.d/debian.sources`, no formato deb822, mas `sources.list` é o arquivo cobrado pela LPI.
