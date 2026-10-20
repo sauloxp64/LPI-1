@@ -20,7 +20,7 @@ const call = async (path, method = 'GET', body) => {
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), 'lpic-api-'));
   proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', join(HERE, '../src/server.mjs')], {
-    env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, 't.db'), LAB_URL: 'http://127.0.0.1:1', MATERIALS_DIR: join(HERE, '../..'), CHALLENGES_DIR: join(HERE, '../../lab/challenges') },
+    env: { ...process.env, PORT: String(PORT), DB_PATH: join(dir, 't.db'), LAB_URL: 'http://127.0.0.1:1', LAB_TERMINAL_URL: 'http://127.0.0.1:1', MATERIALS_DIR: join(HERE, '../..'), CHALLENGES_DIR: join(HERE, '../../lab/challenges') },
     stdio: 'ignore',
   });
   for (let i = 0; i < 60; i++) {
@@ -282,4 +282,119 @@ test('finalizar com estado completo: null apaga a resposta e as marcações são
   const fin = (await call(`/api/exams/${id}/finish`, 'POST', { answers: { 0: null, 1: [0], 2: null }, flags: [1] })).json;
   assert.equal(fin.result.respondidas, 1, 'a resposta apagada (null) não pode continuar valendo');
   assert.deepEqual(fin.flags, [1]);
+});
+
+// ---------- regressões do scan do Strix ----------
+test('percent-encoding inválido devolve 400 (antes era 500) na página, nos estáticos e nos parâmetros da API', async () => {
+  for (const p of ['/%E0%A4%A', '/js/%E0%A4%A.js', '/api/exams/%E0%A4%A']) {
+    const r = await rawSocket(`GET ${p} HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`);
+    assert.match(statusLine(r), /\b400\b/, `${p} deveria ser 400`);
+  }
+  assert.equal((await call('/api/stats')).status, 200, 'o servidor continua de pé');
+});
+
+test('cabeçalhos de segurança: CSP estrita e sem enquadramento por outros sites', async () => {
+  for (const p of ['/', '/api/stats', '/js/main.js', '/css/style.css']) {
+    const r = await fetch(BASE + p);
+    assert.equal(r.headers.get('x-frame-options'), 'SAMEORIGIN', p);
+    assert.equal(r.headers.get('x-content-type-options'), 'nosniff', p);
+    assert.equal(r.headers.get('referrer-policy'), 'no-referrer', p);
+    const csp = r.headers.get('content-security-policy') ?? '';
+    assert.match(csp, /frame-ancestors 'self'/, p);
+    assert.match(csp, /script-src 'self'(;|$)/, p);
+    assert.doesNotMatch(csp, /unsafe-eval|script-src[^;]*unsafe-inline/, p);
+  }
+  const page = await (await fetch(BASE + '/')).text();
+  assert.doesNotMatch(page, /<script(?![^>]*\bsrc=)[^>]*>/i, 'sem script inline: a CSP não permite');
+});
+
+test('proxy do terminal: só /terminal/, /terminal/token e /terminal/ws chegam ao container', async () => {
+  for (const p of ['/terminal/x', '/terminal/..%2fapi', '/terminal/token/extra', '/terminal/ws/', '/terminal/%2e%2e%2f%2e%2e%2fetc%2fpasswd']) {
+    const r = await rawSocket(`GET ${p} HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`);
+    assert.match(statusLine(r), /\b404\b/, `${p} deveria ser 404`);
+  }
+  // rota permitida mas sem laboratório: 502 (e não 404)
+  assert.match(statusLine(await rawSocket(`GET /terminal/token HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nConnection: close\r\n\r\n`, 6000)), /\b502\b/);
+  // WebSocket em outro caminho do terminal é recusado
+  const ws = `GET /terminal/outro HTTP/1.1\r\nHost: 127.0.0.1:${PORT}\r\nOrigin: http://127.0.0.1:${PORT}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n`;
+  assert.match(statusLine(await rawSocket(ws)), /\b403\b/);
+});
+
+test('a visão da prova em andamento não expõe o seed do sorteio; depois de finalizada, sim', async () => {
+  const { json: { id } } = await call('/api/exams', 'POST', { mode: 'topico', objetivos: ['103.4'], n: 5, minutes: 0 });
+  const andamento = (await call(`/api/exams/${id}`)).json;
+  assert.equal('seed' in andamento, false, 'seed vazaria o sorteio (o código é público)');
+  await call(`/api/exams/${id}/finish`, 'POST', { answers: {}, flags: [] });
+  const feita = (await call(`/api/exams/${id}`)).json;
+  assert.ok(feita.seed, 'após finalizar o seed é exibido');
+});
+
+// ---------- regressões da revisão adversarial do Codex (rodada 3) ----------
+
+test('salvamento: ao reabrir a prova a numeração continua e edições rejeitadas são sinalizadas (nada some em silêncio)', async () => {
+  const { json: { id } } = await call('/api/exams', 'POST', { mode: 'topico', objetivos: ['103.4'], n: 5, minutes: 0 });
+  await call(`/api/exams/${id}/answers`, 'PUT', { answers: { 0: [1] }, vers: { 0: 5 }, flags: [2], fv: 4 });
+  const reaberta = (await call(`/api/exams/${id}`)).json;
+  assert.equal(reaberta.vers['0'], 5, 'a visão da prova devolve a versão aplicada');
+  assert.equal(reaberta.vers.flags, 4);
+  // cliente com numeração reiniciada (cenário do Codex): o servidor avisa em vez de fingir sucesso
+  const velho = (await call(`/api/exams/${id}/answers`, 'PUT', { answers: { 0: [0] }, vers: { 0: 1 }, flags: [3], fv: 1 })).json;
+  assert.deepEqual(velho.ignored, [0]);
+  assert.equal(velho.flagsIgnored, true);
+  assert.equal(velho.vers['0'], 5);
+  assert.deepEqual((await call(`/api/exams/${id}`)).json.answers[0], [1], 'a edição velha não sobrescreve');
+  // o reenvio com versão acima da do servidor vale
+  const novo = (await call(`/api/exams/${id}/answers`, 'PUT', { answers: { 0: [0] }, vers: { 0: velho.vers['0'] + 1 }, flags: [3], fv: velho.vers.flags + 1 })).json;
+  assert.deepEqual(novo.ignored, []);
+  const final = (await call(`/api/exams/${id}`)).json;
+  assert.deepEqual(final.answers[0], [0]);
+  assert.deepEqual(final.flags, [3]);
+});
+
+test('importação: estrutura interna das provas é validada e nada é trocado se a prova não puder ser lida', async () => {
+  const antes = (await call('/api/export')).json;
+  const q = { qid: 'q1', obj: '103.4', type: 'unica', text: 'x', options: [null], answers: [0] }; // cenário do Codex: options com null
+  const prova = { id: 'e1', created: 1, mode: 'topico', status: 'andamento', questions: JSON.stringify([q]), answers: '{}', flags: '[]', overrides: '[]', checked: '[]' };
+  const base = (exams) => ({ versao: 1, progress: [], lessons: [], exams, attempts: [], qstats: [], reports: [], lab_runs: [], settings: [] });
+  assert.equal((await call('/api/import', 'POST', base([prova]))).status, 400);
+  const q2 = { ...q, options: [{ t: 'a', ok: true }, { t: 'b', ok: false }], answers: [{ x: 1 }] }; // gabarito com tipo errado
+  assert.equal((await call('/api/import', 'POST', base([{ ...prova, id: 'e2', questions: JSON.stringify([q2]) }]))).status, 400);
+  const depois = (await call('/api/export')).json;
+  assert.equal(depois.attempts.length, antes.attempts.length, 'o banco anterior continua intacto');
+  assert.equal((await call('/api/import', 'POST', antes)).status, 200, 'o arquivo exportado pelo próprio app continua importável');
+});
+
+test('PDF: Range de sufixo maior que o arquivo devolve o arquivo todo; 416 também leva os cabeçalhos de segurança', async (t) => {
+  const m = (await call('/api/meta')).json;
+  if (!m.pdf.disponiveis?.['101']) return t.skip('PDFs da LPI ausentes (não são versionados)');
+  const r = await fetch(`${BASE}/pdf/101`, { headers: { range: 'bytes=-99999999999' } });
+  assert.equal(r.status, 206);
+  assert.match(r.headers.get('content-range'), /^bytes 0-\d+\/\d+$/);
+  const ruim = await fetch(`${BASE}/pdf/101`, { headers: { range: 'bytes=99999999999-' } });
+  assert.equal(ruim.status, 416);
+  assert.equal(ruim.headers.get('x-frame-options'), 'SAMEORIGIN');
+});
+
+test('proxy do terminal repassa ao ttyd o caminho NORMALIZADO (HTTP e WebSocket) e preserva a query', async () => {
+  const seen = [];
+  const fake = http.createServer((req, res) => { seen.push(['http', req.url]); res.end('ok'); });
+  fake.on('upgrade', (req, socket) => { seen.push(['ws', req.url]); socket.end('HTTP/1.1 101 Switching Protocols\r\n\r\n'); });
+  await new Promise((r) => fake.listen(0, '127.0.0.1', r));
+  const port2 = 20000 + Math.floor(Math.random() * 20000);
+  const dir2 = mkdtempSync(join(tmpdir(), 'lpic-api2-'));
+  const p2 = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', join(HERE, '../src/server.mjs')], {
+    env: { ...process.env, PORT: String(port2), DB_PATH: join(dir2, 't.db'), LAB_URL: 'http://127.0.0.1:1', LAB_TERMINAL_URL: `http://127.0.0.1:${fake.address().port}`, MATERIALS_DIR: join(HERE, '../..'), CHALLENGES_DIR: join(HERE, '../../lab/challenges') },
+    stdio: 'ignore',
+  });
+  try {
+    for (let i = 0; i < 60; i++) { try { if ((await fetch(`http://127.0.0.1:${port2}/api/stats`)).ok) break; } catch { /* subindo */ } await new Promise((r) => setTimeout(r, 250)); }
+    // socket bruto: o fetch normaliza %2e%2e no cliente e esconderia o caminho cru
+    const h = net.connect(port2, '127.0.0.1');
+    h.write(`GET /x/%2e%2e/terminal/token?a=1 HTTP/1.1\r\nHost: 127.0.0.1:${port2}\r\nConnection: close\r\n\r\n`);
+    await new Promise((r) => { h.on('data', () => {}); h.on('close', r); h.on('error', r); setTimeout(() => { h.destroy(); r(); }, 2500); });
+    const s = net.connect(port2, '127.0.0.1');
+    s.write(`GET /x/%2e%2e/terminal/ws?b=2 HTTP/1.1\r\nHost: 127.0.0.1:${port2}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n`);
+    await new Promise((r) => { s.on('data', () => {}); s.on('close', r); s.on('error', r); setTimeout(() => { s.destroy(); r(); }, 2500); });
+    assert.deepEqual(seen, [['http', '/terminal/token?a=1'], ['ws', '/terminal/ws?b=2']], 'o ttyd recebe o caminho já normalizado, nunca o cru');
+  } finally { p2.kill(); fake.close(); try { rmSync(dir2, { recursive: true, force: true }); } catch { /* ok */ } }
 });

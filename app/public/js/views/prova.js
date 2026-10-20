@@ -18,7 +18,8 @@ export async function render(root, { args, isCurrent = () => true }) {
   const answeredCount = () => ex.questions.reduce((s, _, i) => s + (isBlank(answers[i]) ? 0 : 1), 0);
 
   let saving = Promise.resolve();
-  const ver = {}; let flagsVer = 0; // versões por resposta/flags: o servidor ignora lotes antigos que chegam fora de ordem
+  // versões por resposta/flags: o servidor ignora lotes antigos que chegam fora de ordem. Ao reabrir a prova a numeração continua da do servidor.
+  const ver = { ...(ex.vers ?? {}) }; delete ver.flags; let flagsVer = Number(ex.vers?.flags) || 0;
   const checking = new Set(); // questões com correção em andamento (treino): não aceitam edição
   const setSaveState = (t, err = false) => { const el = root.querySelector('#savestate'); if (el) { el.textContent = t; el.classList.toggle('err', err); } };
   const flush = (keepalive = false) => {
@@ -32,8 +33,16 @@ export async function render(root, { args, isCurrent = () => true }) {
       return fetch(`/api/exams/${id}/answers`, {
         method: 'PUT', headers: { 'content-type': 'application/json' }, keepalive,
         body: JSON.stringify({ answers: batch, vers, flags: [...flags], fv: flagsVer }),
-      }).then((r) => {
+      }).then(async (r) => {
         if (!r.ok && r.status !== 409) throw new Error(`HTTP ${r.status}`);
+        const out = r.ok && !keepalive ? await r.json().catch(() => null) : null;
+        // o servidor descartou edições por já ter versão mais nova (ex.: outra aba aberta): assume a numeração dele e reenvia o que o usuário vê agora
+        if (out && (out.ignored?.length || out.flagsIgnored) && !done) {
+          for (const i of out.ignored ?? []) { ver[i] = Math.max(ver[i] ?? 0, Number(out.vers?.[i]) || 0) + 1; pending.add(i); }
+          if (out.flagsIgnored) { flagsVer = Math.max(flagsVer, Number(out.vers?.flags) || 0) + 1; pending.add(cur); }
+          setSaveState('sincronizando'); scheduleSave();
+          return;
+        }
         setSaveState('salvo');
       }).catch(() => {
         // não descarta: devolve à fila e tenta de novo (o lote seguinte já leva o valor mais recente)

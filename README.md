@@ -77,6 +77,9 @@ Tudo roda na sua máquina e as portas escutam só em `127.0.0.1`. O progresso fi
 * O servidor só atende `Host` conhecido (localhost/127.0.0.1) e exige `Origin` igual ao próprio app nas mutações — defesa contra **DNS rebinding** e **CSRF** de outros sites. Para abrir na rede local: troque a porta para `"8088:8088"` no `docker-compose.yml` e defina `ALLOWED_HOSTS="meu-pc.local,192.168.0.10"`.
 * O terminal do lab **não** é exposto direto: o app faz proxy em `/terminal/` (mesma checagem de Host/Origin; o `ttyd` roda com `--check-origin`). Ele roda num container **sem privilégios**, descartável, com limites de memória/processos, e sem acesso ao seu sistema de arquivos. `sudo` sem senha só existe lá dentro.
 * A exportação de progresso não inclui provas em andamento (elas carregam o gabarito).
+* Todas as respostas levam `X-Frame-Options: SAMEORIGIN`, `nosniff` e `Referrer-Policy`; as páginas e a API têm uma **CSP estrita** (sem script inline nem `eval`). O proxy do terminal só repassa `/terminal/`, `/terminal/token` e `/terminal/ws`, sempre com o caminho já normalizado.
+* O sorteio de uma prova em andamento não expõe o `seed`. Como o banco de questões é público neste repositório, não dá para impedir que alguém compare os enunciados com ele: o simulado depende da honestidade de quem estuda.
+* A importação valida o arquivo inteiro e faz uma leitura de teste de cada prova **dentro da transação**; se algo não abrir, nada é trocado.
 
 ## Estrutura
 

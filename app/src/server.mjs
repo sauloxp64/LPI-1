@@ -8,7 +8,7 @@ import { openDb, tx, getSetting, setSetting } from './db.mjs';
 import { generators } from './generators/index.mjs';
 import { randomSeed } from './rng.mjs';
 import {
-  buildExam, saveNewExam, loadExam, finishExam, checkOne, contest, publicQuestion, DAY,
+  buildExam, saveNewExam, loadExam, finishExam, checkOne, contest, publicQuestion, computeResult, DAY,
 } from './exam.mjs';
 import { summary, masteryByObjective } from './stats.mjs';
 import { PdfIndex } from './pdfindex.mjs';
@@ -46,6 +46,9 @@ const originAllowed = (req) => {
 };
 // versão mais recente já aplicada por resposta (`examId:índice`): lotes de salvamento que chegam fora de ordem não sobrescrevem o mais novo
 const answerVers = new Map();
+/** Versões já aplicadas de uma prova (índice -> n, e `flags`): o cliente retoma a numeração dela ao reabrir a tela. */
+const versOf = (examId) => { const p = `${examId}:`; const out = {}; for (const [k, v] of answerVers) if (k.startsWith(p)) out[k.slice(p.length)] = v; return out; };
+const dropVers = (examId) => { for (const k of [...answerVers.keys()]) if (k.startsWith(`${examId}:`)) answerVers.delete(k); };
 
 const db = openDb(DB_PATH);
 let bank = loadBank();
@@ -81,9 +84,16 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 const httpError = (status, message) => Object.assign(new Error(message), { status });
 
+// Cabeçalhos de segurança de toda resposta: o app só se deixa enquadrar por ele mesmo (o terminal e os PDFs são iframes da mesma origem).
+const SECURITY_HEADERS = { 'x-content-type-options': 'nosniff', 'x-frame-options': 'SAMEORIGIN', 'referrer-policy': 'no-referrer' };
+// CSP estrita para as páginas e a API do app (sem scripts inline nem eval). Não vale para o terminal (ttyd traz script inline) nem para PDFs.
+const APP_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'";
+/** decodeURIComponent que devolve 400 (e não 500) para sequências inválidas como %E0%A4%A. */
+const decodePath = (s) => { try { return decodeURIComponent(s); } catch { throw httpError(400, 'URL inválida'); } };
+
 function send(res, status, body, headers = {}) {
   const data = typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body);
-  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...SECURITY_HEADERS, 'content-security-policy': APP_CSP, ...headers });
   res.end(data);
 }
 
@@ -113,7 +123,7 @@ function examView(exam) {
   const done = exam.status === 'finalizado';
   const base = {
     id: exam.id, title: exam.title, mode: exam.mode, status: exam.status, instant: !!exam.instant, minutes: exam.minutes,
-    created: exam.created, deadline: exam.deadline, now: Date.now(), n: exam.questions.length, seed: exam.seed,
+    created: exam.created, deadline: exam.deadline, now: Date.now(), n: exam.questions.length, ...(done ? { seed: exam.seed } : {}),
     answers: exam.answers, flags: exam.flags, scope: exam.scope, parent: exam.parent,
   };
   if (done) {
@@ -124,7 +134,7 @@ function examView(exam) {
     };
   }
   return {
-    ...base, checked: exam.checked,
+    ...base, checked: exam.checked, vers: versOf(exam.id),
     questions: exam.questions.map((q, i) => (exam.instant && exam.checked.includes(i)
       ? { ...publicQuestion(q, i, { reveal: true }), ok: undefined }
       : publicQuestion(q, i))),
@@ -250,24 +260,26 @@ route('PUT', '/api/exams/:id/answers', async (req, res, p) => {
   if (exam.status !== 'andamento') throw httpError(409, 'prova já finalizada');
   const incoming = validateAnswers(exam, body.answers);
   const vers = body.vers && typeof body.vers === 'object' ? body.vers : {};
+  const ignored = []; let flagsIgnored = false;
   for (const k of Object.keys(incoming)) {
     const v = Number(vers[k]);
     if (!Number.isSafeInteger(v)) continue;
     const key = `${exam.id}:${k}`;
-    if (v < (answerVers.get(key) ?? -1)) delete incoming[k]; // lote antigo chegou depois de um mais novo
+    if (v < (answerVers.get(key) ?? -1)) { delete incoming[k]; ignored.push(Number(k)); } // lote antigo chegou depois de um mais novo (ou de outra aba)
     else answerVers.set(key, v);
   }
   let flagsIn = body.flags;
   const fv = Number(body.fv);
   if (Number.isSafeInteger(fv)) {
     const key = `${exam.id}:flags`;
-    if (fv < (answerVers.get(key) ?? -1)) flagsIn = undefined; else answerVers.set(key, fv);
+    if (fv < (answerVers.get(key) ?? -1)) { flagsIn = undefined; flagsIgnored = true; } else answerVers.set(key, fv);
   }
   const answers = { ...exam.answers, ...incoming };
   for (const [k, v] of Object.entries(answers)) if (v === null) delete answers[k];
   const flags = Array.isArray(flagsIn) ? [...new Set(flagsIn.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))] : exam.flags;
   db.prepare('UPDATE exams SET answers = ?, flags = ? WHERE id = ?').run(JSON.stringify(answers), JSON.stringify(flags), exam.id);
-  return { ok: true, now: Date.now() };
+  // o que foi descartado é dito ao cliente (com as versões do servidor) para ele reenviar: nada some em silêncio
+  return { ok: true, now: Date.now(), ignored, flagsIgnored, vers: versOf(exam.id) };
 });
 
 route('POST', '/api/exams/:id/check', async (req, res, p) => {
@@ -293,7 +305,7 @@ route('POST', '/api/exams/:id/finish', async (req, res, p) => {
     db.prepare('UPDATE exams SET answers = ?, flags = ? WHERE id = ?').run(JSON.stringify(answers), JSON.stringify(flags), exam.id);
   }
   const done = finishExam(db, p.id);
-  for (const k of [...answerVers.keys()]) if (k.startsWith(`${p.id}:`)) answerVers.delete(k);
+  dropVers(p.id);
   return examView(done);
 });
 
@@ -344,6 +356,7 @@ route('DELETE', '/api/exams/:id', async (req, res, p) => {
   tx(db, () => {
     db.prepare('DELETE FROM attempts WHERE exam_id = ?').run(p.id);
     db.prepare('DELETE FROM exams WHERE id = ?').run(p.id);
+    dropVers(p.id);
     // reconstrói estatísticas das questões afetadas
     db.exec('DELETE FROM qstats');
   });
@@ -518,7 +531,8 @@ function validateImport(d) {
     const qs = JSON.parse(e.questions);
     if (qs.length === 0 || qs.length > 200) return 'prova com número de questões inválido';
     const okQ = qs.every((q) => q && typeof q === 'object' && typeof q.qid === 'string' && isObjCode(q.obj) && ['unica', 'multipla', 'lacuna'].includes(q.type)
-      && typeof q.text === 'string' && Array.isArray(q.options) && Array.isArray(q.answers));
+      && typeof q.text === 'string' && Array.isArray(q.options) && q.options.length <= 12 && q.options.every((o) => o && typeof o === 'object' && typeof o.t === 'string' && typeof o.ok === 'boolean')
+      && Array.isArray(q.answers) && q.answers.every((a) => typeof a === 'string' || Number.isInteger(a)));
     if (!okQ) return 'prova com questões inválidas';
   }
   return null;
@@ -539,7 +553,12 @@ route('POST', '/api/import', async (req) => {
       }
     }
     rebuildAllQstats();
+    // leitura de teste: toda prova importada precisa abrir (e, se em andamento, ser corrigida) como o app faz; senão desfaz tudo
+    for (const { id } of db.prepare('SELECT id FROM exams').all()) {
+      try { const e = loadExam(db, id); examView(e); if (e.status === 'andamento') computeResult(e); } catch { throw httpError(400, `prova ${id} com estrutura inválida`); }
+    }
   });
+  answerVers.clear();
   return { ok: true };
 });
 
@@ -558,6 +577,7 @@ route('POST', '/api/reset', async (req) => {
   const { confirm } = await readBody(req);
   if (confirm !== 'APAGAR') throw httpError(400, 'confirmação ausente');
   tx(db, () => { for (const t of EXPORT_TABLES) db.exec(`DELETE FROM ${t}`); });
+  answerVers.clear();
   return { ok: true };
 });
 
@@ -567,13 +587,13 @@ function serveFile(req, res, file, { range = false, type } = {}) {
   try { st = statSync(file); } catch { return send(res, 404, { erro: 'não encontrado' }); }
   if (!st.isFile()) return send(res, 404, { erro: 'não encontrado' });
   const ct = type || MIME[extname(file).toLowerCase()] || 'application/octet-stream';
-  const headers = { 'content-type': ct, 'cache-control': 'no-cache', 'accept-ranges': range ? 'bytes' : 'none' };
+  const headers = { 'content-type': ct, 'cache-control': 'no-cache', 'accept-ranges': range ? 'bytes' : 'none', ...SECURITY_HEADERS, ...(ct === 'application/pdf' ? {} : { 'content-security-policy': APP_CSP }) };
   const m = range && req.headers.range ? /^bytes=(\d*)-(\d*)$/.exec(req.headers.range) : null;
   if (m) {
-    let start = m[1] === '' ? st.size - Number(m[2]) : Number(m[1]);
+    let start = m[1] === '' ? Math.max(0, st.size - Number(m[2])) : Number(m[1]);
     let end = m[1] !== '' && m[2] !== '' ? Number(m[2]) : st.size - 1;
     end = Math.min(end, st.size - 1);
-    if (!(start >= 0) || start > end) { res.writeHead(416, { 'content-range': `bytes */${st.size}` }); return res.end(); }
+    if (!(start >= 0) || start > end || (m[1] === '' && Number(m[2]) === 0)) { res.writeHead(416, { 'content-range': `bytes */${st.size}`, ...SECURITY_HEADERS }); return res.end(); }
     res.writeHead(206, { ...headers, 'content-range': `bytes ${start}-${end}/${st.size}`, 'content-length': end - start + 1 });
     return createReadStream(file, { start, end }).pipe(res);
   }
@@ -583,7 +603,7 @@ function serveFile(req, res, file, { range = false, type } = {}) {
 }
 
 function servePublic(req, res, pathname) {
-  let rel = decodeURIComponent(pathname);
+  let rel = decodePath(pathname);
   if (rel === '/' || !extname(rel)) rel = '/index.html';
   const file = resolve(PUBLIC_DIR, '.' + normalize(rel));
   if (!file.startsWith(PUBLIC_DIR + sep) || !existsSync(file)) {
@@ -601,12 +621,16 @@ function forwardHeaders(headers) {
   return Object.fromEntries(Object.entries(headers).filter(([k]) => !HOP_BY_HOP.has(k) && !named.has(k)));
 }
 
-function proxyTerminal(req, res) {
+// o ttyd só precisa destas três rotas; qualquer outra (ou caminho com barras/pontos codificados) nem chega ao container
+const TERMINAL_PATH = /^\/terminal\/(token|ws)?$/;
+
+function proxyTerminal(req, res, url) {
   if (dupHeader(req, ['content-length', 'transfer-encoding'])) return send(res, 400, { erro: 'requisição inválida' });
-  const up = httpRequest({ hostname: LAB_TERMINAL.hostname, port: LAB_TERMINAL.port, path: req.url, method: req.method, headers: forwardHeaders(req.headers), timeout: 30_000 }, (pr) => {
+  if (!TERMINAL_PATH.test(url.pathname)) return send(res, 404, { erro: 'não encontrado' });
+  const up = httpRequest({ hostname: LAB_TERMINAL.hostname, port: LAB_TERMINAL.port, path: url.pathname + url.search, method: req.method, headers: forwardHeaders(req.headers), timeout: 30_000 }, (pr) => {
     const rh = { ...pr.headers };
     for (const h of HOP_BY_HOP) delete rh[h];
-    res.writeHead(pr.statusCode, rh);
+    res.writeHead(pr.statusCode, { ...rh, ...SECURITY_HEADERS });
     pr.on('error', () => res.destroy());
     pr.on('aborted', () => res.destroy());   // o laboratório encerrou no meio da resposta: não deixa o navegador pendurado
     pr.pipe(res);
@@ -626,8 +650,8 @@ const server = createServer(async (req, res) => {
     try { url = new URL(req.url, 'http://localhost'); } catch { return send(res, 400, { erro: 'URL inválida' }); }
     if (!hostAllowed(req)) return send(res, 403, { erro: 'host não permitido (veja ALLOWED_HOSTS no docker-compose.yml)' });
     if (req.method !== 'GET' && req.method !== 'HEAD' && !originAllowed(req)) return send(res, 403, { erro: 'origem não permitida' });
-    if (url.pathname === '/terminal') { res.writeHead(302, { location: '/terminal/' }); return res.end(); }
-    if (url.pathname.startsWith('/terminal/')) return proxyTerminal(req, res);
+    if (url.pathname === '/terminal') { res.writeHead(302, { location: '/terminal/', ...SECURITY_HEADERS }); return res.end(); }
+    if (url.pathname.startsWith('/terminal/')) return proxyTerminal(req, res, url);
     const pm = /^\/pdf\/(101|102|x\d+)$/.exec(url.pathname);
     if (pm && (req.method === 'GET' || req.method === 'HEAD')) {
       const f = pdfPath(pm[1]); // só nomes conhecidos pelo servidor: nunca um caminho vindo da URL
@@ -638,7 +662,7 @@ const server = createServer(async (req, res) => {
         if (r.method !== req.method) continue;
         const m = r.re.exec(url.pathname);
         if (!m) continue;
-        const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
+        const params = Object.fromEntries(r.keys.map((k, i) => [k, decodePath(m[i + 1])]));
         const out = await r.handler(req, res, params, url);
         return send(res, 200, out);
       }
@@ -662,13 +686,13 @@ server.on('upgrade', (req, socket, head) => {
     if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny('400 Bad Request');
     url = new URL(req.url, 'http://localhost');
   } catch { return deny('400 Bad Request'); }
-  if (!url.pathname.startsWith('/terminal/') || !hostAllowed(req) || !originAllowed(req)) return deny();
+  if (url.pathname !== '/terminal/ws' || !hostAllowed(req) || !originAllowed(req)) return deny();
   // só um handshake WebSocket legítimo passa; nada de protocolo arbitrário nem dados "pegando carona" no mesmo pacote
   if (req.method !== 'GET' || String(req.headers.upgrade ?? '').toLowerCase() !== 'websocket' || req.headers['sec-websocket-version'] !== '13'
       || !req.headers['sec-websocket-key'] || head?.length) return deny('400 Bad Request');
   const up = net.connect(Number(LAB_TERMINAL.port), LAB_TERMINAL.hostname, () => {
     // cabeçalhos reconstruídos a partir dos valores já validados (Node colapsa duplicados); nada de rawHeaders
-    const lines = [`GET ${req.url} HTTP/1.1`];
+    const lines = [`GET ${url.pathname}${url.search} HTTP/1.1`];
     for (const [k, v] of Object.entries(forwardHeaders(req.headers))) lines.push(`${k}: ${v}`);
     lines.push('Connection: Upgrade', 'Upgrade: websocket');
     up.write(lines.join('\r\n') + '\r\n\r\n');
