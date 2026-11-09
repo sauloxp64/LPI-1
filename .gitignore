@@ -15,3 +15,7 @@ Thumbs.db
 
 # Texto de OCR gerado a partir de PDFs de terceiros (scripts/ocr-pdf.sh)
 *.ocr.txt
+
+# Índices locais de ferramentas de análise de código (codegraph, graphify)
+.codegraph/
+graphify-out/

@@ -48,7 +48,7 @@ Sem os PDFs o app funciona normalmente; só os links de material e a busca depen
 
 ## Banco de questões
 
-* **1.674 questões em português** (42 objetivos, 3 formatos, 3 níveis) em `app/content/questions/<objetivo>.txt`, escritas a partir do material oficial e dos **objetivos oficiais** (cada `area` e cada utilitário listado pela LPI é cobrado), com `ref:` apontando a página do PDF.
+* **1.677 questões em português** (42 objetivos, 3 formatos, 3 níveis) em `app/content/questions/<objetivo>.txt`, escritas a partir do material oficial e dos **objetivos oficiais** (cada `area` e cada utilitário listado pela LPI é cobrado), com `ref:` apontando a página do PDF.
 * **Testadas de verdade**: o que é "qual a saída / o que acontece" foi executado num Debian 12 (`docker run`) pelo autor de cada arquivo, e depois passou por **revisão cega independente** — outro revisor respondeu cada questão sem ver o gabarito (1.669 de 1.672 respostas coincidiram; as divergências viraram correções ou reformulações).
 * **230 geradores paramétricos** em `app/src/generators/`: cada um cria questões novas com números/nomes/comandos sorteados e **gabarito calculado por código**, conferido contra as ferramentas reais (`bash`, GNU coreutils, `chmod`, `grep`, `sed`, `vim -es`…) em centenas de sementes (`node app/tools/verify-generators.mjs`).
 * **`ERRATAS-MATERIAL.md`**: ao testar tudo no Debian, os autores acharam **dezenas de erros e pontos desatualizados no próprio PDF da LPI** (ex.: `tune2fs -c 0` × `-C 0`, `renice` é absoluto, `find -mtime 7`, UDP "estabelece conexão"…). Vale conferir ao estudar.
@@ -59,7 +59,7 @@ Adicionar suas questões: edite/crie `app/content/questions/*.txt` (formato em `
 
 **56 desafios** em `lab/challenges/<id>/` (`meta.json` + `setup.sh` + `check.sh` + `solve.sh`), cobrindo 30+ objetivos. Aparecem na aba **Laboratório**; a pasta é montada direto no container (não precisa rebuild). O container **não é privilegiado** (sem `mount`, sem `systemd`, sem rede de verdade), então o lab foca no que dá para praticar de verdade: arquivos, permissões, usuários, processos, cron/at, pipelines, regex, imagens de disco com `fdisk`/`mkfs`, ssh-keygen/gpg, logs, scripts. Boot/systemd/GRUB/rede física continuam cobertos pelas questões.
 
-Cada desafio é testado automaticamente: o cenário não pode nascer resolvido, a solução de referência tem de passar e o reset tem de desfazer tudo (`node app/tools/selftest-lab.mjs`).
+Cada desafio é testado automaticamente: o cenário não pode nascer resolvido, a solução de referência tem de passar e o reset tem de desfazer tudo (`node app/tools/selftest-lab.mjs`). Os `check.sh` também têm testes de regressão nos dois sentidos — estados incorretos têm de reprovar e variações legítimas da solução têm de passar — em containers descartáveis (`scripts/lab-regressao.sh`; casos em `lab/tests/casos/`).
 
 ## Verificações (qualidade)
 
