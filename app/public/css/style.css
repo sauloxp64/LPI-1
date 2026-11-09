@@ -301,6 +301,9 @@ dialog::backdrop { background: rgba(8, 11, 12, .62); }
 }
 .opt:hover { border-color: var(--edge); background: color-mix(in srgb, var(--text) 4%, transparent); }
 .opt input { position: absolute; opacity: 0; pointer-events: none; }
+/* o controle é invisível (opacity: 0): o indicador de foco do teclado aparece no rótulo */
+.opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+@supports not selector(:has(*)) { .opt:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; } }
 .opt .key { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--edge); font: 500 .8rem var(--mono); color: var(--muted); background: var(--panel); }
 .opt.multi .key { border-radius: 3px; }
 .opt.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }

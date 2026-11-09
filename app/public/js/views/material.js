@@ -98,12 +98,16 @@ ${m.pdf.arquivos['102']}</code></pre>
   // busca em texto completo
   const q = root.querySelector('#q'); const results = root.querySelector('#results'); const toc = root.querySelector('#toc');
   let timer = null;
+  let buscaId = 0; // muda a CADA alteração do campo (inclusive ao limpar) e ao sair da tela: só a busca mais recente pode mexer na tela
   q.oninput = () => {
     clearTimeout(timer);
+    const meu = ++buscaId;
     timer = setTimeout(async () => {
       const term = q.value.trim();
       if (term.length < 2) { results.classList.add('hidden'); toc.classList.remove('hidden'); return; }
-      const r = await get(`/api/search?q=${encodeURIComponent(term)}`);
+      let r;
+      try { r = await get(`/api/search?q=${encodeURIComponent(term)}`); } catch (err) { if (meu === buscaId) throw err; return; } // erro de busca já superada: ignora
+      if (meu !== buscaId) return; // o campo mudou (ou a tela saiu) enquanto a resposta vinha
       toc.classList.add('hidden'); results.classList.remove('hidden');
       const words = term.split(/\s+/).filter((t) => t.length > 1).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
       const re = new RegExp(`(${words.join('|')})`, 'gi');
@@ -114,5 +118,5 @@ ${m.pdf.arquivos['102']}</code></pre>
           : '<p class="muted small">Nada encontrado.</p>';
     }, 250);
   };
-  return () => { root.onclick = null; root.onsubmit = null; };
+  return () => { clearTimeout(timer); buscaId++; root.onclick = null; root.onsubmit = null; };
 }

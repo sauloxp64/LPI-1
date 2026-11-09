@@ -1,5 +1,5 @@
 import { get, post, meta } from '../api.js';
-import { html, md, pct, fmtDuration, fmtDate, LETTERS, tone, toneCls, bar, ico, toast, confirmDialog } from '../util.js';
+import { html, md, pct, fmtDuration, fmtDate, LETTERS, tone, toneCls, bar, ico, toast, confirmDialog, exclusive } from '../util.js';
 
 const refUrl = (r) => { const m = /^(\d+):p\.(\d+)/.exec(r); return m ? `/pdf/${m[1]}#page=${m[2]}` : '#'; };
 
@@ -94,17 +94,24 @@ export async function render(root, { args, params, isCurrent = () => true }) {
       }) : html`<div class="empty">Nada nesta categoria.</div>`}
     </section>`.s;
 
+  // uma criação de prova por vez nesta tela; a resposta tardia só redireciona se a tela ainda for a atual
+  const criar = exclusive(() => root.querySelectorAll('button[data-act]'));
+  const abrir = (path, body) => criar(async () => {
+    const { id: nid } = await post(path, body);
+    if (isCurrent()) location.hash = `#/prova/${nid}`;
+  });
+
   root.onclick = async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
     try {
       if (b.dataset.f) { location.hash = `#/resultado/${id}?f=${b.dataset.f}`; return; }
-      if (b.dataset.act === 'retake') { const { id: nid } = await post(`/api/exams/${id}/retake`, { same: false }); location.hash = `#/prova/${nid}`; }
-      else if (b.dataset.act === 'same') { const { id: nid } = await post(`/api/exams/${id}/retake`, { same: true }); location.hash = `#/prova/${nid}`; }
-      else if (b.dataset.act === 'wrong') { const { id: nid } = await post(`/api/exams/${id}/wrong`); location.hash = `#/prova/${nid}`; }
+      if (b.dataset.act === 'retake') await abrir(`/api/exams/${id}/retake`, { same: false });
+      else if (b.dataset.act === 'same') await abrir(`/api/exams/${id}/retake`, { same: true });
+      else if (b.dataset.act === 'wrong') await abrir(`/api/exams/${id}/wrong`);
       else if (b.dataset.contest !== undefined) {
         if (await confirmDialog({ title: 'Contestar esta questão?', body: 'Ela passará a contar como correta nas suas estatísticas. Use quando sua resposta for equivalente ao gabarito.', ok: 'Contar como correta' })) {
-          await post(`/api/exams/${id}/contest`, { i: Number(b.dataset.contest) }); await render(root, { args, params }); toast('Contestação registrada.');
+          await post(`/api/exams/${id}/contest`, { i: Number(b.dataset.contest) }); await render(root, { args, params, isCurrent }); toast('Contestação registrada.');
         }
       } else if (b.dataset.report !== undefined) {
         const note = prompt('O que está errado nesta questão?');

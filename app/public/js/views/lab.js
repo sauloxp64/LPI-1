@@ -9,7 +9,7 @@ const store = {
 };
 
 export async function render(root, ctx) {
-  return ctx.args[0] ? runView(root, ctx.args[0]) : listView(root);
+  return ctx.args[0] ? runView(root, ctx.args[0], ctx) : listView(root);
 }
 
 async function listView(root) {
@@ -31,7 +31,8 @@ async function listView(root) {
     }) : html`<div class="empty" style="margin-top:16px">Nenhum desafio encontrado em <code>lab/challenges</code>.</div>`}`.s;
 }
 
-async function runView(root, id) {
+async function runView(root, id, ctx = {}) {
+  const isCurrent = ctx.isCurrent ?? (() => true);
   const key = `labrun:${id}`;
   let run = store.get(key);
   const st = await get('/api/lab/status');
@@ -107,10 +108,17 @@ async function runView(root, id) {
         toast('Cenário reiniciado.');
       } else if (act === 'new') {
         store.del(key);
-        await render(root, { args: [id] });
+        await render(root, { ...ctx, args: [id] });
         return;
       }
-    } catch (err) { toast(err.message, 'err'); } finally { if (!b.dataset.exhausted) busy(b, false); }
+    } catch (err) {
+      if (err.status === 404) { // o servidor não conhece mais esta tentativa (progresso apagado/importado): esquece-a e oferece uma nova
+        store.del(key);
+        if (isCurrent()) out.innerHTML = html`<div class="feedback no"><b>Esta tentativa não existe mais.</b> O progresso foi apagado ou substituído. Inicie uma nova tentativa para continuar.
+          <div class="row" style="margin-top:10px"><button class="btn primary" data-act="new">${ico('shuffle')} Nova tentativa</button><a class="btn" href="#/lab">Desafios</a></div></div>`.s;
+      }
+      toast(err.message, 'err');
+    } finally { if (!b.dataset.exhausted) busy(b, false); }
   };
   return () => { root.onclick = null; };
 }

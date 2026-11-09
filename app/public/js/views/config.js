@@ -1,5 +1,5 @@
 import { get, post, meta } from '../api.js';
-import { html, toast, fmtDate, confirmDialog, ico, st } from '../util.js';
+import { html, toast, fmtDate, confirmDialog, ico, st, clearLabRuns } from '../util.js';
 
 const TARGET = { 1: 10, 2: 14, 3: 20, 4: 26, 5: 32 };
 
@@ -49,11 +49,11 @@ export async function render(root) {
   root.querySelector('#imp').onchange = async (e) => {
     const f = e.target.files[0]; if (!f) return;
     if (!(await confirmDialog({ title: 'Importar progresso?', body: 'Isso substitui todo o progresso atual.', ok: 'Importar', danger: true }))) return;
-    try { await post('/api/import', JSON.parse(await f.text())); toast('Progresso importado.'); } catch (err) { toast(err.message, 'err'); }
+    try { await post('/api/import', JSON.parse(await f.text())); clearLabRuns(); toast('Progresso importado.'); } catch (err) { toast(err.message, 'err'); }
   };
   root.querySelector('#reset').onclick = async () => {
     const typed = prompt('Isto apaga TODO o progresso (provas, estatísticas, avanço no curso). Digite APAGAR para confirmar:');
     if (typed !== 'APAGAR') return;
-    await post('/api/reset', { confirm: 'APAGAR' }); toast('Progresso apagado.'); location.hash = '#/';
+    await post('/api/reset', { confirm: 'APAGAR' }); clearLabRuns(); toast('Progresso apagado.'); location.hash = '#/';
   };
 }

@@ -1,7 +1,7 @@
 import { get, post, meta } from '../api.js';
-import { html, pct, tone, dots, ico, toast } from '../util.js';
+import { html, pct, tone, dots, ico, toast, exclusive } from '../util.js';
 
-export async function render(root, { args }) {
+export async function render(root, { args, isCurrent = () => true }) {
   const code = args[0];
   const [m, st, lab, prog] = await Promise.all([meta(), get('/api/stats'), get('/api/lab/challenges').catch(() => ({ desafios: [] })), get('/api/progress')]);
   const o = m.byCode[code];
@@ -51,13 +51,18 @@ export async function render(root, { args }) {
       </div>
     </div>`.s;
 
+  // uma criação de prova por vez nesta tela; a resposta tardia só redireciona se a tela ainda for a atual
+  const criar = exclusive(() => root.querySelectorAll('button[data-train], button[data-quiz]'));
+
   root.onclick = async (e) => {
     const t = e.target.closest('button');
     if (!t || (!t.dataset.train && !t.dataset.quiz)) return;
     try {
       const body = t.dataset.train ? { mode: 'treino', objetivos: [code], n: Number(t.dataset.train) } : { mode: 'topico', objetivos: [code], n: 15 };
-      const { id } = await post('/api/exams', body);
-      location.hash = `#/prova/${id}`;
+      await criar(async () => {
+        const { id } = await post('/api/exams', body);
+        if (isCurrent()) location.hash = `#/prova/${id}`;
+      });
     } catch (err) { toast(err.message, 'err'); }
   };
   return () => { root.onclick = null; };

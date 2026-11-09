@@ -13,6 +13,24 @@ function fmt(v) {
 /** Template literal que escapa automaticamente tudo que não for `raw()` ou outro `html```. */
 export const html = (strings, ...vals) => new Raw(strings.reduce((acc, s, i) => acc + s + (i < vals.length ? fmt(vals[i]) : ''), ''));
 
+// Ênfase: o delimitador abre depois de início/espaço/abre-parêntese e fecha antes de algo que não seja letra;
+// o conteúdo não pode ser vazio, começar nem terminar em espaço e não cruza linhas. O itálico ainda exige
+// que o conteúdo comece por letra, dígito ou código: assim `*-*-*`, `*.*` e `\(.*\)` nunca viram ênfase, mesmo sem crases.
+// Depois de aspas ('*ota*', "*CES*") também não abre: é o padrão de um comando, não destaque.
+// \uE000n\uE001 marca o trecho de código n (ver fmtInline).
+const NEGRITO = /(^|[\s(\[{])\*\*(?=[^\s*])([^*\n]*?[^\s*])\*\*(?![\p{L}\p{N}_*])/gu;
+const ITALICO = /(^|[\s(\[{])\*(?=[\p{L}\p{N}\uE000])([^*\n]*?[^\s*])\*(?![\p{L}\p{N}_*])/gu;
+// Itálico primeiro: o <em> pronto não contém asteriscos, então o negrito o inclui ou o exclui por inteiro (sempre bem aninhado).
+const enfase = (t) => esc(t).replace(ITALICO, '$1<em>$2</em>').replace(NEGRITO, '$1<strong>$2</strong>');
+
+// Texto corrido. Os `trechos de código` saem ANTES da ênfase (viram marcadores): o código recebe só escape HTML e
+// seus asteriscos nunca contam como delimitador. A ênfase pode envolver um trecho inteiro (**`x`**), jamais cortá-lo.
+function fmtInline(p) {
+  const codigos = [];
+  const texto = p.replace(/[\uE000\uE001]/g, '').replace(/`([^`\n]+)`/g, (_, c) => `\uE000${codigos.push(c) - 1}\uE001`);
+  return enfase(texto).replace(/\uE000(\d+)\uE001/g, (_, i) => `<code>${esc(codigos[i])}</code>`).replace(/\n/g, '<br>');
+}
+
 /** Markdown mínimo: ``` blocos ```, `código`, **negrito**, *itálico*, parágrafos. */
 export function md(src, { inline = false } = {}) {
   const parts = String(src ?? '').split(/```[^\n`]*\n?([\s\S]*?)```/g);
@@ -21,11 +39,6 @@ export function md(src, { inline = false } = {}) {
     if (i % 2 === 1) { out += `<pre><code>${esc(parts[i].replace(/\n$/, ''))}</code></pre>`; continue; }
     const text = parts[i].trim();
     if (!text) continue;
-    const fmtInline = (p) => {
-      let s = esc(p).replace(/`([^`\n]+)`/g, '<code>$1</code>');
-      s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g, '$1<em>$2</em>');
-      return s.replace(/\n/g, '<br>');
-    };
     if (inline) { out += fmtInline(text); continue; }
     for (const para of text.split(/\n{2,}/)) {
       // linhas "* item" / "- item" viram lista; o resto, parágrafo
@@ -67,6 +80,31 @@ export function confirmDialog({ title, body, ok = 'Confirmar', cancel = 'Cancela
     d.addEventListener('close', () => { resolve(d.returnValue === 'yes'); d.remove(); });
     d.showModal();
   });
+}
+
+/**
+ * Trava de operação única por tela (ex.: criar uma prova): enquanto `fn` roda, novas chamadas são ignoradas
+ * (clique duplo) e os controles devolvidos por `ctrls()` ficam desabilitados. Se `fn` falhar, a trava é liberada
+ * e o erro segue para o chamador; se concluir, ela permanece, porque a tela está de saída para a prova criada.
+ */
+export function exclusive(ctrls = () => []) {
+  let busy = false;
+  const disable = (on) => { for (const c of ctrls()) c.disabled = on; };
+  return async (fn) => {
+    if (busy) return false;
+    busy = true; disable(true);
+    try { await fn(); } catch (e) { busy = false; disable(false); throw e; }
+    return true;
+  };
+}
+
+/** Esquece as tentativas de laboratório guardadas no navegador (chaves `labrun:`): o servidor as apagou. */
+export function clearLabRuns() {
+  try {
+    const chaves = [];
+    for (let i = 0; i < sessionStorage.length; i++) { const k = sessionStorage.key(i); if (k?.startsWith('labrun:')) chaves.push(k); }
+    chaves.forEach((k) => sessionStorage.removeItem(k));
+  } catch { /* sem armazenamento: não há o que invalidar */ }
 }
 
 export const pct = (x, d = 0) => `${(x * 100).toFixed(d)}%`;

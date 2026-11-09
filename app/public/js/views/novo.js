@@ -1,14 +1,7 @@
 import { get, post, del, meta } from '../api.js';
-import { html, pct, fmtDate, fmtDuration, tone, toast, confirmDialog, ico } from '../util.js';
+import { html, pct, fmtDate, fmtDuration, tone, toast, confirmDialog, ico, exclusive } from '../util.js';
 
 const AUTO = new Set(['relampago', 'erros']);
-
-async function start(body) {
-  try {
-    const { id } = await post('/api/exams', body);
-    location.hash = `#/prova/${id}`;
-  } catch (e) { toast(e.message, 'err'); }
-}
 
 export async function render(root, { params, isCurrent = () => true }) {
   const modo = params.get('modo');
@@ -101,6 +94,14 @@ export async function render(root, { params, isCurrent = () => true }) {
   }
   const chosen = (name) => [...root.querySelectorAll(`input[name=${name}]:checked`)].map((i) => i.value);
 
+  // uma criação de prova por vez nesta tela (clique duplo = uma prova só); a resposta tardia só redireciona se a tela ainda for a atual
+  const criar = exclusive(() => root.querySelectorAll('button[data-start], button[data-start-oficial], button[data-retake]'));
+  const abrir = (path, body) => criar(async () => {
+    const { id } = await post(path, body);
+    if (isCurrent()) location.hash = `#/prova/${id}`;
+  });
+  const start = (body) => abrir('/api/exams', body).catch((e) => toast(e.message, 'err'));
+
   root.onchange = (e) => {
     const t = e.target.closest('[data-topic]');
     if (t) {
@@ -130,10 +131,10 @@ export async function render(root, { params, isCurrent = () => true }) {
       }
       await start(body);
     } else if (b.dataset.retake) {
-      try { const { id } = await post(`/api/exams/${b.dataset.retake}/retake`, { same: false }); location.hash = `#/prova/${id}`; } catch (err) { toast(err.message, 'err'); }
+      await abrir(`/api/exams/${b.dataset.retake}/retake`, { same: false }).catch((err) => toast(err.message, 'err'));
     } else if (b.dataset.del) {
       if (await confirmDialog({ title: 'Excluir este simulado?', body: 'As respostas dele deixam de contar nas estatísticas.', ok: 'Excluir', danger: true })) {
-        await del(`/api/exams/${b.dataset.del}`); await render(root, { params });
+        await del(`/api/exams/${b.dataset.del}`); await render(root, { params, isCurrent });
       }
     }
   };

@@ -1,16 +1,26 @@
 import { get, put, post, meta } from '../api.js';
-import { html, pct, dots, tone, bar, ico, toast } from '../util.js';
+import { html, pct, dots, tone, bar, ico, toast, exclusive } from '../util.js';
 
 const STATUS = [['nao', 'Não vi'], ['estudando', 'Estudando'], ['concluido', 'Concluído']];
 
-export async function render(root) {
+/** Tópicos expandidos, guardados na sessão. Só vale uma lista de tópicos conhecidos; ausente, corrompido
+ *  ou sem armazenamento: abre todos (a tela nunca depende dessa preferência). */
+function lerAbertos(topicos) {
+  try {
+    const v = JSON.parse(sessionStorage.getItem('cursoAbertos'));
+    if (Array.isArray(v)) return new Set(v.filter((t) => typeof t === 'string' && Object.hasOwn(topicos, t)));
+  } catch { /* valor corrompido ou armazenamento indisponível */ }
+  return new Set(Object.keys(topicos));
+}
+
+export async function render(root, { isCurrent = () => true } = {}) {
   const [m, prog, st] = await Promise.all([meta(), get('/api/progress'), get('/api/stats')]);
   const mastery = Object.fromEntries(st.objetivos.map((o) => [o.code, o]));
   const total = m.objetivos.reduce((s, o) => s + o.peso, 0);
   const done = m.objetivos.reduce((s, o) => s + o.peso * ({ concluido: 1, estudando: 0.5 }[prog.status[o.code]] ?? 0), 0);
   const unlocked = m.objetivos.filter((o) => ['estudando', 'concluido'].includes(prog.status[o.code]));
   const aulas = m.curso.aulas ?? {};
-  const open = new Set(JSON.parse(sessionStorage.getItem('cursoAbertos') ?? 'null') ?? Object.keys(m.topicos));
+  const open = lerAbertos(m.topicos);
 
   root.innerHTML = html`
     <div class="page-title"><h1>Meu avanço no curso</h1>
@@ -61,7 +71,10 @@ export async function render(root) {
     })}
     </div>`.s;
 
-  const again = async () => { const y = window.scrollY; await render(root); window.scrollTo(0, y); };
+  const again = async () => { const y = window.scrollY; await render(root, { isCurrent }); window.scrollTo(0, y); };
+
+  // uma criação de prova por vez nesta tela; a resposta tardia só redireciona se a tela ainda for a atual
+  const criar = exclusive(() => root.querySelectorAll('button[data-train]'));
 
   root.onclick = async (e) => {
     const b = e.target.closest('button');
@@ -71,7 +84,12 @@ export async function render(root) {
       return again();
     }
     if (b.dataset.train) {
-      try { const { id } = await post('/api/exams', { mode: 'treino', objetivos: [b.dataset.train], n: 10 }); location.hash = `#/prova/${id}`; } catch (err) { toast(err.message, 'err'); }
+      try {
+        await criar(async () => {
+          const { id } = await post('/api/exams', { mode: 'treino', objetivos: [b.dataset.train], n: 10 });
+          if (isCurrent()) location.hash = `#/prova/${id}`;
+        });
+      } catch (err) { toast(err.message, 'err'); }
     }
     if (b.dataset.bulk) {
       const quais = prompt('Até qual tópico você já viu no curso? (ex.: 103 marca 101, 102 e 103 como concluídos)', '103');
@@ -88,7 +106,7 @@ export async function render(root) {
     return again();
   };
   root.ontoggle = () => {
-    sessionStorage.setItem('cursoAbertos', JSON.stringify([...root.querySelectorAll('details[data-topic][open]')].map((d) => d.dataset.topic)));
+    try { sessionStorage.setItem('cursoAbertos', JSON.stringify([...root.querySelectorAll('details[data-topic][open]')].map((d) => d.dataset.topic))); } catch { /* sem armazenamento: a tela funciona, só não lembra a preferência */ }
   };
   root.querySelectorAll('details[data-topic]').forEach((d) => d.addEventListener('toggle', root.ontoggle));
   return () => { root.onclick = null; root.onchange = null; };
