@@ -21,7 +21,7 @@
     "linha do ext4: UUID correto, ponto `{pt_dados}`, tipo `ext4`, opções `defaults,{opt1}`, dump 0, pass 2",
     "linha do vfat: `LABEL={lbl_usb}`, ponto `/media/{pt_usb}`, tipo `vfat`, opções `noauto`, `user` e `{opt2}`, dump 0, pass 0",
     "linha da swap: UUID correto, ponto `none`, tipo `swap`, opção `sw`, dump 0, pass 0",
-    "todas as linhas com exatamente 6 campos"
+    "todas as linhas úteis do arquivo com exatamente 6 campos, uma só entrada por ponto de montagem/dispositivo e nenhuma opção contraditória na mesma linha (como `auto` junto com `noauto`, `user` com `nouser`, `ro` com `rw`)"
   ],
   "dicas": [
     "Cada linha do fstab tem 6 campos: dispositivo, ponto de montagem, tipo, opções, dump, pass.",

@@ -16,8 +16,8 @@
   },
   "enunciado": "Dois scripts de manutenção foram entregues em `~/lab/cronaluno/` (ainda não foram testados). Cadastre-os no **crontab do usuário `aluno`** (sem `sudo`, no seu próprio crontab):\n\n1. `{script_a}` deve rodar **uma vez por semana, no dia da semana `{dia}`**, às **{hora}h e {minuto} min** (todas as semanas do ano).\n2. `{script_b}` deve rodar **a cada {passo} minutos, de segunda a sexta, durante o expediente**: das **{h_ini}h** às **{h_fim}h** (as horas {h_ini} e {h_fim} inclusive, isto é, o campo de horas do cron como o intervalo `{h_ini}-{h_fim}`).\n\nOs dois comandos devem **acrescentar** (sem apagar o que já existe) a saída padrão **e** a saída de erro em `~/lab/cronaluno/agenda.log`. Use **caminhos absolutos** (o cron não herda o seu ambiente: `PATH` mínimo, shell `/bin/sh`, diretório inicial = home).\n\nAtenção: o cron executa o comando de verdade; garanta que ele realmente funciona quando o cron o chamar.",
   "verifica": [
-    "o crontab de `aluno` tem uma linha para `{script_a}` com minuto `{minuto}`, hora `{hora}`, qualquer dia do mês/mês e dia da semana `{dia}`",
-    "o crontab de `aluno` tem uma linha para `{script_b}` com minutos de `{passo}` em `{passo}`, horas `{h_ini}-{h_fim}`, qualquer dia do mês/mês e dias da semana segunda a sexta",
+    "o crontab de `aluno` tem uma linha para `{script_a}` com minuto `{minuto}`, hora `{hora}`, qualquer dia do mês/mês (`*` no campo do dia do mês: com dia do mês e dia da semana ambos restritos o cron usa OU e rodaria todo dia) e dia da semana `{dia}`",
+    "o crontab de `aluno` tem uma linha para `{script_b}` com minutos de `{passo}` em `{passo}`, horas `{h_ini}-{h_fim}`, `*` no dia do mês e no mês, e dias da semana segunda a sexta",
     "cada comando, executado como o cron o executaria (`/bin/sh`, ambiente mínimo), anexa stdout e stderr em `~/lab/cronaluno/agenda.log` sem apagar o conteúdo anterior"
   ],
   "dicas": [

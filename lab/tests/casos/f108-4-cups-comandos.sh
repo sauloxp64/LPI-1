@@ -1,0 +1,68 @@
+# E-03: caminho completo do arquivo, opções repetidas conflitantes, fila escolhida pelo argumento de -o do lpstat
+# e padrão do USUÁRIO (lpoptions -d; lpadmin -d é o padrão do sistema).
+ID=f108-4-cups-comandos
+D=/home/aluno/lab/impressao
+# cups <opcao> <esperado> <nome> <linha1> <linha2> <linha3> <linha4>
+cups() {
+  P=(impressora=laser-rh arquivo=manual.txt copias=3 opcao=$1 documento=balancete.pdf job=250)
+  lab_setup
+  printf '%s\n%s\n%s\n%s\n' "$4" "$5" "$6" "$7" > $D/comandos.txt
+  chk "$2" "[$1] $3"
+}
+F='~/lab/impressao/manual.txt'
+D1="lp -d laser-rh -n 3 -o sides=two-sided-long-edge $F"
+L2="lprm -P laser-rh 250"; L3="lpq -P laser-rh"; L4="lpoptions -d laser-rh"
+cups duplex PASS "solução" "$D1" "$L2" "$L3" "$L4"
+cups duplex PASS "flags coladas + caminho absoluto" "lp -n3 -dlaser-rh -osides=two-sided-long-edge /home/aluno/lab/impressao/manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "lpr com \$HOME" "lpr -P laser-rh -# 3 -o sides=two-sided-long-edge \$HOME/lab/impressao/manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "lpr com -#3 e -Plaser-rh colados" "lpr -Plaser-rh -#3 -o sides=two-sided-long-edge ~/lab/impressao/manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "caminho relativo manual.txt" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "caminho relativo ./manual.txt" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge ./manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "relativo à home: lab/impressao/manual.txt" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge lab/impressao/manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "caminho com // e ./" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge ~/lab//impressao/./manual.txt" "$L2" "$L3" "$L4"
+cups duplex PASS "cópias por -o copies=3" "lp -o copies=3 -d laser-rh -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex PASS "opções em outra ordem" "lp -o sides=two-sided-long-edge -n 3 -d laser-rh $F" "$L2" "$L3" "$L4"
+cups duplex PASS "-n repetido com o mesmo valor" "lp -d laser-rh -n 3 -n 3 -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex PASS "cancel NUM" "$D1" "cancel 250" "$L3" "$L4"
+cups duplex PASS "cancel fila-NUM" "$D1" "cancel laser-rh-250" "$L3" "$L4"
+cups duplex PASS "lprm NUM sem -P" "$D1" "lprm 250" "$L3" "$L4"
+cups duplex PASS "lpstat -o impressora" "$D1" "$L2" "lpstat -o laser-rh" "$L4"
+cups duplex PASS "lpstat -olaser-rh" "$D1" "$L2" "lpstat -olaser-rh" "$L4"
+cups duplex PASS "lpstat -l -o laser-rh" "$D1" "$L2" "lpstat -l -o laser-rh" "$L4"
+cups duplex PASS "lpstat -o laser-rh -l" "$D1" "$L2" "lpstat -o laser-rh -l" "$L4"
+cups duplex PASS "lpq -Plaser-rh" "$D1" "$L2" "lpq -Plaser-rh" "$L4"
+cups duplex PASS "lpoptions -dlaser-rh" "$D1" "$L2" "$L3" "lpoptions -dlaser-rh"
+cups a4 PASS "media=A4" "lp -d laser-rh -n 3 -o media=A4 $F" "$L2" "$L3" "$L4"
+cups a4 PASS "media=a4 junto de outra opção" "lp -d laser-rh -n 3 -o 'sides=one-sided media=a4' $F" "$L2" "$L3" "$L4"
+cups paisagem PASS "landscape" "lp -d laser-rh -n 3 -o landscape $F" "$L2" "$L3" "$L4"
+cups paisagem PASS "orientation-requested=4" "lp -d laser-rh -n 3 -o orientation-requested=4 $F" "$L2" "$L3" "$L4"
+cups ajustar PASS "fit-to-page" "lp -d laser-rh -n 3 -o fit-to-page $F" "$L2" "$L3" "$L4"
+cups ajustar PASS "fitplot" "lp -d laser-rh -n 3 -o fitplot $F" "$L2" "$L3" "$L4"
+# --- adversariais
+cups duplex FAIL "ADVERSARIAL: arquivo /nao-existe/manual.txt" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge /nao-existe/manual.txt" "$L2" "$L3" "$L4"
+cups duplex FAIL "ADVERSARIAL: -n 3 -n 1" "lp -d laser-rh -n 3 -n 1 -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "ADVERSARIAL: lpstat -o outra -p laser-rh" "$D1" "$L2" "lpstat -o outra -p laser-rh" "$L4"
+cups duplex FAIL "ADVERSARIAL: lpadmin -d (padrão do sistema)" "$D1" "$L2" "$L3" "lpadmin -d laser-rh"
+cups duplex FAIL "sudo lpoptions -d (padrão do sistema)" "$D1" "$L2" "$L3" "sudo lpoptions -d laser-rh"
+cups duplex FAIL "-n 1 -n 3 (valores conflitantes)" "lp -d laser-rh -n 1 -n 3 -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "-n 3 e -o copies=1" "lp -d laser-rh -n 3 -o copies=1 -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "sides repetido e conflitante" "lp -d laser-rh -n 3 -o sides=one-sided -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "sides=two-sided-short-edge" "lp -d laser-rh -n 3 -o sides=two-sided-short-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "destino repetido e conflitante" "lp -d outra -d laser-rh -n 3 -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "sem destino" "lp -n 3 -o sides=two-sided-long-edge $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "sem arquivo" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge" "$L2" "$L3" "$L4"
+cups duplex FAIL "arquivo em subpasta" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge ~/lab/impressao/x/manual.txt" "$L2" "$L3" "$L4"
+cups duplex FAIL "outro arquivo" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge ~/lab/impressao/contrato.pdf" "$L2" "$L3" "$L4"
+cups duplex FAIL "dois arquivos" "lp -d laser-rh -n 3 -o sides=two-sided-long-edge $F ~/lab/impressao/contrato.pdf" "$L2" "$L3" "$L4"
+cups paisagem FAIL "landscape e nolandscape" "lp -d laser-rh -n 3 -o landscape -o nolandscape $F" "$L2" "$L3" "$L4"
+cups paisagem FAIL "landscape=false" "lp -d laser-rh -n 3 -o landscape=false $F" "$L2" "$L3" "$L4"
+cups ajustar FAIL "fit-to-page=false" "lp -d laser-rh -n 3 -o fit-to-page=false $F" "$L2" "$L3" "$L4"
+cups a4 FAIL "media=Letter" "lp -d laser-rh -n 3 -o media=Letter $F" "$L2" "$L3" "$L4"
+cups duplex FAIL "cancela o trabalho errado" "$D1" "lprm -P laser-rh 249" "$L3" "$L4"
+cups duplex FAIL "cancel -a" "$D1" "cancel -a laser-rh" "$L3" "$L4"
+cups duplex FAIL "lpq de outra fila" "$D1" "$L2" "lpq -P outra" "$L4"
+cups duplex FAIL "lpq -P outra -P laser-rh" "$D1" "$L2" "lpq -P outra -P laser-rh" "$L4"
+cups duplex FAIL "lpstat -t" "$D1" "$L2" "lpstat -t" "$L4"
+cups duplex FAIL "lpstat -o sem destino" "$D1" "$L2" "lpstat -o" "$L4"
+cups duplex FAIL "lpstat -o laser-rh,outra" "$D1" "$L2" "lpstat -o laser-rh,outra" "$L4"
+cups duplex FAIL "lpoptions -d de outra impressora" "$D1" "$L2" "$L3" "lpoptions -d outra"

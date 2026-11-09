@@ -17,7 +17,7 @@
     "linha 1: `lp -d {impressora} -n {copias} -o <opção> {arquivo}` (ou `lpr -P {impressora} -# {copias} -o <opção> {arquivo}`), em qualquer ordem de opções",
     "linha 2: cancela somente o trabalho de número correto (o de `{documento}` do `aluno`), com `lprm` ou `cancel`",
     "linha 3: lista a fila de `{impressora}` (`lpq -P ...` ou `lpstat -o ...`)",
-    "linha 4: define a padrão com `lpoptions -d {impressora}` (ou `lpadmin -d {impressora}`)"
+    "linha 4: define a padrão com `lpoptions -d {impressora}` (`lpadmin -d` define o padrão do sistema, não o do usuário, e não vale)"
   ],
   "dicas": [
     "Imprimir: `lp -d IMPRESSORA` seleciona o destino, `-n N` o número de cópias e `-o chave=valor` as opções de impressão. No estilo BSD: `lpr -P IMPRESSORA -# N -o chave=valor arquivo`.",

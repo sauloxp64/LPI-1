@@ -2,6 +2,7 @@
 source /opt/lab/lib.sh
 S=/usr/local/bin/$P_script
 tmp=$(mktemp -d); chmod 755 "$tmp"; export TMPD=$tmp
+SHARED=$(cd "$(dirname "${BASH_SOURCE[0]}")/../_shared" && pwd); export SHARED
 # arquivos de /etc/cron.d que mencionam o script
 cand=$(grep -l -F "$S" /etc/cron.d/* 2>/dev/null)
 if [ -z "$cand" ]; then
@@ -23,35 +24,16 @@ expect_eq "dono do arquivo = root" "$(stat -c %U "$f")" "root"
 mode=$(stat -c %a "$f")
 if [ $(( 0$mode & 022 )) -eq 0 ]; then ok "o arquivo não é gravável por grupo/outros (modo $mode)"; else fail "o arquivo é gravável por grupo/outros (modo $mode): o cron o ignoraria"; fi
 export CRONF="$f"
-python3 - <<'PY'
+python3 -B - <<'PY'
 import os, re, sys
-MON = {m: i + 1 for i, m in enumerate("jan feb mar apr may jun jul aug sep oct nov dec".split())}
-DOW = {d: i for i, d in enumerate("sun mon tue wed thu fri sat".split())}
+sys.path.insert(0, os.environ['SHARED'])
+import cronparse as cp   # analisador compartilhado (dia do mês × dia da semana: E/OU do cron Debian)
 bad = 0
 def ok(m): print("OK|" + m)
 def fail(m):
     global bad
     bad += 1
     print("FALHA|" + m)
-def conv(x, names):
-    x = x.lower()
-    return names[x] if x in names else int(x)
-def expand(field, lo, hi, names=None):
-    names = names or {}
-    out = set()
-    for part in field.split(','):
-        step = 1
-        if '/' in part:
-            part, s = part.split('/', 1)
-            step = int(s)
-        if part == '*': a, b = lo, hi
-        elif '-' in part:
-            x, y = part.split('-', 1)
-            a, b = conv(x, names), conv(y, names)
-        else:
-            a = b = conv(part, names)
-        out |= set(range(a, b + 1, step))
-    return out
 env = os.environ
 script = '/usr/local/bin/' + env['P_script']
 lines = [l.strip() for l in open(env['CRONF'], encoding='utf-8', errors='replace') if l.strip() and not l.strip().startswith('#')]
@@ -67,17 +49,24 @@ if len(p) < 7:
     fail("a linha precisa de 5 campos de tempo + usuário + comando (formato do /etc/crontab)")
     sys.exit(1)
 try:
-    mi = expand(p[0], 0, 59); ho = expand(p[1], 0, 23); dm = expand(p[2], 1, 31)
-    mo = expand(p[3], 1, 12, MON); dw = {0 if v == 7 else v for v in expand(p[4], 0, 7, DOW)}
-except Exception:
+    t = cp.parse_tempo(p[:5])
+except cp.CronErro:
     fail("algum campo de tempo da linha é inválido")
     sys.exit(1)
+mi, ho, dm, mo, dw = t.mi, t.ho, t.dm, t.mo, t.dw
 c = lambda cond, m: ok(m) if cond else fail(m + " (não confere com o pedido)")
 c(mi == {int(env['P_minuto'])}, "campo dos minutos")
 c(ho == {int(env['P_hora'])}, "campo das horas")
 c(dm == {int(env['P_d1']), int(env['P_d2'])}, "campo dos dias do mês")
 c(mo == set(range(int(env['P_m1']), int(env['P_m2']) + 1)), "campo dos meses")
 c(dw == set(range(0, 7)), "campo do dia da semana (qualquer dia)")
+if dm == {int(env['P_d1']), int(env['P_d2'])} and dw == set(range(0, 7)) and mo == set(range(int(env['P_m1']), int(env['P_m2']) + 1)):
+    # os conjuntos batem, mas com dia do mês E dia da semana ambos restritos (nenhum começa com '*') o cron usa OU:
+    # "1,15 2-8 0-6" roda todos os dias desses meses. O calendário efetivo precisa ser o pedido.
+    esperado = cp.tempo_esperado({int(env['P_minuto'])}, {int(env['P_hora'])}, {int(env['P_d1']), int(env['P_d2'])},
+                                 range(int(env['P_m1']), int(env['P_m2']) + 1), range(0, 7), False, True)
+    same = cp.mesmo_calendario(t, esperado)
+    (ok if same else fail)("dias em que a tarefa realmente roda" + ("" if same else ": quando dia do mês e dia da semana são ambos restritos (não começam com '*'), o cron usa OU e roda em mais dias; use '*' no dia da semana"))
 c(p[5] == env['P_robo'], "6º campo: usuário que executa a tarefa")
 open(os.path.join(env['TMPD'], 'cmd'), 'w').write(p[6])
 open(os.path.join(env['TMPD'], 'user'), 'w').write(p[5])

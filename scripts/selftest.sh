@@ -7,13 +7,15 @@ cd "$(dirname "$0")/.."
 export NODE_NO_WARNINGS=1
 fail=0
 step() { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
-run()  { "$@" || { fail=1; printf '\033[31mFALHOU: %s\033[0m\n' "$*"; }; }
+run()  { "$@"; local rc=$?; [ $rc -eq 0 ] || { fail=1; printf '\033[31mFALHOU: %s\033[0m\n' "$*"; }; return $rc; }
 
 step "Banco de questões (formato, gabaritos, referências de página)"
 run node app/tools/lint-questions.mjs --quiet --cobertura
 
 step "Testes unitários"
-(cd app && run node --test)
+# Sem subshell: um `run` dentro de ( ) alteraria `fail` só na cópia do subshell e o script
+# anunciaria "tudo certo" mesmo com testes falhando (achado E-09).
+if pushd app >/dev/null; then run node --test; popd >/dev/null; else fail=1; echo "pasta app/ inexistente"; fi
 
 if [ "${1:-}" != "rapido" ]; then
   step "Geradores paramétricos × ferramentas reais (Docker)"
@@ -28,6 +30,9 @@ if [ "${1:-}" != "rapido" ]; then
   else
     echo "lab fora do ar — rode antes: docker compose up -d --build"; fail=1
   fi
+
+  step "Checks do laboratório: estados adversariais reprovam, solução aprova (container descartável)"
+  run bash scripts/lab-regressao.sh
 fi
 echo
 [ $fail -eq 0 ] && printf '\033[1;32m✓ tudo certo\033[0m\n' || printf '\033[1;31m✗ há falhas acima\033[0m\n'

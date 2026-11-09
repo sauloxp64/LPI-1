@@ -14,10 +14,12 @@ lanca() {   # lanca <nome>: cria o "daemon" e o inicia em segundo plano, separad
   cat > "$BIN/$n" <<SCRIPT
 #!/bin/bash
 log="$d/logs/$n.log"
+ev="$ST/ev.$n"
 echo \$\$ > "$ST/pid.$n"
 echo "\$(date +%H:%M:%S) $n iniciado (pid \$\$)" >> "\$log"
-trap 'echo "\$(date +%H:%M:%S) SIGHUP recebido: configuracao recarregada" >> "\$log"' HUP
-trap 'echo "\$(date +%H:%M:%S) SIGTERM recebido: encerrando com calma" >> "\$log"; exit 0' TERM
+# o log (editável pelo aluno) serve para diagnóstico; o que o check consulta é o registro privado \$ev (só root grava)
+trap 'echo "\$(date +%H:%M:%S) SIGHUP recebido: configuracao recarregada" >> "\$log"; echo HUP >> "\$ev"' HUP
+trap 'echo "\$(date +%H:%M:%S) SIGTERM recebido: encerrando com calma" >> "\$log"; echo TERM >> "\$ev"; exit 0' TERM
 while true; do sleep 1 & wait \$!; done
 SCRIPT
   chmod 755 "$BIN/$n"

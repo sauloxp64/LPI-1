@@ -2,6 +2,42 @@
 source /opt/lab/lib.sh
 h=/home/aluno
 k=$h/.ssh/$P_arquivo
+# imprime "tipo blob" das entradas efetivas de um authorized_keys (ignora linhas vazias e comentários;
+# pula o campo de opções, que pode ter aspas com espaços dentro)
+ak_efetivas() {
+  python3 -B - "$1" <<'PY'
+import sys
+def toks(line):
+    out, cur, q, esc = [], '', False, False
+    for ch in line:
+        if esc:
+            cur += ch; esc = False
+        elif ch == '\\' and q:
+            cur += ch; esc = True
+        elif ch == '"':
+            cur += ch; q = not q
+        elif ch in ' \t' and not q:
+            if cur: out.append(cur); cur = ''
+        else:
+            cur += ch
+    if cur: out.append(cur)
+    return out
+try:
+    linhas = open(sys.argv[1], encoding='utf-8', errors='replace').read().splitlines()
+except OSError:
+    linhas = []
+for raw in linhas:
+    line = raw.strip()
+    if not line or line.startswith('#'):
+        continue
+    t = toks(line)
+    for i in (0, 1):   # o tipo da chave é o 1º campo, ou o 2º se houver opções antes
+        if i < len(t) and t[i].startswith(('ssh-', 'ecdsa-sha2-', 'sk-')):
+            if i + 1 < len(t):
+                print(t[i], t[i + 1])
+            break
+PY
+}
 case "$P_modelo" in
   ed25519)   want_type=ED25519; want_bits=256;;
   rsa-3072)  want_type=RSA;     want_bits=3072;;
@@ -26,12 +62,17 @@ else
   mine=$(awk '{print $1" "$2}' "$k.pub")
   if [ -n "$derived" ] && [ "$derived" = "$mine" ]; then ok "a chave privada corresponde à pública e não tem passphrase"; else fail "a chave privada não abre sem passphrase ou não corresponde à pública"; fi
   # authorized_keys
+  # só contam as entradas EFETIVAS do authorized_keys (linha comentada com # não autoriza ninguém; as opções que o
+  # OpenSSH aceita antes do tipo da chave, como from="..." ou command="...", são toleradas)
   ak=$h/.ssh/authorized_keys
-  blob=$(awk '{print $2}' "$k.pub")
-  n=$(grep -c -F "$blob" "$ak" 2>/dev/null)
-  expect_eq "a chave nova aparece 1 vez no authorized_keys" "$n" "1"
-  oldblob=$(awk '{print $2}' "$h/.ssh/id_velha.pub" 2>/dev/null)
-  if [ -n "$oldblob" ] && grep -q -F "$oldblob" "$ak" 2>/dev/null; then ok "a chave antiga continua no authorized_keys"; else fail "a chave antiga foi apagada do authorized_keys (use >> para acrescentar)"; fi
+  tipo_blob=$(awk '{print $1 " " $2}' "$k.pub")
+  efetivas=$(ak_efetivas "$ak")
+  n=0; [ -n "${tipo_blob// /}" ] && n=$(printf '%s\n' "$efetivas" | grep -c -x -F "$tipo_blob")
+  expect_eq "a chave nova aparece 1 vez no authorized_keys (linhas ativas, não comentadas)" "$n" "1"
+  # a chave antiga é a registrada pelo setup em estado privado (id_velha.pub é editável pelo aluno)
+  oldkey=$(cat /root/.lab-state/f110-3-ssh-chaves/chave-antiga 2>/dev/null)
+  [ -n "$oldkey" ] || oldkey=$(awk '{print $1 " " $2}' "$h/.ssh/id_velha.pub" 2>/dev/null)   # setup antigo, sem estado privado
+  if [ -n "$oldkey" ] && printf '%s\n' "$efetivas" | grep -q -x -F "$oldkey"; then ok "a chave antiga continua ativa no authorized_keys"; else fail "a chave antiga não está ativa no authorized_keys (foi apagada ou comentada? use >> para acrescentar)"; fi
   # fingerprint
   f=$LAB_DIR/ssh/impressao-digital.txt
   if [ -f "$f" ]; then

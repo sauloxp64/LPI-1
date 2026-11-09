@@ -1,7 +1,7 @@
 #!/bin/bash
 source /opt/lab/lib.sh
-python3 - <<'PY'
-import os, shlex, sys
+python3 -B - <<'PY'
+import os, re, shlex, sys
 env = os.environ
 bad = 0
 def ok(m): print("OK|" + m)
@@ -19,17 +19,19 @@ if len(lines) != 4:
 lines += [''] * (4 - len(lines))
 imp = env['P_impressora']; arq = env['P_arquivo']; cop = env['P_copias']; job = env['P_job']
 home = '/home/aluno'
-OPT = {'duplex': ['sides=two-sided-long-edge'], 'a4': ['media=A4', 'media=a4'], 'paisagem': ['landscape', 'orientation-requested=4'], 'ajustar': ['fit-to-page', 'fitplot', 'fitplot=true']}
+SUDO = [False]
 def toks(line):
+    SUDO[0] = False
     try:
         t = shlex.split(line)
     except ValueError:
         return []
     if t and t[0] == 'sudo':
+        SUDO[0] = True
         t = t[1:]
     return t
 def getopts(t, withargs):
-    """devolve (comando, lista de (flag, valor), argumentos posicionais)."""
+    """devolve (comando, lista ORDENADA de (flag, valor), argumentos posicionais)."""
     cmd = t[0] if t else ''
     opts, pos = [], []
     i = 1
@@ -50,8 +52,40 @@ def getopts(t, withargs):
             pos.append(a)
         i += 1
     return cmd, opts, pos
-def base(p):
-    return os.path.basename(p.replace('~', home).replace('$HOME', home))
+def caminhos(p):
+    """Caminhos absolutos possíveis de um argumento: ~, ~aluno e $HOME viram a home; um caminho relativo vale
+    a partir de ~/lab/impressao (diretório de trabalho declarado no enunciado) ou da home."""
+    q = p
+    for pre in ('~aluno', '~', '${HOME}', '$HOME'):
+        if q == pre or q.startswith(pre + '/'):
+            q = home + q[len(pre):]
+            break
+    q = re.sub(r'/+', '/', q)
+    if q.startswith('/'):
+        return {os.path.normpath(q)}
+    return {os.path.normpath(home + '/lab/impressao/' + q), os.path.normpath(home + '/' + q)}
+def inteiro(v):
+    return str(int(v)) if re.fullmatch(r'[0-9]+', v or '') else v
+BOOLEANAS = ('landscape', 'fit-to-page', 'fitplot')
+def opcoes_o(valores):
+    """Interpreta os argumentos de -o: {chave: conjunto de valores}. Opção repetida com valores diferentes
+    fica com mais de um valor (conflito), em vez de valer só a primeira ou a última ocorrência."""
+    d = {}
+    for v in valores:
+        for item in v.split():
+            k, eq, val = item.partition('=')
+            if not eq:
+                if k.startswith('no') and k[2:] in BOOLEANAS:
+                    k, val = k[2:], 'false'
+                else:
+                    val = 'true'
+            elif k in BOOLEANAS:
+                val = 'false' if val.lower() in ('false', 'no', 'off', '0') else 'true'
+            d.setdefault(k, set()).add(val)
+    return d
+def so(d, k, aceitos):
+    """a opção k foi dada e TODAS as suas ocorrências estão em 'aceitos'"""
+    return k in d and d[k] <= set(aceitos)
 # ---- 1) impressão
 t = toks(lines[0])
 good = False; why = ''
@@ -63,21 +97,25 @@ if t and t[0] in ('lp', 'lpr'):
     else:
         dest = [v for k, v in opts if k == 'P']
         copies = [v for k, v in opts if k in ('#', 'n')]
-    oo = [v for k, v in opts if k == 'o']
-    flat = []
-    for v in oo:
-        flat += v.split()
-    for v in list(flat):
-        if v.startswith('copies='):
-            copies.append(v.split('=', 1)[1])
-    if dest != [imp]:
-        why = 'destino (impressora) errado ou ausente'
-    elif cop not in copies:
-        why = 'número de cópias errado ou ausente'
-    elif not any(x in flat for x in OPT[env['P_opcao']]):
-        why = 'opção de impressão (-o) errada ou ausente'
-    elif [base(p) for p in pos] != [arq]:
-        why = 'arquivo errado ou ausente'
+    od = opcoes_o([v for k, v in opts if k == 'o'])
+    copies += list(od.get('copies', []))
+    alvo = os.path.normpath(env['LAB_DIR'] + '/impressao/' + arq)
+    o = env['P_opcao']
+    if not dest or set(dest) != {imp}:
+        why = 'destino (impressora) errado, ausente ou contraditório'
+    elif not copies or {inteiro(c) for c in copies} != {cop}:
+        why = 'número de cópias errado, ausente ou contraditório (opções repetidas com valores diferentes)'
+    elif not (
+        (o == 'duplex' and so(od, 'sides', ['two-sided-long-edge']))
+        or (o == 'a4' and so(od, 'media', ['a4', 'A4', 'iso_a4_210x297mm']))
+        or (o == 'paisagem' and ((so(od, 'landscape', ['true']) and od.get('orientation-requested', {'4'}) == {'4'})
+                                 or (so(od, 'orientation-requested', ['4']) and od.get('landscape', {'true'}) == {'true'})))
+        or (o == 'ajustar' and ((so(od, 'fit-to-page', ['true']) and od.get('fitplot', {'true'}) == {'true'})
+                                or (so(od, 'fitplot', ['true']) and od.get('fit-to-page', {'true'}) == {'true'})))
+    ):
+        why = 'opção de impressão (-o) errada, ausente ou contraditória'
+    elif len(pos) != 1 or alvo not in caminhos(pos[0]):
+        why = 'arquivo errado ou ausente (use o caminho de ~/lab/impressao/' + arq + ')'
     else:
         good = True
 else:
@@ -114,30 +152,60 @@ else:
     why = 'use lprm ou cancel'
 (ok if good else fail)("linha 2: cancelamento do trabalho" + ("" if good else f" ({why})"))
 # ---- 3) listar a fila
+def lpstat_o(t):
+    """Destinos dados a -o do lpstat (None se não houve -o). O argumento de -o é opcional: vale o texto colado
+    (-olaser-rh) ou a palavra seguinte, se ela não começar com '-'."""
+    dests = None
+    i = 1
+    while i < len(t):
+        a = t[i]
+        if a.startswith('-') and len(a) > 1:
+            j = 1
+            while j < len(a):
+                ch = a[j]
+                if ch in 'acopuv':   # argumento opcional
+                    if j + 1 < len(a):
+                        val = a[j + 1:]
+                    elif i + 1 < len(t) and not t[i + 1].startswith('-'):
+                        val = t[i + 1]; i += 1
+                    else:
+                        val = ''
+                    if ch == 'o':
+                        dests = (dests or []) + [x for x in re.split(r'[,\s]+', val) if x]
+                    break
+                if ch in 'hUW':   # argumento obrigatório
+                    if j + 1 >= len(a):
+                        i += 1
+                    break
+                j += 1
+        i += 1
+    return dests
 t = toks(lines[2])
 good = False; why = ''
 if t and t[0] == 'lpq':
     cmd, opts, pos = getopts(t, set('PU'))
-    good = [v for k, v in opts if k == 'P'] == [imp]
-    why = 'falta -P com a impressora'
+    ps = {v for k, v in opts if k == 'P'}
+    good = ps == {imp}
+    why = 'falta -P com a impressora (ou há -P com outra fila)'
 elif t and t[0] == 'lpstat':
-    cmd, opts, pos = getopts(t, set('opuvhU'))
-    os_ = [v for k, v in opts if k == 'o']
-    allv = [v for k, v in opts if v] + pos
-    good = any(k == 'o' for k, v in opts) and imp in allv
-    why = 'use lpstat -o com a impressora'
+    dests = lpstat_o(t)
+    good = bool(dests) and set(dests) == {imp}
+    why = 'use lpstat -o seguido da impressora (o argumento de -o é que escolhe a fila)'
 else:
     why = 'use lpq ou lpstat'
 (ok if good else fail)("linha 3: listagem da fila" + ("" if good else f" ({why})"))
-# ---- 4) impressora padrão
+# ---- 4) impressora padrão do USUÁRIO (lpoptions -d grava em ~/.cups/lpoptions;
+# lpadmin -d, ou lpoptions com sudo, mudam o padrão do SISTEMA)
 t = toks(lines[3])
 good = False; why = ''
-if t and t[0] in ('lpoptions', 'lpadmin'):
+if t and t[0] == 'lpoptions':
     cmd, opts, pos = getopts(t, set('dpoxPEh'))
-    good = [v for k, v in opts if k == 'd'] == [imp] and not [1 for k, v in opts if k in ('x',)]
-    why = 'use a opção -d com a impressora'
+    good = [v for k, v in opts if k == 'd'] == [imp] and not [1 for k, v in opts if k in ('x',)] and not SUDO[0]
+    why = 'use lpoptions -d com a impressora, sem sudo (com sudo o padrão seria o do sistema)' if SUDO[0] else 'use a opção -d com a impressora'
+elif t and t[0] == 'lpadmin':
+    why = 'lpadmin -d define o padrão do SISTEMA (root); o enunciado pede o padrão do usuário: use lpoptions -d'
 else:
-    why = 'use lpoptions -d ou lpadmin -d'
+    why = 'use lpoptions -d'
 (ok if good else fail)("linha 4: impressora padrão" + ("" if good else f" ({why})"))
 sys.exit(1 if bad else 0)
 PY

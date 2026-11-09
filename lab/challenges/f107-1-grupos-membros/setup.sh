@@ -1,7 +1,9 @@
 #!/bin/bash
 source /opt/lab/lib.sh
 for u in "$P_m1" "$P_m2" "$P_m3" "$P_m4"; do drop_user "$u"; done
-for g in "$P_grupo" "$P_antigo" "$P_ex1" "$P_ex2"; do drop_group "$g"; done
+# também os grupos privados das contas: se o aluno trocou o grupo primário de uma conta (usermod -g), o userdel
+# deixa o grupo privado dela para trás e o useradd abaixo falharia ("group X exists")
+for g in "$P_grupo" "$P_antigo" "$P_ex1" "$P_ex2" "$P_m1" "$P_m2" "$P_m3" "$P_m4"; do drop_group "$g"; done
 other=$(getent group "$P_gid" | cut -d: -f1); [ -n "$other" ] && drop_group "$other"
 groupadd "$P_ex1"; groupadd "$P_ex2"
 groupadd -g $((P_gid + 1000)) "$P_antigo"

@@ -17,7 +17,7 @@
   "enunciado": "O script `/usr/local/bin/{script}` já está instalado e precisa rodar automaticamente como o usuário de serviço **`{robo}`** (não como `root`). Em vez de usar o crontab de um usuário, a equipe quer a tarefa **no cron do sistema**, em um arquivo dentro de `/etc/cron.d/` (use `sudo`).\n\nAgendamento:\n\n* **minuto `{minuto}` da hora `{hora}`**;\n* nos **dias do mês `{d1}` e `{d2}`**;\n* apenas nos **meses `{m1}` a `{m2}`** (numéricos, inclusive);\n* qualquer dia da semana.\n\nVocê escolhe o nome do arquivo em `/etc/cron.d/`, mas lembre que o cron é exigente com nomes e permissões desses arquivos. Ao final, o comando agendado, executado como o usuário indicado na própria linha, tem de funcionar.",
   "verifica": [
     "existe um arquivo em `/etc/cron.d/` com nome aceito pelo cron (sem ponto), do `root`, sem escrita para grupo/outros, que agenda `/usr/local/bin/{script}`",
-    "a linha tem os 5 campos de tempo corretos (minuto `{minuto}`, hora `{hora}`, dias do mês `{d1}` e `{d2}`, meses `{m1}-{m2}`, qualquer dia da semana)",
+    "a linha tem os 5 campos de tempo corretos (minuto `{minuto}`, hora `{hora}`, dias do mês `{d1}` e `{d2}`, meses `{m1}-{m2}`, `*` no dia da semana: com dia do mês e dia da semana ambos restritos o cron usa OU)",
     "o 6º campo (usuário) é `{robo}`",
     "executando o comando da linha como `{robo}` o script funciona (grava o marcador no diretório do serviço)"
   ],

@@ -8,8 +8,9 @@ vivo() {
   [ "$(cat "/proc/$1/comm" 2>/dev/null)" = "$2" ] || return 1
   [ "$(awk '/^State:/{print $2}' "/proc/$1/status" 2>/dev/null)" != "Z" ]
 }
-rec()  { grep -c 'SIGHUP recebido' "$d/logs/$1.log" 2>/dev/null; }
-term() { grep -c 'SIGTERM recebido' "$d/logs/$1.log" 2>/dev/null; }
+# os sinais recebidos vêm do registro privado dos handlers ($ST/ev.<nome>), não do log em ~/lab, que o aluno pode editar
+rec()  { local c; c=$(grep -c '^HUP$' "$ST/ev.$1" 2>/dev/null); echo "${c:-0}"; }
+term() { local c; c=$(grep -c '^TERM$' "$ST/ev.$1" 2>/dev/null); echo "${c:-0}"; }
 
 n1=$P_d1; n2=$P_d2; n3="$P_d1-aux"
 p1=$(cat "$ST/pid.$n1"); p2=$(cat "$ST/pid.$n2"); p3=$(cat "$ST/pid.$n3")

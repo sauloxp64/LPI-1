@@ -19,5 +19,18 @@ done
 dir=$(pos); ln -s "$(rel "$dir" "$d/sub/removido-$RANDOM.dat")" "$dir/${nomes[idx]}.lnk"; idx=$((idx + 1))     # link quebrado
 for i in $(seq "$nc"); do dir=$(pos); cp "$orig" "$dir/${nomes[idx]}.dat"; idx=$((idx + 1)); done                  # cópias (mesmo conteúdo, inode próprio)
 dir=$(pos); { cat "$orig"; echo "linha extra $RANDOM"; } > "$dir/${nomes[idx]}.dat"                              # isca: parecido, mas diferente
+# gabarito e manifesto do material, em estado privado (fora de ~/lab): o check compara com isto, e não com a árvore
+# atual, que o aluno poderia ter apagado ou alterado. Manifesto = tipo|caminho|(destino do symlink ou sha256).
+ST=/root/.lab-state/f104-6-classificar-links
+rm -rf "$ST"; mkdir -p "$ST"; chmod 700 /root/.lab-state "$ST"
+(
+  cd "$d" || exit 1
+  find . -type f -samefile "$orig" ! -path "./$P_base.dat" | sed 's|^\./||' | sort > "$ST/duros"
+  find . -type l | sed 's|^\./||' | sort > "$ST/simbolicos"
+  find . -type f ! -samefile "$orig" -print0 | while IFS= read -r -d '' f; do cmp -s "$orig" "$f" && echo "${f#./}"; done | sort > "$ST/copias"
+  find . \( -type f -o -type l \) | sed 's|^\./||' | sort | while IFS= read -r p; do
+    if [ -L "$p" ]; then printf 'l|%s|%s\n' "$p" "$(readlink "$p")"; else printf 'f|%s|%s\n' "$p" "$(sha256sum < "$p" | cut -d' ' -f1)"; fi
+  done > "$ST/manifesto"
+)
 chown -R -h aluno:aluno "$d"
 echo "cenário pronto em $d"
