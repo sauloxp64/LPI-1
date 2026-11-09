@@ -194,6 +194,14 @@ function goodLine(rng, cmd) {
   const e = rng.pick([() => { const t = mkTemplate(rng); return t.expr; }, () => rng.pick(['@daily', '@reboot', '@hourly', '@weekly', '@monthly'])])();
   return `${e} ${cmd}`;
 }
+/** Primeira linha válida `m h * * * cmd` (começando em `i+3 i+5`) que ainda não está em `used`: percorre as 1440 combinações, nunca entra em laço. */
+function freeLine(used, i, cmd) {
+  for (let k = 0; k < 60 * 24; k++) {
+    const line = `${(i + 3 + k) % 60} ${(i + 5 + Math.floor(k / 60)) % 24} * * * ${cmd}`;
+    if (!used.has(line)) return line;
+  }
+  throw new Error('sem linha livre para o crontab');
+}
 function crontabVerify(lines) {
   const sh = lines.map((l, i) => `printf '%s\\n' ${sq(l.line)} > /tmp/zzc${i}; if crontab /tmp/zzc${i} >/dev/null 2>&1; then echo ok; else echo erro; fi`).join('\n') + '\ncrontab -r 2>/dev/null; rm -f /tmp/zzc*';
   return { sh, expect: lines.map((l) => (l.ok ? 'ok' : 'erro')).join('\n') };
@@ -216,7 +224,7 @@ const gCronValid = {
       };
     }
     const goods = [{ line: goodLine(rng, cmd), ok: true }, { line: goodLine(rng, cmd), ok: true }, { line: goodLine(rng, cmd), ok: true }];
-    const gl = new Set(); goods.forEach((g, i) => { while (gl.has(g.line)) g.line = `${i + 3} ${i + 5} * * * ${cmd}`; gl.add(g.line); });
+    const gl = new Set(); goods.forEach((g, i) => { if (gl.has(g.line)) g.line = freeLine(gl, i, cmd); gl.add(g.line); });
     const bads = []; const whys = new Set();
     const nb = rng.int(2, 3);
     while (bads.length < nb) { const b = badLine(rng, cmd); if (!whys.has(b.why.slice(0, 6))) { whys.add(b.why.slice(0, 6)); bads.push({ ...b, ok: false }); } }
@@ -451,7 +459,7 @@ const gAtCmd = {
     const n = rng.int(3, 40);
     const items = [
       { q: 'Qual comando **lista** os jobs `at` pendentes do usuário?', ok: 'atq', bad: ['atrm', 'at -c', 'batch', 'atd -l'], also: 'at -l é um alias de atq' },
-      { q: `Qual comando **remove** o job \`at\` de número ${n}?`, ok: `atrm ${n}`, bad: [`atq ${n}`, `at -c ${n}`, `at -r ${n}`, `rm ${n}`], also: 'at -d é alias de atrm' },
+      { q: `Qual comando **remove** o job \`at\` de número ${n}?`, ok: `atrm ${n}`, bad: [`atq ${n}`, `at -c ${n}`, `at -f ${n}`, `rm ${n}`], also: 'os aliases `at -d N` e `at -r N` também removem o job (por isso não aparecem entre as alternativas)' },
       { q: `Qual comando **exibe os comandos** (e o ambiente) do job \`at\` ${n}?`, ok: `at -c ${n}`, bad: [`atq ${n}`, `at -l ${n}`, `atrm -c ${n}`, `at -s ${n}`], also: '' },
       { q: 'Qual opção do `at` lê os comandos do job a partir de um **arquivo** em vez da entrada padrão?', ok: 'at -f arquivo', bad: ['at -r arquivo', 'at -c arquivo', 'at -i arquivo', 'at -l arquivo'], also: '' },
       { q: 'Qual comando é semelhante ao `at`, mas só executa o job quando a **carga do sistema** está baixa?', ok: 'batch', bad: ['atq', 'nice', 'cron', 'atrm'], also: '' },
@@ -465,7 +473,7 @@ const gAtCmd = {
     else if (it.ok === 'atq') verify = { sh: `echo date > /tmp/zzat.sh; at -f /tmp/zzat.sh now + 1 hour >/dev/null 2>&1; atq | wc -l; at -l | wc -l; atrm $(atq | cut -f1); rm -f /tmp/zzat.sh`, expect: '1\n1' };
     return {
       type: 'unica', text: it.q, options: mcq(rng, it.ok, it.bad),
-      explanation: `Comandos do at: \`at\` agenda (hora + comandos até Ctrl+D), \`atq\` (= \`at -l\`) lista, \`atrm N\` (= \`at -d N\`) remove, \`at -c N\` mostra o conteúdo, \`at -f arquivo\` lê de um arquivo, \`batch\` espera a carga baixar; o daemon \`atd\` executa os jobs. Alternativa moderna: \`systemd-run\` (--on-calendar / --on-active). Resposta: \`${it.ok}\`.${it.also ? ' ' + it.also[0].toUpperCase() + it.also.slice(1) + '.' : ''}`,
+      explanation: `Comandos do at: \`at\` agenda (hora + comandos até Ctrl+D), \`atq\` (= \`at -l\`) lista, \`atrm N\` (= \`at -d N\` = \`at -r N\`) remove, \`at -c N\` mostra o conteúdo, \`at -f arquivo\` lê de um arquivo, \`batch\` espera a carga baixar; o daemon \`atd\` executa os jobs. Alternativa moderna: \`systemd-run\` (--on-calendar / --on-active). Resposta: \`${it.ok}\`.${it.also ? ' ' + it.also[0].toUpperCase() + it.also.slice(1) + '.' : ''}`,
       ref: ['102:p.229-230', '102:p.231-232'], ...(verify ? { verify } : {}),
     };
   },

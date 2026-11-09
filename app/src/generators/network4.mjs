@@ -10,11 +10,17 @@ const subnetOf = (ip, p) => calc(ip, p);
 function params(r) {
   const dev = r.pick(DEVS); const pfx = r.pick([24, 24, 24, 16, 25, 23, 22, 20]);
   let A = randPrivate(r); const s = subnetOf(A, pfx); const G = n2ip(s.first);
-  if (A === G) A = n2ip(s.first + 5);
+  if (A === G || ip2n(A) === s.net || ip2n(A) === s.bc) A = n2ip(s.first + 5); // o host nunca é o gateway, nem o endereço de rede/broadcast (ex.: /25 em .127 e .128)
   let A2 = n2ip(s.first + r.int(20, Math.min(s.hosts - 2, 60))); if (A2 === A) A2 = n2ip(s.first + 7);
   const np = r.pick([16, 20, 22, 24, 24, 24]); const netBase = r.pick([`172.${r.int(16, 31)}.${r.int(0, 255)}.0`, `10.${r.int(0, 255)}.${r.int(0, 255)}.0`, `192.168.${r.int(0, 255)}.0`]);
   const NET = n2ip((ip2n(netBase) & maskN(np)) >>> 0);
   return { dev, pfx, A, A2, G, CIDR: `${A}/${pfx}`, CIDR2: `${A2}/${pfx}`, NET, NP: np, NETC: `${NET}/${np}`, MASKN: maskStr(np), MTU: r.pick([1400, 1492, 9000, 1280, 1450]), VID: r.pick([10, 20, 30, 100, 200, 300]), IP6: `2001:db8:${r.int(1, 9)}::${r.int(2, 99)}/64`, DST: `${r.int(11, 99)}.${r.int(0, 255)}.${r.int(0, 255)}.${r.int(1, 254)}` };
+}
+
+/** Primeiro host da sub-rede seguinte à do endereço `ip`/`pfx` (garantidamente fora dela). */
+export function outsideGw(ip, pfx) {
+  const s = subnetOf(ip, pfx);
+  return n2ip(s.net + s.size + 1);
 }
 
 // ---------- descrição <-> comando ip ----------
@@ -344,7 +350,7 @@ export const generators = [
     id: 'net-troubleshoot', obj: '109.3', nivel: 3, peso: 3,
     make(rng) {
       const p = params(rng); const { dev, A, G, CIDR } = p; const host = rng.pick(['www.example.com', 'git.example.org', 'api.example.net']); const srv = `10.${rng.int(0, 9)}.${rng.int(0, 254)}.${rng.int(2, 250)}`; const port = rng.pick([22, 80, 443, 3306, 8080]);
-      const net2 = (() => { const q = G.split('.'); return `${q[0]}.${q[1]}.${(Number(q[2]) + 1) % 256}.1`; })();
+      const net2 = outsideGw(A, p.pfx); // gateway "externo": primeiro host da sub-rede vizinha (de verdade fora da sub-rede do host, qualquer que seja o prefixo)
       const S = [
         { id: 'down', cause: `A interface ${dev} está desativada (DOWN): ativá-la com ${c(`ip link set ${dev} up`)}`,
           out: `$ ip link show ${dev}\n2: ${dev}: <BROADCAST,MULTICAST> mtu 1500 qdisc fq_codel state DOWN mode DEFAULT group default qlen 1000\n$ ping -c 1 ${G}\nping: connect: Network is unreachable` },

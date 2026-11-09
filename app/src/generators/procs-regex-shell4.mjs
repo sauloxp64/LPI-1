@@ -53,7 +53,11 @@ export function viRun(lines0, tokens) {
         snap(); reg = { lw: false, t: s.slice(c, pos) }; L[r] = s.slice(0, c) + s.slice(pos); setC(Math.min(c, Math.max(0, L[r].length - 1))); break;
       }
       case 'D': { const s = L[r]; if (s === '') throw new Err(); snap(); reg = { lw: false, t: s.slice(c) }; L[r] = s.slice(0, c); setC(Math.max(0, c - 1)); break; }
-      case 'J': { if (r + 1 >= L.length || L[r] === '') throw new Err(); const a = L[r]; const b = L[r + 1].replace(/^ +/, ''); snap(); L.splice(r, 2, b ? `${a} ${b}` : a); setC(b ? a.length : Math.max(0, a.length - 1)); break; }
+      case 'J': { // como o vim: tira o recuo da linha seguinte e só insere um espaço se for preciso (não duplica o espaço/tab do fim da linha atual, nem antes de ")")
+        if (r + 1 >= L.length || L[r] === '') throw new Err(); const a = L[r]; const b = L[r + 1].replace(/^[ \t]+/, ''); snap();
+        const sep = b !== '' && b[0] !== ')' && !/[ \t]$/.test(a) ? ' ' : '';
+        L.splice(r, 2, a + sep + b); setC(b ? a.length : Math.max(0, a.length - 1)); break;
+      }
       case 'cw': { const s = L[r]; if (s === '' || s[c] === ' ') throw new Err(); const e = endWord(s, c); snap(); reg = { lw: false, t: s.slice(c, e + 1) }; L[r] = s.slice(0, c) + t.t + s.slice(e + 1); setC(c + t.t.length - 1); break; }
       case 'r': { const s = L[r]; if (s === '') throw new Err(); snap(); L[r] = s.slice(0, c) + t.ch + s.slice(c + 1); break; }
       case 'o': snap(); L.splice(r + 1, 0, t.t); r++; setC(t.t.length - 1); break;
@@ -222,7 +226,7 @@ const viFinal = {
       options: options.map((o) => ({ ...o, t: '`' + o.t + '`' })),
       explanation: `Passo a passo: ${passos.join('; ')}; depois \`${keysOf(exit)}\` ${exit.how === 'ZZ' || exit.how === 'wq' || exit.how === 'x' ? 'grava e sai' : 'sai sem gravar'}. Resultado: ${final.join(' / ')}. ${EXPL_BASE}`,
       ref: REF,
-      verify: { sh: vimSh(ls, seq), expect: lineOut(final) },
+      verify: { sh: vimSh(ls, seq), expect: lineOut(final), exato: true }, // espaços (como o do fim da linha antes do J) fazem parte da resposta: nada de trim
     };
   }),
 };

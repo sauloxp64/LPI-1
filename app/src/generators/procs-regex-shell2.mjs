@@ -161,7 +161,10 @@ const grepLines = {
     const ok = nomeLinhas(sel);
     const alts = [];
     alts.push(selecionadas(lines, pat, { ...o, v: !o.v }), selecionadas(lines, pat, { ...o, i: !o.i }), selecionadas(lines, pat, { ...o, ere: !o.ere }), selecionadas(lines, pat, { ...o, w: !o.w }));
-    for (let k = 0; k < 3; k++) { const s2 = new Set(sel); const j = rng.int(1, lines.length); if (s2.has(j)) s2.delete(j); else s2.add(j); alts.push([...s2].sort((a, b) => a - b)); }
+    const vira = () => { const s2 = new Set(sel); const j = rng.int(1, lines.length); if (s2.has(j)) s2.delete(j); else s2.add(j); alts.push([...s2].sort((a, b) => a - b)); };
+    for (let k = 0; k < 3; k++) vira();
+    // as viradas aleatórias podem coincidir entre si ou com a resposta: garante pelo menos 3 distratores distintos (mcq exige)
+    for (let k = 0; k < 40 && new Set(alts.map(nomeLinhas).filter((x) => x !== ok)).size < 3; k++) vira();
     return {
       type: 'unica', text: `${arqTxt}Quais linhas são impressas pelo comando abaixo?\n\n${block(cmd)}`,
       options: mcq(rng, ok, alts.map(nomeLinhas)),

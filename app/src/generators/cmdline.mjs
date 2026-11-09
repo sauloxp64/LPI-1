@@ -344,7 +344,7 @@ export const generators = [
   {
     id: 'cl-var-scope', obj: '103.1', nivel: 3, peso: 3,
     make(rng) {
-      return retry(() => {
+      return retry(() => { // a amostragem por rejeição aceita ~8% das tentativas: 80 tentativas esgotavam em ~1 de cada 1000 sementes
         const names = rng.sample(['CURSO', 'NIVEL', 'TURMA', 'LINGUA', 'MODO'], rng.int(1, 2));
         const vals = ['alfa', 'beta', 'gama', 'delta', 'omega', 'zeta', 'sigma', 'kappa'];
         const pickV = () => rng.pick(vals);
@@ -380,7 +380,7 @@ export const generators = [
           ref: ['101:p.197-199'],
           verify: { sh: `{\n${text.join('\n')}\n} 2>&1 | paste -s -d'|' -`, expect: correctLines.join('|') },
         };
-      });
+      }, 400);
     },
   },
   // -------------------------------------------------------------------------------------------

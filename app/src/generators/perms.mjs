@@ -158,7 +158,7 @@ export const generators = [
         type: 'unica',
         text: `Com \`umask ${pad(um.toString(8), 3)}\` ativo, quais serão as permissões de ${isFile ? 'um **arquivo** recém-criado com `touch`' : 'um **diretório** recém-criado com `mkdir`'}?`,
         options: mcq(rng, correct, pool),
-        explanation: `A umask é *subtraída* (bits desligados) do modo máximo: ${isFile ? 'arquivos começam em 666 (não recebem x automaticamente)' : 'diretórios começam em 777'}. ${octal(base)} AND NOT ${pad(um.toString(8), 3)} = ${octal(mode)} → \`${correct}\`.`,
+        explanation: `A umask **remove** os bits que estão ligados nela do modo solicitado (operação bit a bit, não uma conta aritmética):${isFile ? 'arquivos são pedidos com 666 (não recebem x automaticamente)' : 'diretórios são pedidos com 777'}. ${octal(base)} AND NOT ${pad(um.toString(8), 3)} = ${octal(mode)} → \`${correct}\`.`,
         ref: ['101:p.512-514'],
         verify: { sh: `cd "$(mktemp -d)" && umask ${pad(um.toString(8), 3)} && touch f && mkdir d && ls -ld ${isFile ? 'f' : 'd'} | cut -c2-10`, expect: correct },
       };
@@ -173,7 +173,7 @@ export const generators = [
         type: 'lacuna',
         text: `Que valor de umask (3 dígitos octais) faz com que **arquivos** novos sejam criados com o modo \`${octal(fileMode)}\` (\`${symbolic(fileMode)}\`)? \`umask ____\``,
         answers: umasksFor(fileMode),
-        explanation: `modo do arquivo = 666 − umask (bit a bit). Para obter ${octal(fileMode)}, a umask típica é ${pad(um.toString(8), 3)} (o dígito de execução da umask não afeta arquivos, então valores como ${pad((um | 0o111).toString(8), 3)} também servem). Para diretórios, ${pad(um.toString(8), 3)} resultaria em ${octal(0o777 & ~um)}.`,
+        explanation: `modo do arquivo = 666 AND NOT umask (a umask remove os bits ligados nela; operação bit a bit, não uma conta aritmética). Para obter ${octal(fileMode)}, a umask típica é ${pad(um.toString(8), 3)} (o dígito de execução da umask não afeta arquivos, então valores como ${pad((um | 0o111).toString(8), 3)} também servem). Para diretórios, ${pad(um.toString(8), 3)} resultaria em ${octal(0o777 & ~um)}.`,
         ref: ['101:p.512-514'],
         verify: { sh: `cd "$(mktemp -d)" && umask ${pad(um.toString(8), 3)} && touch f && stat -c %a f`, expect: octal(fileMode).replace(/^0+(?=\d{3})/, '') },
       };

@@ -70,6 +70,13 @@ const TIPOS = {
   'login interativo': 'shell interativo de login', 'nologin interativo': 'shell interativo sem login',
   'login nao-interativo': 'shell não interativo de login', 'nologin nao-interativo': 'shell não interativo sem login',
 };
+// evidências coerentes com o bash real: [`$0`, `$-`] de cada combinação login/interatividade (no terminal `$-` termina em `s`; em `-c`, em `c`; em script, não tem nem `s` nem `c`)
+const DIAG = [
+  ['login interativo', [{ v0: '-bash', fl: 'himBHs' }, { v0: '-bash', fl: 'himBHs' }, { v0: 'bash', fl: 'himBHs' }]],
+  ['nologin interativo', [{ v0: 'bash', fl: 'himBHs' }, { v0: '/bin/bash', fl: 'himBHs' }]],
+  ['login nao-interativo', [{ v0: '-bash', fl: 'hBc' }, { v0: 'bash', fl: 'hBc' }]],
+  ['nologin nao-interativo', [{ v0: 'bash', fl: 'hBc' }, { v0: './script.sh', fl: 'hB' }, { v0: 'script.sh', fl: 'hB' }]],
+];
 const INVOC = [
   { txt: 'digitar `bash -l` em um terminal (stdin é o terminal)', k: 'login interativo', sh: `bash -l -i -c ${sq(CHECK)} 2>/dev/null | tail -n 1` },
   { txt: 'digitar `bash` em um terminal já aberto', k: 'nologin interativo', sh: `bash -i -c ${sq(CHECK)} 2>/dev/null | tail -n 1` },
@@ -88,16 +95,18 @@ const INVOC = [
 const shsTipo = {
   id: 'shs-type', obj: '105.1', nivel: 2, peso: 3,
   make(rng) {
-    const fmt = rng.pick(['tipo', 'tipo', 'dolar0', 'flag']);
+    const fmt = rng.pick(['tipo', 'tipo', 'diag', 'flag']);
     const ref = ['102:p.15-18'];
-    if (fmt === 'dolar0') {
-      const c = rng.pick([['-bash', 'login interativo'], ['-su', 'login interativo'], ['bash', 'nologin interativo'], ['/bin/bash', 'nologin interativo'], ['./script.sh', 'nologin nao-interativo'], ['script.sh', 'nologin nao-interativo']]);
+    if (fmt === 'diag') {
+      // `$0` sozinho NÃO decide a interatividade (`su - ana -c cmd` imprime `-bash` e é não interativo): a evidência completa é `$-` (letra i) + login_shell
+      const [k, ev] = rng.pick(DIAG); const e = rng.pick(ev);
+      const login = k.startsWith('login'); const inter = k.endsWith(' interativo');
       return {
-        type: 'unica', text: `Em um shell, o comando \`echo $0\` imprime \`${c[0]}\`. Que tipo de shell é esse?`,
-        options: Object.entries(TIPOS).map(([k, v]) => ({ t: caps(v), ok: k === c[1] })),
-        explanation: 'O valor de `$0` revela como o shell foi iniciado: **`-bash`/`-su`** (com hífen) = shell de **login** (o `login`/`su -` coloca um `-` em `argv[0]`); **`bash`** ou **`/bin/bash`** = shell interativo **sem login**; o **nome do script** = shell não interativo executando um script.',
+        type: 'unica', text: `Um administrador executou os comandos abaixo dentro de um shell Bash (de um terminal ou de um script) e anotou as saídas:\n\n${block(`echo "$0"\n${e.v0}\necho "$-"\n${e.fl}\nshopt -q login_shell && echo login || echo nologin\n${login ? 'login' : 'nologin'}`)}\n\nQue tipo de shell é esse?`,
+        options: Object.entries(TIPOS).map(([kk, v]) => ({ t: caps(v), ok: kk === k })),
+        explanation: `${caps(TIPOS[k])}. A letra **\`i\`** em \`$-\` indica shell **interativo** (aqui \`${e.fl}\` ${inter ? 'contém' : 'não contém'} \`i\`) e \`shopt -q login_shell\` mostra se é shell de **login** (aqui: ${login ? 'sim' : 'não'}). O \`$0\` não decide sozinho: um \`-\` inicial (\`-bash\`) só indica que o shell foi iniciado como shell de login (\`argv[0]\` = \`-bash\`, como fazem \`login\`, \`su -\` e \`ssh\`), mas esse shell pode ser interativo ou não (\`su - ana -c comando\` imprime \`-bash\` e é não interativo); \`bash\` ou o nome de um script em \`$0\` também não revela a interatividade.`,
         ref,
-        verify: c[0].startsWith('-') ? { sh: `bash -c ${sq(`exec -a ${c[0]} bash -c 'echo $0'`)}`, expect: c[0] } : undefined,
+        verify: { sh: `bash -c ${sq(`exec -a ${e.v0} bash ${login ? '-l ' : ''}${inter ? '-i ' : ''}-c ${sq(`printf '%s|' "$0"; ${CHECK}`)}`)} 2>/dev/null | tail -n 1`, expect: `${e.v0}|${k}` },
       };
     }
     if (fmt === 'flag') {

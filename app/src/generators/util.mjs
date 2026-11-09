@@ -13,7 +13,8 @@
 //       explanation: '...',
 //       ref: ['101:p.512'],         // páginas físicas do PDF dentro do objetivo
 //       verify: { sh, expect }      // opcional: script bash + stdout esperado, conferido no Docker por
-//     }                             //   `node tools/verify-generators.mjs` (nunca vai para o cliente)
+//     }                             //   `node tools/verify-generators.mjs` (nunca vai para o cliente); compara sem espaços
+//                                   //   nas pontas, ou byte a byte com `exato: true` (quando o espaço faz parte da resposta)
 //   }
 
 /** Monta `total` opções: a correta + (total-1) erradas sorteadas do pool (sem repetir, sem igualar à correta). */

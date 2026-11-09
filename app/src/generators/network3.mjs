@@ -1,6 +1,19 @@
 // 109.2 — Configuração persistente de rede: nsswitch.conf / hosts / resolv.conf, hostnamectl, nmcli,
 // ifup/ifdown, systemd-networkd e nomes de interface.
 import { mcq, multi, code as c } from './util.mjs';
+import { calc, ip2n, n2ip, maskN } from './network.mjs';
+
+/**
+ * Host + gateway coerentes com o prefixo: o host é um endereço utilizável (nem rede, nem broadcast) e o gateway
+ * (`net.1` quando cabe na sub-rede; senão o primeiro/último host dela) está na MESMA sub-rede e é diferente do host.
+ */
+export function hostGw(net, last, pfx) {
+  const sub = calc(`${net}.${last}`, pfx);
+  const h = sub.n === sub.net || sub.n === sub.bc ? sub.net + 10 : sub.n;
+  let gw = ip2n(`${net}.1`);
+  if (((gw & maskN(pfx)) >>> 0) !== sub.net || gw === h) gw = sub.first === h ? sub.last : sub.first;
+  return { addr: n2ip(h), gw: n2ip(gw) };
+}
 
 const lines = (...l) => l.map((x) => c(x)).join('\n'); // várias linhas de código em uma opção (renderiza com quebra de linha)
 
@@ -223,7 +236,8 @@ export const generators = [
     make(rng) {
       const kind = rng.pick(['dhcp', 'static', 'nd-static', 'nd-dhcp', 'nd-facts', 'nd-facts']);
       const ifn = rng.pick(['eno1', 'enp3s5', 'ens33', 'eth0', 'enp0s8']);
-      const a = rng.int(1, 253); const net = `192.168.${rng.int(0, 254)}`; const addr = `${net}.${rng.int(10, 200)}`; const gw = `${net}.1`; const pfx = rng.pick([24, 24, 24, 25, 16]);
+      const a = rng.int(1, 253); const net = `192.168.${rng.int(0, 254)}`; const last = rng.int(10, 200); const pfx = rng.pick([24, 24, 24, 25, 16]);
+      const { addr, gw } = hostGw(net, last, pfx);
       const gwBad = `${net.replace(/\.\d+$/, (m) => `.${(Number(m.slice(1)) + 1) % 255}`)}.1`;
       if (kind === 'dhcp') {
         const ok = lines(`auto ${ifn}`, `iface ${ifn} inet dhcp`);

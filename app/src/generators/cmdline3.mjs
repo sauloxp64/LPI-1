@@ -63,12 +63,12 @@ const permStr = (mode, type = 'f') => (type === 'd' ? 'd' : '-') + [6, 3, 0].map
 const MIB = 1048576;
 const sizeText = (n) => (n >= MIB && n % MIB === 0 ? `${n / MIB} MiB` : n >= 1024 && n % 1024 === 0 ? `${n / 1024} KiB` : `${n} bytes`);
 
-const ATOM = {
+export const ATOM = { // exportado para os testes de regressão do -mtime
   type: (c) => ({ k: 'type', c, txt: `-type ${c}`, ok: (f) => f.type === c, say: c === 'f' ? 'são arquivos regulares' : 'são diretórios' }),
   name: (pat, ci = false) => ({ k: ci ? 'iname' : 'name', pat, ci, txt: `-${ci ? 'i' : ''}name ${sq(pat)}`, ok: (f) => globRe(pat, ci).test(base(f.path)), say: nameSay(pat, ci) }),
   notname: (pat) => ({ k: 'notname', pat, txt: `! -name ${sq(pat)}`, ok: (f) => !globRe(pat).test(base(f.path)), say: 'NÃO ' + nameSay(pat, false).replace(/^têm/, 'têm') }),
   size: (sign, n, u) => ({ k: 'size', sign, n, u, txt: `-size ${sign}${n}${u}`, ok: (f) => cmpN(Math.ceil(f.size / UNIT[u]), sign, n), say: `${sign === '+' ? 'têm mais de' : sign === '-' ? 'têm menos de' : 'têm exatamente'} ${n} ${{ c: 'bytes', k: 'KiB', M: 'MiB', G: 'GiB' }[u]}` }),
-  mtime: (sign, n) => ({ k: 'mtime', sign, n, txt: `-mtime ${sign}${n}`, ok: (f) => cmpN(Math.floor(f.age / 1440), sign, n), say: sign === '-' ? `foram modificados nos últimos ${n} dias` : sign === '+' ? `foram modificados há mais de ${n} dias` : `foram modificados há ${n} dia(s)` }),
+  mtime: (sign, n) => ({ k: 'mtime', sign, n, txt: `-mtime ${sign}${n}`, ok: (f) => cmpN(Math.floor(f.age / 1440), sign, n), say: sign === '-' ? `foram modificados nos últimos ${n} dias` : sign === '+' ? `foram modificados há pelo menos ${n + 1} dias completos (${n + 1} períodos de 24 h)` : `foram modificados há ${n} dia(s) completo(s) (idade de ${n} períodos de 24 h até menos de ${n + 1})` }),
   mmin: (sign, n) => ({ k: 'mmin', sign, n, txt: `-mmin ${sign}${n}`, ok: (f) => (sign === '+' ? f.age > n : f.age < n), say: sign === '-' ? `foram modificados nos últimos ${n} minutos` : `foram modificados há mais de ${n} minutos` }),
   perm: (kind, mode) => ({
     k: 'perm', kind, mode, txt: `-perm ${kind}${mode}`,
@@ -230,7 +230,7 @@ generators.push(
         const rules = [];
         const flatAll = c.items.flatMap((it) => (it === 'or' ? [] : it.group ? it.group : [it]));
         if (flatAll.some((a) => a.k === 'size')) rules.push('`-size` **arredonda para cima** o tamanho para a unidade dada (c = byte, k = KiB, M = MiB) antes de comparar: `+1M` significa "mais de 1 MiB", `-2M` significa "no máximo 1 MiB" e `2M` casa tamanhos entre 1 MiB (exclusive) e 2 MiB (inclusive)');
-        if (flatAll.some((a) => a.k === 'mtime')) rules.push('`-mtime n` usa a idade em dias **inteiros** (a parte fracionária é descartada): `-mtime -1` = menos de 24 h; `-mtime 1` = de 24 h a 48 h; `-mtime +1` = 48 h ou mais');
+        if (flatAll.some((a) => a.k === 'mtime')) rules.push('`-mtime n` usa a idade em dias **inteiros** (a parte fracionária é descartada): `-mtime -1` = menos de 24 h; `-mtime 1` = de 24 h a 48 h (intervalo [N, N+1) períodos); `-mtime +1` = pelo menos 2 períodos completos de 24 h, ou seja, 48 h ou mais (`+N` = pelo menos N+1 períodos)');
         if (flatAll.some((a) => a.k === 'mmin')) rules.push('`-mmin -n` / `+n` compara a idade em minutos (menos/mais de n minutos)');
         if (flatAll.some((a) => a.k === 'perm')) rules.push('`-perm 644` exige modo **exatamente** 644; `-perm -644` exige que **todos** esses bits estejam ligados (pode haver outros); `-perm /111` basta que **algum** desses bits esteja ligado');
         if (flatAll.some((a) => a.k === 'iname')) rules.push('`-iname` ignora maiúsculas/minúsculas; `-name` não');
@@ -283,7 +283,7 @@ generators.push(
         const rules = [];
         const all2 = c.items.flatMap((it) => (it === 'or' ? [] : it.group ? it.group : [it]));
         if (all2.some((a) => a.k === 'size')) rules.push('`-size +N` = maior que N unidades (c, k, M, G), com arredondamento para cima; `-size -N` seria o oposto');
-        if (all2.some((a) => a.k === 'mtime')) rules.push('`-mtime -N` = modificado há menos de N dias; `-mtime +N` = há mais de N dias; `-mmin` faz o mesmo em minutos');
+        if (all2.some((a) => a.k === 'mtime')) rules.push('`-mtime -N` = modificado há menos de N períodos de 24 h; `-mtime +N` = há pelo menos N+1 períodos completos de 24 h; `-mtime N` = idade no intervalo [N, N+1) períodos; `-mmin` compara em minutos');
         if (all2.some((a) => a.k === 'perm')) rules.push('`-perm MODO` exato; `-perm -MODO` todos os bits; `-perm /MODO` qualquer um dos bits');
         if (all2.some((a) => a.k === 'name' || a.k === 'iname' || a.k === 'notname')) rules.push('o padrão de `-name`/`-iname` vai entre aspas para o shell não expandi-lo; `-iname` ignora a caixa; `!` ou `-not` nega o teste');
         return {
@@ -429,10 +429,11 @@ generators.push(
         }
         if (cands.length < 3) return null;
         const options = [{ t: pat.p, ok: true }, ...cands.map((c) => ({ t: c.p, ok: false }))];
+        const shown = options.map((o) => ({ ...o, t: '`' + o.t + '`' })); // entre crases: um glob solto como *no* seria lido como itálico pelo md() da interface
         return {
           type: 'unica',
           text: `Um diretório contém exatamente estes arquivos (incluindo os ocultos):\n\n${block(shownList)}\n\nQual padrão, usado em \`ls PADRÃO\`, seleciona **exatamente** os arquivos ${real.map((x) => '`' + x + '`').join(', ')}?`,
-          options,
+          options: shown,
           explanation: `${pat.why[0].toUpperCase()}${pat.why.slice(1)}. Resultados das opções: ${options.map((o) => '`' + o.t + '` → ' + echoGlob([o.t], list).join(' ')).join('; ')}.`,
           ref: ['101:p.252-256'],
           verify: { sh: `${setup}\n${options.map((o) => `echo ${o.t}`).join('\n')}`, expect: options.map((o) => echoGlob([o.t], list).join(' ')).join('\n') },
