@@ -155,7 +155,7 @@ $ uptime
 - Uso de CPU por usuário, sistema e ociosidade
 - Número de processos em execução, dormindo e zumbis
 - Uso de CPU, de memória RAM e de swap
-> O `uptime` exibe a hora, o tempo de atividade (`up 3 days, 2:07`), o número de usuários e a carga média (processos em execução ou aguardando CPU) em janelas de 1, 5 e 15 minutos. A divisão em `us/sy/id` pertence ao `top`, e os totais de zumbis ao cabeçalho `Tasks` do `top`.
+> O `uptime` exibe a hora, o tempo de atividade (`up 3 days, 2:07`), o número de usuários e a carga média (tarefas executando, prontas para executar ou em espera ininterruptível, estado `D`, em geral E/S) em médias suavizadas de 1, 5 e 15 minutos. A divisão em `us/sy/id` pertence ao `top`, e os totais de zumbis ao cabeçalho `Tasks` do `top`.
 
 ### 103.5-015 | unica | 3
 ref: 101:p.312

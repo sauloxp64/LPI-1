@@ -247,7 +247,7 @@ Um processo de backup (PID 3000) consome muita CPU e prejudica um servidor web. 
 - `renice -20 -p 3000`
 - `nice -n 19 -p 3000`
 - `kill -19 3000`
-> `renice 19 -p 3000` coloca o processo na menor prioridade possível (ele só usa a CPU quando ninguém precisa dela). O valor -20 faria o contrário e exige root. O `nice` não tem `-p`. `kill -19` envia SIGSTOP (sinal 19), que paralisa o processo em vez de diminuir sua prioridade.
+> `renice 19 -p 3000` coloca o processo na menor prioridade possível (nice 19): reduz o peso dele na disputa por CPU, mas ele ainda pode executar enquanto outras tarefas estão prontas (testado: com dois processos presos à mesma CPU, um com nice 0 e outro com nice 19, o de nice 19 continuou recebendo tempo, cerca de 1,4% da CPU). Ou seja, o `renice` ameniza o impacto no servidor web, mas não o elimina nem isola a CPU. O valor -20 faria o contrário e exige root. O `nice` não tem `-p`. `kill -19` envia SIGSTOP (sinal 19), que paralisa o processo em vez de diminuir sua prioridade.
 
 ### 103.6-026 | lacuna | 2
 ref: 101:p.368

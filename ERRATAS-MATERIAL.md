@@ -37,7 +37,7 @@ vale desconfiar destes trechos ao estudar. Páginas = número **físico** da pá
 | 103.3 p.253-255 | O título "Caracteres entre chaves" descreve colchetes; `student-1A.text` deveria ser `.txt`; `find ... -name *.png` sem aspas (contradiz a p.266). |
 | 103.3 p.270 | `--file=archive=name` tem erro de digitação. |
 | 103.3 p.251 | A mensagem do `cp` ("omitting directory") é antiga; hoje: "-r not specified; omitting directory". |
-| 103.3 p.267 | `-mtime 7` casa só arquivos com *exatamente* 7 períodos de 24 h; "últimos 7 dias" é `-mtime -7`. |
+| 103.3 p.267 | `-mtime 7` casa só o intervalo [7, 8) períodos completos de 24 h (e `-mtime +7`, pelo menos 8 períodos completos); "últimos 7 dias" é `-mtime -7`, isto é, [0, 7). |
 | 103.3 p.272 | "bzip" onde seria `bzip2`. |
 | 103.3 p.273 | Diz que `cpio -d` "cria a pasta de destino"; cria os diretórios intermediários que faltam. |
 | 103.3 p.279 | `find -name *.backup` sem aspas (contradiz a p.266); `-size -1000M` não equivale a 1G. |

@@ -113,10 +113,10 @@ O diretório `mydir` contém `file1` e `sub/file2`. O diretório `newcopy` já e
 ref: 101:p.254
 tags: cp, curingas, arquivos ocultos
 Qual comando copia todo o conteúdo do diretório `origem`, inclusive os arquivos ocultos, para o diretório já existente `destino`?
-= cp -r origem/. destino
-- cp -r origem/* destino
-- cp -r origem destino
-- cp -r origem/*.* destino
+= `cp -r origem/. destino`
+- `cp -r origem/* destino`
+- `cp -r origem destino`
+- `cp -r origem/*.* destino`
 > O padrão `*` não casa com nomes iniciados por ponto, então `origem/*` deixa os ocultos para trás. `origem/.` representa o próprio diretório e leva tudo o que está dentro dele, ocultos incluídos. `cp -r origem destino` criaria `destino/origem`. `*.*` também não casa com nomes iniciados por ponto.
 
 ### 103.3-013 | multipla | 2
@@ -269,16 +269,15 @@ Qual comando lista os arquivos regulares de `/var` com mais de 100 MiB e modific
 - find /var -type f -size +100M -mtime +7 -print
 - find /var -type f -size -100M -mtime -7
 - find /var -type f -size +100M -mtime 7
-> No `find`, `+n` significa "mais que n", `-n` "menos que n" e `n` "exatamente n". Em `-size +100M`, são arquivos maiores que 100 MiB; em `-mtime -7`, arquivos modificados há menos de 7 dias. `-mtime +7` seleciona os mais antigos que isso, e `-mtime 7` somente os modificados exatamente 7 períodos de 24 horas atrás.
+> No `find`, `+n` significa "mais que n", `-n` "menos que n" e `n` "igual a n". Em `-size +100M`, são arquivos maiores que 100 MiB. Em `-mtime`, a idade é contada em períodos **completos** de 24 horas (a fração é descartada): `-mtime -7` seleciona menos de 7 períodos completos, isto é, o intervalo [0, 7); `-mtime 7` seleciona somente o intervalo [7, 8) períodos; e `-mtime +7` seleciona **pelo menos 8 períodos completos**, [8, ∞), os mais antigos que isso.
 
 ### 103.3-028 | lacuna | 2
 ref: 101:p.266-267
 tags: find, -mmin
 Qual teste do `find` seleciona arquivos modificados há menos de 30 minutos?
 
-`find /tmp -____ -30`
+`find /tmp ____ -30`
 = -mmin
-= mmin
 > `-mmin -30` usa minutos, enquanto `-mtime` conta períodos de 24 horas. Também existem `-amin` e `-cmin` (acesso e mudança de status/metadados).
 
 ### 103.3-029 | multipla | 2

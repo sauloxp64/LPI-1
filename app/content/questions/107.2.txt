@@ -12,10 +12,10 @@ Qual é a ordem dos campos de tempo de uma linha de crontab de usuário?
 ref: 102:p.213-214
 tags: /etc/cron.d, crontab de sistema
 Qual linha é válida em um arquivo de `/etc/cron.d/` para executar `/opt/backup.sh` todos os dias às 03:15, como root?
-- 15 3 * * * /opt/backup.sh
-- 15 3 * * * -u root /opt/backup.sh
-= 15 3 * * * root /opt/backup.sh
-- 15 3 * * root /opt/backup.sh
+- `15 3 * * * /opt/backup.sh`
+- `15 3 * * * -u root /opt/backup.sh`
+= `15 3 * * * root /opt/backup.sh`
+- `15 3 * * root /opt/backup.sh`
 > Os arquivos de `/etc/cron.d/` e o `/etc/crontab` são crontabs de sistema: depois dos cinco campos de tempo exigem um sexto campo com o nome do usuário que executará o comando, sem nenhuma opção. Sem ele, o cron tentaria interpretar o comando como nome de usuário. A opção com `-u` não existe nesse formato, e a última tem só quatro campos de tempo (o usuário ocuparia o quinto).
 
 ### 107.2-003 | unica | 1
@@ -85,10 +85,10 @@ Qual atalho do crontab pode substituir os cinco campos de tempo para executar um
 ref: 102:p.214, 102:p.224
 tags: crontab, @weekly
 A qual especificação de tempo corresponde o atalho `@weekly` do crontab?
-= 0 0 * * 0
-- 0 0 * * 1
-- 0 0 1 * *
-- 0 0 */7 * *
+= `0 0 * * 0`
+- `0 0 * * 1`
+- `0 0 1 * *`
+- `0 0 */7 * *`
 > `@weekly` executa uma vez por semana, à meia-noite de domingo (`0 0 * * 0`). `0 0 * * 1` seria a segunda-feira, `0 0 1 * *` equivale a `@monthly`, e `*/7` no dia do mês dispararia nos dias 1, 8, 15, 22 e 29 (e voltaria ao dia 1 do mês seguinte), e não a cada sete dias exatos.
 
 ### 107.2-010 | unica | 3
@@ -425,10 +425,10 @@ Qual é a frequência de `OnCalendar=*-*-* *:00/05:00`?
 ref: 102:p.218
 tags: OnCalendar, primeira segunda-feira
 Qual valor de `OnCalendar=` executa o serviço às 05:30 da primeira segunda-feira de cada mês?
-= Mon *-*-1..7 05:30:00
-- Mon *-*-01 05:30:00
-- *-*-1..7 Mon 05:30:00
-- Mon *-1..7-* 05:30:00
+= `Mon *-*-1..7 05:30:00`
+- `Mon *-*-01 05:30:00`
+- `*-*-1..7 Mon 05:30:00`
+- `Mon *-1..7-* 05:30:00`
 > A primeira segunda-feira sempre cai entre os dias 1 e 7, então combina-se `Mon` (que vem primeiro) com o intervalo `1..7` no campo do dia. `Mon *-*-01` só dispara nos meses em que o dia 1 é segunda-feira. A terceira opção é inválida porque o dia da semana deve vir antes da data, e a quarta executa todas as segundas-feiras de janeiro a julho (meses 1..7).
 
 ### 107.2-043 | lacuna | 2
@@ -506,3 +506,27 @@ Qual é a causa?
 - O cron não permite o uso do comando date dentro de nenhum job agendado
 - A data deve ser calculada nos campos de tempo, e não dentro do comando
 > No crontab, o primeiro `%` não escapado encerra o comando, e o que vem depois é enviado como entrada padrão. Por isso `date +%F` precisa ser escrito como `date +\%F`, o que foi confirmado em teste no laboratório. O shell padrão do cron é o `/bin/sh`, que entende `$( )`, e não há restrição ao comando `date`.
+
+### 107.2-050 | unica | 3
+ref: 102:p.212, 102:p.216
+tags: crontab, dia do mês, dia da semana, OU
+Como o cron interpreta a especificação de tempo `0 9 1 * 1` de um crontab?
+= Às 09:00 no dia 1 de cada mês e também em todas as segundas-feiras
+- Às 09:00 somente nas segundas-feiras que caem no dia 1 do mês
+- Às 09:00 somente no dia 1 de cada mês, ignorando o dia da semana
+- Às 09:00 somente em todas as segundas-feiras, ignorando o dia do mês
+- Às 09:00 somente na primeira segunda-feira de cada mês
+> Quando os campos de **dia do mês** e de **dia da semana** estão ambos restritos (nenhum deles é `*`), o cron executa o comando se **qualquer um** dos dois casar: a regra é OU, e não E (`man 5 crontab`: "the command will be run when either field matches the current time"). Por isso `0 9 1 * 1` dispara às 09:00 do dia 1 de cada mês e também de todas as segundas-feiras.
+> A leitura "segunda-feira que seja dia 1" (interseção, E) está errada, bem como as que ignoram um dos dois campos. Para executar apenas na primeira segunda-feira do mês, o cron sozinho não basta (usa-se um teste dentro do comando, ou um timer do systemd com `OnCalendar=Mon *-*-1..7`).
+
+### 107.2-051 | unica | 2
+ref: 102:p.212, 102:p.216
+tags: crontab, dia do mês, dia da semana, OU
+Em abril de 2026, o dia 1 é uma quarta-feira. Em quais dias desse mês executam, respectivamente, as linhas de crontab `0 9 * * 1` e `0 9 1 * 1`?
+= Dias 6, 13, 20 e 27; e dias 1, 6, 13, 20 e 27
+- Dias 6, 13, 20 e 27; e nenhum dia, pois o dia 1 não é segunda-feira
+- Dias 6, 13, 20 e 27; e somente o dia 1
+- Dias 1, 6, 13, 20 e 27; e dias 6, 13, 20 e 27
+- Todos os dias; e dias 1, 6, 13, 20 e 27
+> Em `0 9 * * 1` só o dia da semana é restrito: dispara nas segundas-feiras (6, 13, 20 e 27). Em `0 9 1 * 1` os dois campos de dia estão restritos, e o cron aplica **OU**: dispara no dia 1 (quarta-feira) e em todas as segundas-feiras, ou seja, nos dias 1, 6, 13, 20 e 27.
+> Se a regra fosse E (interseção), a segunda linha não executaria em nenhum dia de abril de 2026, porque o dia 1 não é segunda-feira. As demais opções trocam as linhas ou ignoram um dos campos de dia.

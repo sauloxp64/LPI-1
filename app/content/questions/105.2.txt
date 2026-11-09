@@ -166,13 +166,14 @@ Qual é a causa do erro e a correção?
 ### 105.2-014 | multipla | 2
 ref: 102:p.115
 tags: test, links simbólicos
-Quais opções do `test` são verdadeiras quando o caminho informado é um link simbólico?
+Quais opções do `test` identificam o próprio caminho como um link simbólico, inclusive quando o alvo do link não existe?
 - `-s`
 - `-S`
 - `-b`
 = `-h`
 = `-L`
-> `-h` e `-L` são sinônimos e testam se o caminho é um link simbólico. `-S` testa se é um socket, `-s` testa se existe e não está vazio, e `-b` testa se é um arquivo especial de bloco.
+> `-h` e `-L` são sinônimos e examinam o próprio caminho, sem seguir o link: são verdadeiros para qualquer link simbólico, mesmo quebrado (testado: `test -h` e `test -L` retornam 0 para um link cujo alvo não existe).
+> Os demais operadores seguem o link e examinam o **alvo**: `-S` testa se o alvo é um socket, `-b` se é um arquivo especial de bloco e `-s` se existe e não está vazio. Por isso `test -s link` pode retornar 0 para um link que aponta para um arquivo com conteúdo (testado), mas isso não identifica o caminho como link; para um link quebrado ele retorna falso.
 
 ### 105.2-015 | unica | 2
 ref: 102:p.116

@@ -199,10 +199,10 @@ Qual regra do `/etc/rsyslog.conf` envia as mensagens de emergência de **todas**
 ref: 102:p.312, 102:p.322
 tags: rsyslog, remoto, tcp, udp
 Qual regra, colocada no `/etc/rsyslog.conf` de um cliente, envia **todas** as mensagens por **TCP** ao servidor de log 192.168.1.6, porta 514?
-- *.* @192.168.1.6:514
-= *.* @@192.168.1.6:514
-- *.* tcp:192.168.1.6:514
-- *.* 192.168.1.6:514
+- `*.* @192.168.1.6:514`
+= `*.* @@192.168.1.6:514`
+- `*.* tcp:192.168.1.6:514`
+- `*.* 192.168.1.6:514`
 > No rsyslog, `@` envia por UDP e `@@` envia por TCP. Testado no laboratório: com `@@127.0.0.1:514` a mensagem chegou ao receptor `imtcp`, e com `@127.0.0.1:515` ao receptor `imudp`.
 > `tcp:host:porta` não é sintaxe de ação (o rsyslog acusa erro) e um endereço sem prefixo seria tratado como nome de arquivo.
 

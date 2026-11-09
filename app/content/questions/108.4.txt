@@ -120,19 +120,20 @@ Qual é a sequência simplificada do processamento de um trabalho de impressão 
 ### 108.4-012 | lacuna | 2
 ref: 102:p.377
 tags: lpadmin, -v, URI
-Complete o comando de instalação da fila de impressão, de modo que a opção informe o URI do dispositivo: `sudo lpadmin -p ENVY-4510 -L "office" ____ socket://192.168.150.25 -m everywhere`
+Complete o comando de instalação da fila de impressão, de modo que a opção informe o URI do dispositivo: `sudo lpadmin -p ENVY-4510 -L "office" ____ ipp://192.168.150.25/ipp/print -m everywhere`
 = -v
-> No `lpadmin`, `-p` dá o nome da fila (o destino dos trabalhos), `-L` informa a localização (opcional), `-v` é o **URI do dispositivo** (aqui, `socket://192.168.150.25`) e `-m` define o modelo/driver.
+> No `lpadmin`, `-p` dá o nome da fila (o destino dos trabalhos), `-L` informa a localização (opcional), `-v` é o **URI do dispositivo** (aqui, `ipp://192.168.150.25/ipp/print`, endereço IPP de uma impressora que suporta IPP Everywhere) e `-m` define o modelo/driver. O `-m everywhere` só funciona com URI IPP (`ipp://`, `ipps://`, `dnssd://` ou `ippusb://`); com `socket://` seria preciso indicar um PPD ou driver.
 
 ### 108.4-013 | unica | 2
 ref: 102:p.377-378
 tags: lpadmin, -m everywhere, IPP
-Qual é o efeito de `-m everywhere` em `lpadmin -p ENVY-4510 -v socket://192.168.150.25 -m everywhere`?
-= O CUPS usa IPP Everywhere: consulta a impressora pelo URI e escolhe sozinho o PPD
+Qual é o efeito de `-m everywhere` em `lpadmin -p ENVY-4510 -v ipp://192.168.150.25/ipp/print -m everywhere`?
+= O CUPS usa IPP Everywhere: consulta a impressora por IPP, no URI, e gera sozinho o PPD
 - O CUPS compartilha a impressora com todos os computadores da rede local e libera a porta 631
 - A impressora é definida como padrão para todos os usuários do sistema
 - A fila passa a aceitar trabalhos de qualquer usuário, sem autenticação
-> Nas versões modernas do CUPS, `-m everywhere` (IPP Everywhere) dispensa a escolha manual do driver: o CUPS pergunta à impressora, pelo URI do dispositivo, o que ela suporta e determina o arquivo PPD correto.
+> Nas versões modernas do CUPS, `-m everywhere` (IPP Everywhere) dispensa a escolha manual do driver: o CUPS pergunta à impressora, por IPP, no URI do dispositivo, o que ela suporta (formatos, papéis, cores, duplex) e gera o arquivo PPD correspondente. Por isso o URI precisa ser IPP (`ipp://`, `ipps://`, `dnssd://` ou `ippusb://`) e a impressora precisa suportar IPP Everywhere.
+> Com um URI `socket://` (AppSocket/JetDirect, porta 9100), o CUPS só despeja os dados na impressora e não consulta suas capacidades; nesse caso o `lpadmin` recusa o `-m everywhere` ("IPP Everywhere driver requires an IPP connection") e é preciso indicar um PPD ou driver (`-P` ou `-m` com um modelo de `lpinfo -m`).
 > Compartilhamento é `-o printer-is-shared=true`; impressora padrão, `lpoptions -d`; restrição de usuários, `-u allow:`/`deny:`.
 
 ### 108.4-014 | lacuna | 1
@@ -381,7 +382,7 @@ Quais comandos listam os trabalhos que estão em espera nas filas de impressão?
 ref: 102:p.377, 102:p.384
 tags: lpadmin, cupsreject, cupsdisable, privilégios
 Quais comandos exigem privilégios administrativos (root ou um usuário do grupo de administração do CUPS)?
-= lpadmin -p NOVA -v socket://192.168.150.30 -m everywhere
+= lpadmin -p NOVA -v ipp://192.168.150.30/ipp/print -m everywhere
 - lpq -a
 = cupsreject FRONT-DESK
 - lpstat -p

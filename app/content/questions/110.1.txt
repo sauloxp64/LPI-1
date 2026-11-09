@@ -218,13 +218,14 @@ Complete o comando para listar todos os soquetes UDP em escuta (use somente as o
 
 ### 110.1-020 | unica | 3
 ref: 102:p.511-512
-tags: netstat, conexões estabelecidas
+tags: netstat, estados de conexão, TIME_WAIT
 O que exibe o comando `netstat -tn` (sem a opção `-l`)?
 - Os soquetes TCP em escuta, com endereços e portas em formato numérico
 - Todas as conexões TCP e UDP, tanto estabelecidas quanto em escuta
-= Apenas as conexões TCP estabelecidas, em formato numérico
+= Os soquetes TCP que não estão em escuta, em formato numérico e em qualquer estado de conexão
 - A tabela de roteamento, com os endereços em formato numérico
-> Sem `-l` (ou `-a`), o `netstat` omite os soquetes em escuta e mostra só as conexões ativas, no cabeçalho "Active Internet connections (w/o servers)". Para ver os servidores em escuta, é preciso `-l`; para todos, `-a`. A tabela de roteamento é obtida com `-r`.
+> Sem `-l` (ou `-a`), o `netstat` omite os soquetes em escuta e mostra os demais, sob o cabeçalho "Active Internet connections (w/o servers)". `-t` seleciona o protocolo TCP e `-n` desativa a resolução de nomes; nenhuma das duas filtra por estado. Por isso, além de `ESTABLISHED`, podem aparecer `TIME_WAIT`, `CLOSE_WAIT`, `SYN_SENT` e outros estados (testado: depois de o cliente encerrar uma conexão em loopback, a linha em `TIME_WAIT` continuou aparecendo em `netstat -tn`).
+> Para ver os servidores em escuta, é preciso `-l`; para todos os soquetes, `-a`. A tabela de roteamento é obtida com `-r`. Para listar apenas as conexões estabelecidas, use um filtro de estado, como `ss -tn state established`.
 
 ### 110.1-021 | unica | 2
 ref: 102:p.513, 102:p.532
@@ -449,11 +450,12 @@ Qual comando exibe a data e a hora da última inicialização do sistema?
 ref: 102:p.518-519
 tags: w, load average
 Na primeira linha da saída do `w` aparece `load average: 0.04, 0.12, 0.09`. O que representam esses três números?
-= A média de processos na fila de execução em 1, 5 e 15 minutos
+= A média de tarefas em execução, prontas ou em espera ininterruptível, em 1, 5 e 15 minutos
 - Os percentuais de CPU usados por usuários, sistema e processos ociosos
 - O uso médio de memória RAM, swap e disco nos últimos 15 minutos
 - O número de usuários conectados, de processos e de terminais abertos
-> A carga média (load average) mostra a quantidade média de trabalhos na fila de execução nos últimos 1, 5 e 15 minutos, na ordem. Percentuais de CPU e uso de memória são exibidos por outras ferramentas (como `top` e `free`).
+> A carga média (load average) é a quantidade média de tarefas que estão executando ou prontas para executar (estado `R`) somadas às que estão em espera ininterruptível (estado `D`, em geral aguardando E/S), em médias suavizadas dos últimos 1, 5 e 15 minutos, na ordem. Não é um percentual de CPU nem uma contagem instantânea: muitas tarefas bloqueadas em `D` podem manter a carga alta mesmo com a CPU quase ociosa.
+> Percentuais de CPU e uso de memória são exibidos por outras ferramentas (como `top` e `free`).
 
 ### 110.1-041 | unica | 3
 ref: 102:p.519
@@ -604,3 +606,14 @@ Um usuário comum consegue trocar a própria senha com o comando `passwd`, embor
 - O passwd chama o sudo automaticamente para elevar os privilégios do usuário
 - O usuário é temporariamente adicionado ao grupo shadow durante a troca
 > O `/usr/bin/passwd` tem o bit SUID (`-rwsr-xr-x root root`): quando executado, o processo assume a identidade do dono do arquivo (root) e pode gravar em `/etc/shadow`, validando antes que o usuário só altere a própria senha (o root pode alterar a de qualquer conta). `/etc/shadow` tem modo 640 e não é gravável por usuários comuns, e o `passwd` não depende do `sudo` nem de mudanças de grupo.
+
+### 110.1-055 | unica | 3
+ref: 102:p.518-519
+tags: load average, estado D, interpretação
+Um servidor de 4 CPUs mostra `load average: 14.20, 13.80, 10.10`, mas o `top` indica a CPU quase toda ociosa (`id` acima de 95%). O `ps` lista dezenas de processos no estado `D`, aguardando uma montagem NFS que não responde. Como interpretar essa carga alta?
+= Tarefas em espera ininterruptível (estado `D`) também contam na carga, que pode ficar alta sem CPU saturada
+- Carga acima do número de CPUs sempre prova que há processos prontos esperando CPU; o `top` deve estar errado
+- Processos no estado `D` não entram no cálculo; a carga vem só de processos zumbis (estado `Z`)
+- A carga média é o percentual de CPU em uso, então 14,20 indica 1.420% de uso
+> No Linux, a carga média conta as tarefas que estão executando ou prontas para executar (estado `R`) e também as em espera ininterruptível (estado `D`, em geral aguardando E/S, como um NFS travado ou um disco lento). Várias tarefas bloqueadas em `D` elevam a carga mesmo com a CPU ociosa; carga alta, portanto, não implica CPU saturada (`man 5 proc`, campo `/proc/loadavg`).
+> O `top` está certo ao mostrar a CPU ociosa. Zumbis (`Z`) já terminaram e não contam, e a carga não é um percentual: são médias suavizadas de 1, 5 e 15 minutos de uma contagem de tarefas, que pode passar do número de CPUs.

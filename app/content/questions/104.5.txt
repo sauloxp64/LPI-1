@@ -71,7 +71,8 @@ Com `umask 027` ativo no shell, quais permissões recebem, respectivamente, um a
 - arquivo rwxr-x--- e diretório rwxr-x---
 - arquivo rw------- e diretório rwx------
 - arquivo rw-r----- e diretório rw-r-----
-> A máscara é subtraída do modo-base: 666 para arquivos e 777 para diretórios. Com 027: arquivos ficam 640 (rw-r-----) e diretórios 750 (rwxr-x---). Testado.
+> A `umask` **remove** do modo solicitado os bits que estão ligados na máscara (`modo & ~umask`); não é uma subtração aritmética. O modo solicitado usual é 666 para arquivos e 777 para diretórios. Com 027: `0666 & ~0027 = 0640` (rw-r-----) e `0777 & ~0027 = 0750` (rwxr-x---). Testado, em diretório sem ACL padrão.
+> Por isso a subtração engana: com `umask 111`, "666 - 111" daria 555, mas o arquivo nasce com 666, pois a máscara só desliga bits de execução que o modo solicitado já não tinha.
 > `rw-r--r--`/`rwxr-xr-x` corresponde a umask 022; `rw-------`/`rwx------` a 077; arquivos comuns não nascem com execução, e um diretório rw-r----- (umask 137) não pode ser acessado pelo grupo. O padrão do sistema costuma ser 022 (Debian) ou 002 para usuários com grupo privado (RHEL/Fedora).
 
 ### 104.5-007 | unica | 2
@@ -83,7 +84,7 @@ Qual valor de umask faz com que arquivos novos sejam criados com `rw-rw-r--` e d
 - 022
 - 220
 - 775
-> A umask indica as permissões que serão removidas do modo-base (666 para arquivos, 777 para diretórios). Para retirar apenas a escrita dos outros, usa-se 002: 666-002 = 664 e 777-002 = 775 (testado).
+> A `umask` indica os bits que serão removidos do modo solicitado (666 para arquivos, 777 para diretórios), e não um valor a subtrair. Para retirar apenas a escrita dos outros, usa-se 002: `0666 & ~0002 = 0664` e `0777 & ~0002 = 0775` (testado, em diretório sem ACL padrão).
 > 664 e 775 são os modos resultantes, não a máscara; 022 retira escrita do grupo; 220 retiraria escrita do dono e do grupo.
 
 ### 104.5-008 | unica | 2
@@ -302,14 +303,14 @@ O arquivo abaixo pertence a ana, que também é membro do grupo ana. O que acont
 ### 104.5-023 | unica | 3
 ref: 101:p.510, 101:p.525
 tags: chmod, octal, dígitos
-Um arquivo está com todas as permissões zeradas (`----------`). Qual será a listagem depois de `chmod 44 arquivo`?
+Um arquivo regular está com todas as permissões ligadas (`-rwxrwxrwx`). Qual será a listagem depois de `chmod 44 arquivo`?
 = ----r--r--
 - -r--r-----
 - -r--r--r--
 - -------r--
-- ----r-----
-> No modo octal, o `chmod` interpreta os dígitos "de trás para frente": um dígito altera apenas os outros; dois dígitos alteram grupo e outros; três alteram dono, grupo e outros; quatro incluem os bits especiais. `chmod 44` equivale a `chmod 0044`: grupo e outros com `r--`. Testado.
-> `chmod 4` produziria `-------r--`; `-r--r--r--` seria `chmod 444` e `-r--r-----` seria `chmod 440`.
+- -rwxr--r--
+> No modo octal, o `chmod` define o modo inteiro e preenche com zeros os dígitos que faltam à esquerda: `chmod 44` equivale a `chmod 0044` (dono `---`, grupo `r--`, outros `r--`). Ele não altera só os últimos dígitos: as permissões antigas do dono são descartadas, por isso `-rwxr--r--` está errado. Testado: partindo de 777, `chmod 44` resulta em `----r--r--` (modo 44).
+> `chmod 4` equivale a `0004` e produziria `-------r--`; `-r--r--r--` seria `chmod 444` e `-r--r-----` seria `chmod 440`. Em arquivos regulares todos os bits são redefinidos; em diretórios, o `chmod` do GNU preserva os bits SUID/SGID com modos numéricos de até quatro dígitos (testado: um diretório com SGID, `2755`, ficou `2044` após `chmod 44`).
 
 ### 104.5-024 | unica | 2
 ref: 101:p.512
@@ -407,7 +408,7 @@ tags: umask
 Qual valor de umask faz arquivos novos serem criados com `rw-r-----` e diretórios novos com `rwxr-x---`?
 = 027
 = 0027
-> 666 - 027 = 640 (rw-r-----) e 777 - 027 = 750 (rwxr-x---). Testado.
+> A `umask` remove do modo solicitado os bits ligados na máscara: `0666 & ~0027 = 0640` (rw-r-----) e `0777 & ~0027 = 0750` (rwxr-x---). Testado, em diretório sem ACL padrão.
 
 ### 104.5-033 | lacuna | 1
 ref: 101:p.511

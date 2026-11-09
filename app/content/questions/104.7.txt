@@ -133,13 +133,13 @@ Qual comando lista os arquivos regulares com mais de 100 MiB sob `/var`?
 ### 104.7-012 | unica | 2
 ref: 101:p.551-552
 tags: find, -mtime
-Qual comando lista os arquivos regulares de `/var/log` cuja última modificação ocorreu há **mais de 30 dias**?
+Qual comando lista os arquivos regulares de `/var/log` cuja última modificação ocorreu há **pelo menos 31 períodos completos de 24 horas**?
 - find /var/log -type f -mtime 30
 - find /var/log -type f -mtime -30
 - find /var/log -type f -newermt '30 days ago'
 = find /var/log -type f -mtime +30
-> `-mtime N` conta em períodos de 24 horas desde a modificação. Com `+30`, o `find` seleciona o que foi modificado há mais de 30 períodos de 24 horas.
-> `-mtime 30` seleciona somente os modificados há exatamente 30 períodos de 24 horas, e `-mtime -30` seleciona os modificados há menos de 30 dias. `-newermt '30 days ago'` seleciona o oposto: arquivos modificados depois daquela data, ou seja, nos últimos 30 dias.
+> O `find` mede a idade do arquivo em períodos **completos** de 24 horas desde a modificação e descarta a fração. `-mtime +30` seleciona idades maiores que 30, isto é, **pelo menos 31 períodos completos** de 24 horas: um arquivo modificado há 30 dias e 12 horas tem idade 30 e não é selecionado (testado).
+> `-mtime 30` seleciona o intervalo [30, 31) períodos (de 30 dias até menos de 31), e `-mtime -30` seleciona menos de 30 períodos completos, isto é, [0, 30). `-newermt '30 days ago'` seleciona o oposto: arquivos modificados depois daquela data, ou seja, nos últimos 30 dias.
 
 ### 104.7-013 | lacuna | 2
 ref: 101:p.549-550
@@ -320,5 +320,5 @@ Qual comando lista, **apenas no diretório atual** (sem descer em subdiretórios
 - find . -maxdepth 1 -writable -mtime -10 -size 4G
 = find . -maxdepth 1 -writable -mtime -10 -size +4G
 - find . -writable -mtime -10 -size +4G
-> `-maxdepth 1` mantém a busca no diretório atual, `-writable` seleciona o que o usuário pode gravar, `-mtime -10` seleciona o modificado há menos de 10 dias e `-size +4G` seleciona arquivos maiores que 4 GiB.
-> `-mtime 10` casa apenas o que foi modificado há exatamente 10 períodos de 24 horas, e `-size 4G` casa apenas o tamanho igual a 4 GiB (arredondado para cima). Sem `-maxdepth 1`, o `find` desce por todos os subdiretórios.
+> `-maxdepth 1` mantém a busca no diretório atual, `-writable` seleciona o que o usuário pode gravar, `-mtime -10` seleciona o modificado há menos de 10 períodos completos de 24 horas ([0, 10)) e `-size +4G` seleciona arquivos maiores que 4 GiB.
+> `-mtime 10` casa apenas o intervalo [10, 11) períodos completos de 24 horas, e `-size 4G` casa apenas o tamanho igual a 4 GiB (arredondado para cima). Sem `-maxdepth 1`, o `find` desce por todos os subdiretórios.

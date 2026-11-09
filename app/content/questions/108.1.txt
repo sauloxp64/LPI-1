@@ -35,7 +35,6 @@ ref: 102:p.261
 tags: date, época unix
 Em `date +____`, qual sequência de formato (incluindo o caractere `%`) imprime o tempo Unix, isto é, o número de segundos decorridos desde 1º de janeiro de 1970 (UTC)?
 = %s
-= +%s
 > A sequência `%s` mostra os segundos desde a Época Unix (`date +%s`). Já `%Y-%m-%d` e `%T`, por exemplo, formatam ano-mês-dia e hora:minuto:segundo.
 
 ### 108.1-005 | unica | 2

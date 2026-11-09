@@ -38,12 +38,13 @@ O que o valor `GRUB_TIMEOUT=-1` provoca no GRUB 2?
 ### 102.2-005 | unica | 2
 ref: 101:p.83-84
 tags: GRUB_CMDLINE_LINUX_DEFAULT, GRUB_CMDLINE_LINUX
-Um administrador deseja que o parâmetro `nomodeset` seja passado ao kernel apenas na entrada de menu **padrão**, e não na entrada de recuperação (recovery). Em qual variável de `/etc/default/grub` ele deve ser colocado?
+Um administrador deseja que o parâmetro `nomodeset` seja passado ao kernel apenas nas entradas de menu **normais**, e não nas entradas de recuperação (recovery). Em qual variável de `/etc/default/grub` ele deve ser colocado?
 = GRUB_CMDLINE_LINUX_DEFAULT
 - GRUB_CMDLINE_LINUX
 - GRUB_CMDLINE_LINUX_RECOVERY
 - GRUB_SAVEDEFAULT
-> `GRUB_CMDLINE_LINUX_DEFAULT` recebe parâmetros adicionais apenas para a entrada padrão, enquanto `GRUB_CMDLINE_LINUX` vale para todas as entradas do kernel (inclusive a de recuperação). `GRUB_CMDLINE_LINUX_RECOVERY` não existe, e `GRUB_SAVEDEFAULT` controla se a última escolha é lembrada.
+> `GRUB_CMDLINE_LINUX_DEFAULT` recebe parâmetros adicionais apenas para as entradas normais geradas pelo `grub-mkconfig` (de todos os kernels instalados), excluindo as de recuperação; ela não escolhe a entrada padrão (isso é papel de `GRUB_DEFAULT`). `GRUB_CMDLINE_LINUX` vale para todas as entradas do kernel, normais e de recuperação.
+> `GRUB_CMDLINE_LINUX_RECOVERY` não é uma variável de configuração documentada do GRUB (alguns scripts de distribuição a usam internamente) e, pelo nome, só se aplicaria às entradas de recuperação, não às normais; `GRUB_SAVEDEFAULT` controla se a última escolha é lembrada.
 
 ### 102.2-006 | unica | 3
 ref: 101:p.83

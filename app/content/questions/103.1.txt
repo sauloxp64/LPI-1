@@ -461,10 +461,10 @@ Em um diretório que contém somente `a.txt` e `b.txt`, o que imprimem os dois c
 $ echo "*.txt"
 $ echo *.txt
 ```
-= *.txt e depois a.txt b.txt
-- a.txt b.txt e depois *.txt
-- a.txt b.txt e depois a.txt b.txt
-- *.txt e depois *.txt
+= `*.txt` e depois `a.txt b.txt`
+- `a.txt b.txt` e depois `*.txt`
+- `a.txt b.txt` e depois `a.txt b.txt`
+- `*.txt` e depois `*.txt`
 > Entre aspas, o asterisco perde o significado de curinga e é impresso literalmente. Sem aspas, o shell expande `*.txt` para a lista de nomes correspondentes antes de chamar o `echo`.
 
 ### 103.1-044 | lacuna | 1

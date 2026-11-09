@@ -58,8 +58,6 @@ tags: telinit, q, /etc/inittab
 Depois de editar `/etc/inittab`, qual argumento faz o `init` reler o arquivo, sem reiniciar o sistema? `telinit ____`
 = q
 = Q
-= telinit q
-= telinit Q
 > `telinit q` (ou `Q`) pede ao init que recarregue sua configuração; isso deve ser feito sempre que `/etc/inittab` for modificado. Os argumentos numéricos e `S` mudam de runlevel.
 
 ### 101.3-006 | unica | 3
