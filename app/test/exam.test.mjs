@@ -88,6 +88,15 @@ test('isCorrect: multipla exige conjunto exato; lacuna normaliza espaços e prom
   assert.ok(!isCorrect(l, 'LS -l'));
 });
 
+test('isCorrect (lacuna): não aceita resposta que difere em espaços de aspas nem em quebra de linha (A-01)', () => {
+  const p = { type: 'lacuna', answers: ["printf 'a  b'"] };
+  assert.ok(isCorrect(p, "printf 'a  b'"), 'a própria resposta é aceita');
+  assert.ok(!isCorrect(p, "printf 'a b'"), 'um espaço no lugar de dois dentro das aspas imprime outra coisa');
+  assert.ok(isCorrect({ type: 'lacuna', answers: ['ls pwd'] }, '$  ls   pwd '), 'espaços fora de aspas e prompt continuam tolerados');
+  assert.ok(!isCorrect({ type: 'lacuna', answers: ['ls pwd'] }, 'ls\npwd'), 'dois comandos em linhas separadas não são "ls" com argumento "pwd"');
+  assert.ok(!isCorrect({ type: 'lacuna', answers: ['ls pwd'] }, 'ls\tpwd'));
+});
+
 test('todo objetivo tem questões no banco ou geradores', () => {
   const sem = bank.objetivos.filter((o) => !bank.questions.some((q) => q.obj === o.code) && !generators.some((g) => g.obj === o.code));
   // durante a construção do banco alguns objetivos ainda podem faltar: apenas informa

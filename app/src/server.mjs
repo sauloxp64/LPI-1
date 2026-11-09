@@ -1,17 +1,19 @@
 // Servidor HTTP da área de estudos (Node puro, sem dependências).
 import { createServer, request as httpRequest } from 'node:http';
 import net from 'node:net';
-import { createReadStream, readFileSync, statSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, statSync, existsSync, readdirSync } from 'node:fs';
 import { join, extname, normalize, resolve, sep } from 'node:path';
 import { loadBank, loadObjectives, APP_ROOT, DATA_DIR } from './bank.mjs';
 import { openDb, tx, getSetting, setSetting } from './db.mjs';
 import { generators } from './generators/index.mjs';
 import { randomSeed } from './rng.mjs';
 import {
-  buildExam, saveNewExam, loadExam, finishExam, checkOne, contest, publicQuestion, computeResult, DAY,
+  buildExam, saveNewExam, loadExam, finishExam, checkOne, contest, publicQuestion, computeResult, validateExamState, DAY,
 } from './exam.mjs';
 import { summary, masteryByObjective } from './stats.mjs';
 import { PdfIndex } from './pdfindex.mjs';
+import { pipeFile } from './pipefile.mjs';
+import { createShutdown } from './shutdown.mjs';
 import { loadChallenges, rollParams, render, labCall, CHALLENGES_DIR } from './lab.mjs';
 
 const PORT = Number(process.env.PORT || 8088);
@@ -44,11 +46,11 @@ const originAllowed = (req) => {
     return (u.protocol === 'http:' || u.protocol === 'https:') && u.origin === o && u.host === req.headers.host;
   } catch { return false; }
 };
-// versão mais recente já aplicada por resposta (`examId:índice`): lotes de salvamento que chegam fora de ordem não sobrescrevem o mais novo
-const answerVers = new Map();
-/** Versões já aplicadas de uma prova (índice -> n, e `flags`): o cliente retoma a numeração dela ao reabrir a tela. */
-const versOf = (examId) => { const p = `${examId}:`; const out = {}; for (const [k, v] of answerVers) if (k.startsWith(p)) out[k.slice(p.length)] = v; return out; };
-const dropVers = (examId) => { for (const k of [...answerVers.keys()]) if (k.startsWith(`${examId}:`)) answerVers.delete(k); };
+/** Revisões já aplicadas de uma prova (índice -> n, e `flags`), gravadas na coluna `vers` junto com as respostas: o cliente retoma a numeração dela ao reabrir a tela. */
+const versOf = (exam) => {
+  let o; try { o = JSON.parse(exam.vers ?? '{}'); } catch { o = null; }
+  return Object.fromEntries(Object.entries(o && typeof o === 'object' && !Array.isArray(o) ? o : {}).filter(([, v]) => Number.isSafeInteger(v) && v >= 0));
+};
 
 const db = openDb(DB_PATH);
 let bank = loadBank();
@@ -134,7 +136,7 @@ function examView(exam) {
     };
   }
   return {
-    ...base, checked: exam.checked, vers: versOf(exam.id),
+    ...base, checked: exam.checked, vers: versOf(exam),
     questions: exam.questions.map((q, i) => (exam.instant && exam.checked.includes(i)
       ? { ...publicQuestion(q, i, { reveal: true }), ok: undefined }
       : publicQuestion(q, i))),
@@ -161,6 +163,56 @@ function validateAnswers(exam, answers) {
   }
   return out;
 }
+
+// Contrato de revisões do salvamento (PUT /answers) e da finalização (POST /finish).
+// Cada edição de resposta (`vers[i]`) e da lista de marcações (`fv`) leva a revisão do cliente; o servidor guarda a maior já
+// aplicada (coluna `exams.vers`, junto com as respostas). Para cada item com revisão válida:
+//   revisão  > guardada                -> aplica e passa a guardar essa revisão;
+//   revisão <= guardada, mesmo valor   -> idempotente (repetição/retentativa): nada muda, não é erro;
+//   revisão  < guardada, valor novo    -> antiga: NÃO aplica (`ignored`);
+//   revisão == guardada, valor novo    -> conflito (duas abas editaram a partir da mesma base): NÃO aplica (`ignored` + `conflicts`).
+// Sem revisão (formato antigo/ferramentas) aplica como antes. Quem recusa devolve `current` (valores vigentes) e `vers` para o
+// cliente ressincronizar; o cliente não reenvia a edição recusada como se fosse nova.
+// PUT /answers aplica o que pode e informa o resto (200). POST /finish é tudo-ou-nada: qualquer recusa vira 409 ANTES de gravar,
+// finalizar ou registrar tentativas (a prova segue em andamento).
+const revOf = (x) => (typeof x === 'number' && Number.isSafeInteger(x) && x >= 0 ? x : null);
+const blankAnswer = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
+const sortedInts = (l) => [...l].sort((a, b) => a - b);
+const canonAnswer = (v) => (blankAnswer(v) ? '' : JSON.stringify(Array.isArray(v) ? sortedInts(v) : v));
+
+function mergeRevisions(exam, body) {
+  const incoming = validateAnswers(exam, body.answers);
+  const sent = body.vers && typeof body.vers === 'object' ? body.vers : {};
+  const vers = versOf(exam);
+  const answers = { ...exam.answers };
+  const ignored = []; const conflicts = [];
+  for (const [k, v] of Object.entries(incoming)) {
+    const r = revOf(sent[k]);
+    if (r !== null && vers[k] !== undefined && r <= vers[k] && canonAnswer(v) !== canonAnswer(answers[k])) {
+      ignored.push(Number(k)); if (r === vers[k]) conflicts.push(Number(k));
+      continue;
+    }
+    if (v === null) delete answers[k]; else answers[k] = v;
+    if (r !== null && (vers[k] === undefined || r > vers[k])) vers[k] = r;
+  }
+  let flags = exam.flags; let flagsIgnored = false;
+  if (Array.isArray(body.flags)) {
+    const nf = [...new Set(body.flags.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))];
+    const fr = revOf(body.fv);
+    if (fr !== null && vers.flags !== undefined && fr <= vers.flags && JSON.stringify(sortedInts(nf)) !== JSON.stringify(sortedInts(new Set(exam.flags)))) flagsIgnored = true;
+    else { flags = nf; if (fr !== null && (vers.flags === undefined || fr > vers.flags)) vers.flags = fr; }
+  }
+  return { answers, flags, vers, ignored, conflicts, flagsIgnored };
+}
+
+/** O que o cliente precisa para ressincronizar: o que foi recusado, os valores vigentes no servidor e as revisões vigentes. */
+const syncInfo = (exam, m, vers = m.vers) => ({
+  ignored: m.ignored, conflicts: m.conflicts, flagsIgnored: m.flagsIgnored, vers,
+  current: { answers: Object.fromEntries(m.ignored.map((i) => [i, exam.answers[i] ?? null])), ...(m.flagsIgnored ? { flags: exam.flags } : {}) },
+});
+
+const saveMerged = (exam, m) => db.prepare('UPDATE exams SET answers = ?, flags = ?, vers = ? WHERE id = ?')
+  .run(JSON.stringify(m.answers), JSON.stringify(m.flags), JSON.stringify(m.vers), exam.id);
 
 // ---------- rotas ----------
 const routes = [];
@@ -258,28 +310,10 @@ route('PUT', '/api/exams/:id/answers', async (req, res, p) => {
   const exam = maybeExpire(loadExam(db, p.id));
   if (!exam) throw httpError(404, 'prova não encontrada');
   if (exam.status !== 'andamento') throw httpError(409, 'prova já finalizada');
-  const incoming = validateAnswers(exam, body.answers);
-  const vers = body.vers && typeof body.vers === 'object' ? body.vers : {};
-  const ignored = []; let flagsIgnored = false;
-  for (const k of Object.keys(incoming)) {
-    const v = Number(vers[k]);
-    if (!Number.isSafeInteger(v)) continue;
-    const key = `${exam.id}:${k}`;
-    if (v < (answerVers.get(key) ?? -1)) { delete incoming[k]; ignored.push(Number(k)); } // lote antigo chegou depois de um mais novo (ou de outra aba)
-    else answerVers.set(key, v);
-  }
-  let flagsIn = body.flags;
-  const fv = Number(body.fv);
-  if (Number.isSafeInteger(fv)) {
-    const key = `${exam.id}:flags`;
-    if (fv < (answerVers.get(key) ?? -1)) { flagsIn = undefined; flagsIgnored = true; } else answerVers.set(key, fv);
-  }
-  const answers = { ...exam.answers, ...incoming };
-  for (const [k, v] of Object.entries(answers)) if (v === null) delete answers[k];
-  const flags = Array.isArray(flagsIn) ? [...new Set(flagsIn.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))] : exam.flags;
-  db.prepare('UPDATE exams SET answers = ?, flags = ? WHERE id = ?').run(JSON.stringify(answers), JSON.stringify(flags), exam.id);
-  // o que foi descartado é dito ao cliente (com as versões do servidor) para ele reenviar: nada some em silêncio
-  return { ok: true, now: Date.now(), ignored, flagsIgnored, vers: versOf(exam.id) };
+  const m = mergeRevisions(exam, body);
+  saveMerged(exam, m); // respostas, marcações e revisões na mesma gravação
+  // o que foi recusado é dito ao cliente (com os valores e revisões do servidor) para ele ressincronizar: nada some em silêncio
+  return { ok: true, now: Date.now(), ...syncInfo(exam, m) };
 });
 
 route('POST', '/api/exams/:id/check', async (req, res, p) => {
@@ -299,13 +333,13 @@ route('POST', '/api/exams/:id/finish', async (req, res, p) => {
   const late = exam.deadline && Date.now() > exam.deadline + 20_000; // tolerância de rede; depois disso só valem as respostas já salvas
   if (exam.status === 'andamento' && body.answers && !late) {
     // o cliente manda o estado COMPLETO ao finalizar: null apaga a resposta (ex.: o usuário limpou uma alternativa)
-    const answers = { ...exam.answers, ...validateAnswers(exam, body.answers) };
-    for (const [k, v] of Object.entries(answers)) if (v === null) delete answers[k];
-    const flags = Array.isArray(body.flags) ? [...new Set(body.flags.filter((x) => Number.isInteger(x) && x >= 0 && x < exam.questions.length))] : exam.flags;
-    db.prepare('UPDATE exams SET answers = ?, flags = ? WHERE id = ?').run(JSON.stringify(answers), JSON.stringify(flags), exam.id);
+    const m = mergeRevisions(exam, body);
+    if (m.ignored.length || m.flagsIgnored) { // revisão antiga/conflitante: recusa ANTES de gravar, finalizar ou registrar tentativas
+      throw Object.assign(httpError(409, 'respostas desatualizadas: a prova foi alterada em outra janela'), { corpo: { ok: false, ...syncInfo(exam, m, versOf(exam)) } });
+    }
+    saveMerged(exam, m);
   }
   const done = finishExam(db, p.id);
-  dropVers(p.id);
   return examView(done);
 });
 
@@ -356,11 +390,10 @@ route('DELETE', '/api/exams/:id', async (req, res, p) => {
   tx(db, () => {
     db.prepare('DELETE FROM attempts WHERE exam_id = ?').run(p.id);
     db.prepare('DELETE FROM exams WHERE id = ?').run(p.id);
-    dropVers(p.id);
-    // reconstrói estatísticas das questões afetadas
+    // reconstrói as estatísticas na mesma transação: se a reconstrução falhar, a prova e as estatísticas voltam ao que eram
     db.exec('DELETE FROM qstats');
+    rebuildAllQstats();
   });
-  rebuildAllQstats();
   return { ok: true };
 });
 
@@ -480,7 +513,7 @@ const IMPORT_SPEC = {
   lessons: { req: ['key'], cols: { key: 's', done: 'b', updated: 'i?' }, max: 2000 },
   exams: {
     req: ['id', 'created', 'mode', 'status', 'questions'], max: 5000,
-    cols: { id: 's', created: 'i', mode: 's', title: 's?', scope: 'j:o?', seed: 's?', minutes: 'i?', instant: 'b', deadline: 'i?', status: 's', questions: 'j:a', answers: 'j:o', flags: 'j:a', overrides: 'j:a', checked: 'j:a', result: 'j:o?', finished: 'i?', n: 'i?', parent: 's?' },
+    cols: { id: 's', created: 'i', mode: 's', title: 's?', scope: 'j:o?', seed: 's?', minutes: 'i?', instant: 'b', deadline: 'i?', status: 's', questions: 'j:a', answers: 'j:o', flags: 'j:a', overrides: 'j:a', checked: 'j:a', vers: 'j:o', result: 'j:o?', finished: 'i?', n: 'i?', parent: 's?' },
   },
   attempts: { req: ['exam_id', 'qid', 'obj', 'correct', 'ts'], cols: { id: 'i?', exam_id: 's', idx: 'i', qid: 's', obj: 's', type: 's?', level: 'i?', correct: 'b', ts: 'i' }, max: 300000 },
   qstats: { req: [], cols: { qid: 's?', obj: 's?', seen: 'i?', correct: 'i?', box: 'i?', last_ts: 'i?', last_ok: 'i?', due_ts: 'i?' }, max: 100000 }, // ignorado: é recalculado
@@ -526,6 +559,8 @@ function validateImport(d) {
   if (!d.lessons.every((r) => /^\d{3}\.\d:\d+$/.test(r.key))) return 'aula com chave inválida';
   if (!d.attempts.every((r) => isObjCode(r.obj) && r.qid.length <= 80)) return 'tentativa com objetivo/questão inválidos';
   if (!d.settings.every((r) => ['data_101', 'data_102'].includes(r.k))) return 'configuração desconhecida';
+  const attemptsOf = new Map(); // exam_id -> Set dos idx corrigidos (a exportação omite provas em andamento mas mantém as tentativas do treino)
+  for (const a of d.attempts) (attemptsOf.get(a.exam_id) ?? attemptsOf.set(a.exam_id, new Set()).get(a.exam_id)).add(a.idx ?? 0);
   for (const e of d.exams) {
     if (!['andamento', 'finalizado'].includes(e.status)) return 'prova com status inválido';
     const qs = JSON.parse(e.questions);
@@ -534,6 +569,8 @@ function validateImport(d) {
       && typeof q.text === 'string' && Array.isArray(q.options) && q.options.length <= 12 && q.options.every((o) => o && typeof o === 'object' && typeof o.t === 'string' && typeof o.ok === 'boolean')
       && Array.isArray(q.answers) && q.answers.every((a) => typeof a === 'string' || Number.isInteger(a)));
     if (!okQ) return 'prova com questões inválidas';
+    const problemaProva = validateExamState(e, attemptsOf.get(e.id));
+    if (problemaProva) return problemaProva;
   }
   return null;
 }
@@ -553,12 +590,18 @@ route('POST', '/api/import', async (req) => {
       }
     }
     rebuildAllQstats();
-    // leitura de teste: toda prova importada precisa abrir (e, se em andamento, ser corrigida) como o app faz; senão desfaz tudo
+    // `result` é dado derivado: refeito do snapshot importado (questões, respostas, contestações, datas), nunca confiado.
+    // Depois, leitura de teste: toda prova importada precisa abrir (e, se em andamento, ser corrigida) como o app faz; senão desfaz tudo
     for (const { id } of db.prepare('SELECT id FROM exams').all()) {
-      try { const e = loadExam(db, id); examView(e); if (e.status === 'andamento') computeResult(e); } catch { throw httpError(400, `prova ${id} com estrutura inválida`); }
+      try {
+        const e = loadExam(db, id);
+        e.result = e.status === 'finalizado' ? computeResult(e) : null;
+        db.prepare('UPDATE exams SET result = ? WHERE id = ?').run(e.result && JSON.stringify(e.result), id);
+        examView(e);
+        if (e.status === 'andamento') computeResult(e);
+      } catch { throw httpError(400, `prova ${id} com estrutura inválida`); }
     }
   });
-  answerVers.clear();
   return { ok: true };
 });
 
@@ -577,7 +620,6 @@ route('POST', '/api/reset', async (req) => {
   const { confirm } = await readBody(req);
   if (confirm !== 'APAGAR') throw httpError(400, 'confirmação ausente');
   tx(db, () => { for (const t of EXPORT_TABLES) db.exec(`DELETE FROM ${t}`); });
-  answerVers.clear();
   return { ok: true };
 });
 
@@ -588,18 +630,21 @@ function serveFile(req, res, file, { range = false, type } = {}) {
   if (!st.isFile()) return send(res, 404, { erro: 'não encontrado' });
   const ct = type || MIME[extname(file).toLowerCase()] || 'application/octet-stream';
   const headers = { 'content-type': ct, 'cache-control': 'no-cache', 'accept-ranges': range ? 'bytes' : 'none', ...SECURITY_HEADERS, ...(ct === 'application/pdf' ? {} : { 'content-security-policy': APP_CSP }) };
+  // o arquivo existia no statSync mas não abriu (removido, sem permissão, E/S): erro genérico, sem derrubar o processo
+  const failFile = (err) => {
+    if (err?.code !== 'ENOENT') console.error('[arquivo]', file, err?.code ?? err);
+    send(res, err?.code === 'ENOENT' ? 404 : 500, { erro: err?.code === 'ENOENT' ? 'não encontrado' : 'erro ao ler o arquivo' });
+  };
   const m = range && req.headers.range ? /^bytes=(\d*)-(\d*)$/.exec(req.headers.range) : null;
   if (m) {
     let start = m[1] === '' ? Math.max(0, st.size - Number(m[2])) : Number(m[1]);
     let end = m[1] !== '' && m[2] !== '' ? Number(m[2]) : st.size - 1;
     end = Math.min(end, st.size - 1);
     if (!(start >= 0) || start > end || (m[1] === '' && Number(m[2]) === 0)) { res.writeHead(416, { 'content-range': `bytes */${st.size}`, ...SECURITY_HEADERS }); return res.end(); }
-    res.writeHead(206, { ...headers, 'content-range': `bytes ${start}-${end}/${st.size}`, 'content-length': end - start + 1 });
-    return createReadStream(file, { start, end }).pipe(res);
+    return pipeFile(res, file, { range: { start, end }, fail: failFile, head: () => res.writeHead(206, { ...headers, 'content-range': `bytes ${start}-${end}/${st.size}`, 'content-length': end - start + 1 }) });
   }
-  res.writeHead(200, { ...headers, 'content-length': st.size });
-  if (req.method === 'HEAD') return res.end();
-  return createReadStream(file).pipe(res);
+  if (req.method === 'HEAD') { res.writeHead(200, { ...headers, 'content-length': st.size }); return res.end(); }
+  return pipeFile(res, file, { fail: failFile, head: () => res.writeHead(200, { ...headers, 'content-length': st.size }) });
 }
 
 function servePublic(req, res, pathname) {
@@ -644,6 +689,7 @@ function proxyTerminal(req, res, url) {
 
 const server = createServer(async (req, res) => {
   try {
+    if (shutdown.closing()) res.setHeader('connection', 'close'); // encerrando: esta conexão não será reaproveitada
     // alvo da requisição: caminho absoluto simples; "//x" e formas estranhas viram 400 (antes derrubavam o processo)
     if (!req.url.startsWith('/') || req.url.startsWith('//')) return send(res, 400, { erro: 'URL inválida' });
     let url;
@@ -673,14 +719,18 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const status = e.status || 500;
     if (status >= 500) console.error('[erro]', req.method, req.url, e);
-    send(res, status, { erro: e.message || 'erro interno' });
+    send(res, status, { erro: e.message || 'erro interno', ...e.corpo }); // `corpo`: campos extras do erro (ex.: 409 da finalização)
   }
 });
+
+// sockets dos túneis WebSocket do terminal (cliente e laboratório): o encerramento os derruba em vez de esperar sessões que nunca acabam
+const tunnels = new Set();
 
 // WebSocket do terminal (ttyd): mesma checagem de Host/Origin e túnel TCP até o container do lab
 server.on('upgrade', (req, socket, head) => {
   socket.on('error', () => socket.destroy());
   const deny = (status = '403 Forbidden') => socket.end(`HTTP/1.1 ${status}\r\nconnection: close\r\n\r\n`);
+  if (shutdown.closing()) return deny('503 Service Unavailable');
   let url;
   try {
     if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny('400 Bad Request');
@@ -698,7 +748,8 @@ server.on('upgrade', (req, socket, head) => {
     up.write(lines.join('\r\n') + '\r\n\r\n');
     socket.pipe(up); up.pipe(socket);
   });
-  const close = () => { socket.destroy(); up.destroy(); };
+  tunnels.add(socket); tunnels.add(up);
+  const close = () => { socket.destroy(); up.destroy(); tunnels.delete(socket); tunnels.delete(up); };
   up.on('error', close); up.on('close', close); socket.on('close', close);
 });
 
@@ -706,5 +757,7 @@ server.on('upgrade', (req, socket, head) => {
 process.on('unhandledRejection', (e) => console.error('[unhandledRejection]', e));
 
 server.listen(PORT, '0.0.0.0', () => console.log(`[web] http://localhost:${PORT}`));
-process.on('SIGTERM', () => { server.close(); db.close(); process.exit(0); });
-process.on('SIGINT', () => { server.close(); db.close(); process.exit(0); });
+// SIGTERM (docker stop/restart) e SIGINT: param de aceitar, esperam as requisições em andamento (stop_grace_period do compose > prazo) e só então fecham o SQLite
+const shutdown = createShutdown({ server, tunnels, closeDb: () => db.close(), drainMs: Number(process.env.SHUTDOWN_DRAIN_MS) || 45_000 });
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

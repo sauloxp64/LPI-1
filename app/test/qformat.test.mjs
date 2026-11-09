@@ -64,6 +64,39 @@ test('normalizeAnswer', () => {
   assert.notEqual(normalizeAnswer('LS'), normalizeAnswer('ls'));
 });
 
+// ---------- A-01: a normalização só tolera o que o shell também tolera ----------
+test('normalizeAnswer: espaços DENTRO de aspas são significativos; fora delas continuam tolerados', () => {
+  // o interior de aspas é um argumento só: "a  b" (dois espaços) imprime diferente de "a b"
+  assert.notEqual(normalizeAnswer("printf 'a  b'"), normalizeAnswer("printf 'a b'"));
+  assert.notEqual(normalizeAnswer('echo "a  b"'), normalizeAnswer('echo "a b"'));
+  assert.notEqual(normalizeAnswer("'a  b'"), normalizeAnswer("'a b'"), 'aspas externas removidas não podem reabrir a compactação do interior');
+  assert.equal(normalizeAnswer("printf  'a  b'   x"), "printf 'a  b' x", 'fora das aspas compacta; dentro preserva');
+  // espaço escapado também é literal
+  assert.notEqual(normalizeAnswer('ls a\\ \\ b'), normalizeAnswer('ls a\\ b'));
+  assert.equal(normalizeAnswer('ls   a\\  b'), 'ls a\\  b', 'a barra protege só o espaço seguinte; o resto compacta');
+  // aspas sem fechamento: o resto da linha fica como está
+  assert.notEqual(normalizeAnswer("echo 'a  b"), normalizeAnswer("echo 'a b"));
+});
+
+test('normalizeAnswer: nova linha e tabulação nunca equivalem a espaço', () => {
+  assert.notEqual(normalizeAnswer('ls\npwd'), normalizeAnswer('ls pwd'));
+  assert.notEqual(normalizeAnswer('ls\tpwd'), normalizeAnswer('ls pwd'));
+  assert.notEqual(normalizeAnswer('ls\n\npwd'), normalizeAnswer('ls\npwd'));
+  assert.notEqual(normalizeAnswer("echo 'a\nb'"), normalizeAnswer("echo 'a b'"));
+});
+
+test('normalizeAnswer: prompt, trim e aspas externas (só quando correspondentes e envolvendo tudo)', () => {
+  for (const s of ['$ ls -l', '  $   ls -l  ', '# ls -l', ' ls  -l ', 'ls -l\n']) assert.equal(normalizeAnswer(s), 'ls -l', JSON.stringify(s));
+  assert.equal(normalizeAnswer("'tee'"), 'tee');
+  assert.equal(normalizeAnswer('`tee`'), 'tee');
+  assert.equal(normalizeAnswer('"tee\''), '"tee\'', 'aspas diferentes não são delimitadores');
+  assert.equal(normalizeAnswer("'a' 'b'"), "'a' 'b'", 'duas palavras entre aspas não são um invólucro único');
+  assert.equal(normalizeAnswer('"'), '"');
+  assert.equal(normalizeAnswer(null), '');
+  // toda resposta é equivalente a si mesma
+  for (const s of ["printf 'a  b'", 'ls\npwd', 'ls\tpwd', 'a\\ \\ b', "echo 'a", '"x"', 'cut -d" " -f1']) assert.equal(normalizeAnswer(s), normalizeAnswer(s));
+});
+
 test('banco real: sem erros de validação e cobre os objetivos já escritos', () => {
   const b = loadBank();
   assert.deepEqual(b.errors, [], JSON.stringify(b.errors.slice(0, 5)));

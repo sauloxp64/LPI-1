@@ -33,6 +33,8 @@ const MIGRATIONS = [
   CREATE INDEX idx_lab_runs_ch ON lab_runs(challenge, started);
   CREATE TABLE settings (k TEXT PRIMARY KEY, v TEXT);
   `,
+  // revisões do salvamento da prova (índice da questão -> n, e `flags`): ficam junto com as respostas e sobrevivem a reinício
+  `ALTER TABLE exams ADD COLUMN vers TEXT NOT NULL DEFAULT '{}';`,
 ];
 
 export function openDb(path) {

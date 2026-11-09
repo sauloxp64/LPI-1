@@ -250,6 +250,44 @@ export function loadExam(db, id) {
   };
 }
 
+/**
+ * Invariantes de uma prova na importação. `e` é a linha da tabela `exams` (colunas JSON ainda em texto) e `attemptIdx`, o Set dos
+ * `idx` das tentativas importadas dessa prova. Devolve a mensagem do problema ou null. A estrutura básica das questões já foi
+ * conferida pelo chamador. O gabarito vem do snapshot: se for impossível (nenhuma alternativa correta, lacuna sem resposta), a
+ * correção daria acerto sem resposta ou erro garantido. Respostas de formato "trocado" (texto numa questão de múltipla escolha)
+ * não são recusadas: PUT /answers as aceita e elas apenas contam como erradas.
+ */
+export function validateExamState(e, attemptIdx = new Set()) {
+  const qs = JSON.parse(e.questions);
+  const n = qs.length;
+  for (const q of qs) {
+    const ok = q.options.filter((o) => o.ok).length;
+    if (q.type === 'unica' && (ok !== 1 || q.options.length < 2)) return 'prova com questão de resposta única sem exatamente uma alternativa correta';
+    if (q.type === 'multipla' && (ok < 2 || ok > 8 || ok >= q.options.length)) return 'prova com questão de múltipla escolha com número de corretas inválido';
+    if (q.type === 'lacuna') {
+      if (q.options.length) return 'prova com questão de lacuna que tem alternativas';
+      if (!q.answers.length || !q.answers.every((a) => typeof a === 'string' && normalizeAnswer(a))) return 'prova com questão de lacuna sem resposta aceita';
+    }
+  }
+  const idxList = (txt) => { const a = txt == null ? [] : JSON.parse(txt); return a.every((x) => Number.isInteger(x) && x >= 0 && x < n) && new Set(a).size === a.length ? a : null; };
+  const checked = idxList(e.checked); const flags = idxList(e.flags); const overrides = idxList(e.overrides);
+  if (!checked || !flags || !overrides) return 'prova com índices inválidos em checked/flags/overrides';
+  for (const [k, v] of Object.entries(e.answers == null ? {} : JSON.parse(e.answers))) {
+    const i = Number(k);
+    if (!Number.isInteger(i) || String(i) !== k || i < 0 || i >= n) return 'prova com resposta de questão inexistente';
+    const okVal = (typeof v === 'string' && v.length <= 300) || Number.isInteger(v) || (Array.isArray(v) && v.length <= 8 && v.every(Number.isInteger));
+    if (!okVal) return 'prova com resposta em formato inválido';
+  }
+  if (e.status === 'finalizado') {
+    if (e.finished == null) return 'prova finalizada sem data de término';
+  } else {
+    if (overrides.length) return 'prova em andamento não pode ter contestações';
+    if (!e.instant && checked.length) return 'prova em andamento sem correção imediata não pode ter questões corrigidas';
+    if (checked.length !== attemptIdx.size || !checked.every((i) => attemptIdx.has(i))) return 'prova em andamento com questões corrigidas que não batem com as tentativas';
+  }
+  return null;
+}
+
 export function saveNewExam(db, built, parent = null) {
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const now = Date.now();

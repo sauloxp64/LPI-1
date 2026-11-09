@@ -42,6 +42,33 @@ const dayKey = (ts) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+const STREAK_BATCH = 120; // dias buscados por lote ao contar a sequência
+
+/**
+ * Dias seguidos com atividade (tentativas + desafios do lab concluídos). Independe da janela de 120 dias exibida no painel:
+ * busca o histórico em lotes, para trás, até a primeira lacuna. Os dias avançam pelo calendário local (não por múltiplos de 24 h).
+ */
+function streakOf(db, now) {
+  const t = new Date(now);
+  const midnight = (back) => new Date(t.getFullYear(), t.getMonth(), t.getDate() - back).getTime();
+  const days = new Set(); let loaded = 0; // `loaded`: quantos dias (contando de hoje para trás) já estão em `days`
+  const load = () => {
+    const from = midnight(loaded + STREAK_BATCH);
+    const to = loaded === 0 ? Number.MAX_SAFE_INTEGER : midnight(loaded); // o lote mais recente inclui hoje inteiro
+    for (const r of db.prepare('SELECT ts FROM attempts WHERE ts >= ? AND ts < ?').all(from, to)) days.add(dayKey(r.ts));
+    for (const r of db.prepare('SELECT passed_ts ts FROM lab_runs WHERE passed = 1 AND passed_ts >= ? AND passed_ts < ?').all(from, to)) days.add(dayKey(r.ts));
+    loaded += STREAK_BATCH;
+  };
+  let streak = 0;
+  for (let d = 0; d < 36500; d++) {
+    while (d >= loaded) load();
+    if (days.has(dayKey(midnight(d)))) streak++;
+    else if (d === 0) continue; // hoje ainda pode ser preenchido
+    else break;
+  }
+  return streak;
+}
+
 export function summary(db, { objetivos, topicos, bank, now = Date.now() }) {
   const mastery = masteryByObjective(db, objetivos);
   const weightOf = (list) => list.reduce((s, o) => s + o.peso, 0);
@@ -65,13 +92,7 @@ export function summary(db, { objetivos, topicos, bank, now = Date.now() }) {
     const a = act.get(k) ?? { q: 0, ok: 0, lab: 0 };
     a.lab++; act.set(k, a);
   }
-  let streak = 0;
-  for (let d = 0; d < 400; d++) {
-    const k = dayKey(now - d * DAY);
-    if (act.has(k)) streak++;
-    else if (d === 0) continue; // hoje ainda pode ser preenchido
-    else break;
-  }
+  const streak = streakOf(db, now);
   const atividade = [...act.entries()].map(([dia, v]) => ({ dia, ...v }));
 
   const exames = db.prepare("SELECT id, created, mode, title, n, result, minutes FROM exams WHERE status = 'finalizado' ORDER BY created DESC LIMIT 60").all()

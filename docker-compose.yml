@@ -9,6 +9,7 @@ services:
     image: lpic1-web
     init: true
     restart: unless-stopped
+    stop_grace_period: 50s            # o app espera até 45 s pelas requisições em andamento antes de fechar o banco (SHUTDOWN_DRAIN_MS)
     ports:
       - "127.0.0.1:8088:8088"      # só o seu computador acessa. Para abrir na rede local: "8088:8088" + ALLOWED_HOSTS (abaixo)
     environment:

@@ -100,14 +100,41 @@ export function parseQuestions(source, file = '<memória>') {
   return { questions, errors };
 }
 
+/**
+ * Compacta sequências de espaços em um só, mas apenas FORA de aspas: o interior de '...' e "..." é um argumento só
+ * (printf 'a  b' != printf 'a b'). Barra invertida protege o caractere seguinte (a\ \ b), e aspa sem fechamento
+ * preserva o resto. Tab e nova linha nunca viram espaço: `ls\npwd` são dois comandos, não `ls` com argumento `pwd`.
+ */
+function squeezeSpaces(s) {
+  let out = ''; let quote = null; let prevSpace = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      out += c;
+      if (c === '\\' && quote === '"' && i + 1 < s.length) out += s[++i];
+      else if (c === quote) quote = null;
+    } else if (c === '\\' && i + 1 < s.length) { out += c + s[++i]; prevSpace = false; }
+    else if (c === ' ') { if (!prevSpace) out += c; prevSpace = true; }
+    else { out += c; prevSpace = false; if (c === "'" || c === '"') quote = c; }
+  }
+  return out;
+}
+
+/** Tira as aspas externas só quando a primeira e a última são o par de uma única palavra entre aspas (`'a' 'b'` não é). */
+function unwrapQuotes(s) {
+  const q = s[0];
+  if (s.length < 2 || (q !== '"' && q !== "'" && q !== '`')) return s;
+  for (let i = 1; i < s.length; i++) {
+    if (s[i] === '\\' && q !== "'") { i++; continue; }
+    if (s[i] === q) return i === s.length - 1 ? s.slice(1, -1) : s;
+  }
+  return s;
+}
+
 /** Normaliza resposta de lacuna para comparação. */
 export function normalizeAnswer(s) {
-  return String(s ?? '')
-    .trim()
-    .replace(/^(\$|#)\s+/, '')
-    .replace(/\s+/g, ' ')
-    .replace(/^["'`](.*)["'`]$/, '$1')
-    .trim();
+  const t = String(s ?? '').trim().replace(/^(\$|#) +/, '').trim();
+  return unwrapQuotes(squeezeSpaces(t));
 }
 
 /**
